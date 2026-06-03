@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Settings | SHEETSTRIDE_</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;family=Press+Start+2P&amp;family=VT323&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#3f2e00",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "on-error-container": "#ffdad6",
+                        "error": "#ffb4ab",
+                        "tertiary": "#f7be1d",
+                        "surface-tint": "#a4c9ff",
+                        "tertiary-fixed-dim": "#f7be1d",
+                        "error-container": "#93000a",
+                        "inverse-primary": "#0060ac",
+                        "surface-bright": "#37393b",
+                        "on-secondary-fixed-variant": "#005321",
+                        "secondary-fixed-dim": "#4ae176",
+                        "surface-dim": "#111415",
+                        "surface-container-high": "#282a2c",
+                        "surface-variant": "#323537",
+                        "on-surface-variant": "#c1c7d3",
+                        "surface-container-lowest": "#0c0f10",
+                        "surface-container-low": "#191c1e",
+                        "primary-fixed": "#d4e3ff",
+                        "inverse-on-surface": "#2e3132",
+                        "outline-variant": "#414751",
+                        "primary": "#a4c9ff",
+                        "on-primary-container": "#003a6b",
+                        "surface": "#111415",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-secondary-container": "#004119",
+                        "on-tertiary-fixed-variant": "#5a4300",
+                        "surface-container": "#1d2022",
+                        "inverse-surface": "#e1e2e4",
+                        "on-secondary-fixed": "#002109",
+                        "tertiary-container": "#cc9b00",
+                        "surface-container-highest": "#323537",
+                        "outline": "#8b919d",
+                        "on-primary-fixed": "#001c39",
+                        "background": "#111415",
+                        "primary-container": "#60a5fa",
+                        "on-error": "#690005",
+                        "secondary": "#4ae176",
+                        "on-surface": "#e1e2e4",
+                        "on-primary-fixed-variant": "#004883",
+                        "secondary-container": "#00b954",
+                        "on-primary": "#00315d",
+                        "tertiary-fixed": "#ffdf9a",
+                        "secondary-fixed": "#6bff8f",
+                        "on-background": "#e1e2e4",
+                        "on-secondary": "#003915",
+                        "on-tertiary-container": "#493600"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "margin-desktop": "40px",
+                        "unit": "4px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "gutter": "20px",
+                        "xl": "48px"
+                    },
+                    "fontFamily": {
+                        "data-lg": ["VT323"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-lg": ["Press Start 2P"],
+                        "headline-sm": ["Press Start 2P"],
+                        "display-hero": ["Press Start 2P"],
+                        "data-md": ["VT323"],
+                        "body-lg": ["JetBrains Mono"],
+                        "body-md": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "data-lg": ["36px", {"lineHeight": "40px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "headline-lg": ["20px", {"lineHeight": "32px", "fontWeight": "400"}],
+                        "headline-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "display-hero": ["32px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+                        "data-md": ["24px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0B0B0B;
+            color: #E1E2E4;
+            scrollbar-width: thin;
+            scrollbar-color: #2A2A2A #0B0B0B;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0B0B0B; }
+        ::-webkit-scrollbar-thumb { background: #2A2A2A; }
+        
+        .toggle-switch:checked + .toggle-slider {
+            background-color: #60A5FA;
+        }
+        .toggle-switch:checked + .toggle-slider::before {
+            transform: translateX(20px);
+            background-color: #0B0B0B;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-x-hidden">
+<!-- Global Top Bar (Mobile) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-mobile md:hidden h-16 bg-surface border-b border-outline-variant">
+<div class="font-headline-sm text-headline-sm text-primary animate-pulse">SHEETSTRIDE_</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary">search</span>
+<span class="material-symbols-outlined text-primary">notifications</span>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full hidden lg:flex flex-col border-r border-outline-variant w-64 pt-6 pb-4 bg-surface-container-low dark:bg-surface-dim z-50">
+<div class="px-6 mb-8">
+<div class="font-headline-sm text-headline-sm text-primary">SHEETSTRIDE_</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant mt-1">v1.0.4</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span class="font-body-md">Questions</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+<span class="font-body-md">Progress</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-md">Profile</span>
+</a>
+<a class="bg-surface-container-highest text-primary border-l-4 border-primary px-4 py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-4">
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-md">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 min-h-screen p-margin-mobile md:p-margin-desktop pt-24 md:pt-margin-desktop">
+<div class="max-w-4xl mx-auto">
+<!-- Header Section -->
+<div class="mb-12">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-2 tracking-tight">SYSTEM_PREFERENCES</h1>
+<p class="text-on-surface-variant font-body-md">Configure global workspace parameters and user identity settings.</p>
+</div>
+<!-- Bento Grid Settings -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Appearance Section -->
+<section class="bg-[#1E1E1E] border border-[#2A2A2A] p-6 space-y-6">
+<div class="flex items-center gap-3 border-b border-[#2A2A2A] pb-4 mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="palette">palette</span>
+<h2 class="font-headline-sm text-headline-sm">APPEARANCE</h2>
+</div>
+<div class="flex justify-between items-center">
+<div>
+<p class="font-body-md text-on-surface">Dark Theme</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant">OPTIMIZE FOR LOW LIGHT</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-switch" type="checkbox"/>
+<div class="w-11 h-5 bg-[#2A2A2A] rounded-none transition-colors toggle-slider before:content-[''] before:absolute before:top-[2px] before:left-[2px] before:bg-[#F3F4F6] before:h-4 before:w-4 before:transition-all"></div>
+</label>
+</div>
+<div class="flex justify-between items-center">
+<div>
+<p class="font-body-md text-on-surface">Pixel Mode</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant">ENABLE RETRO SHARPENING</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only toggle-switch" type="checkbox"/>
+<div class="w-11 h-5 bg-[#2A2A2A] rounded-none transition-colors toggle-slider before:content-[''] before:absolute before:top-[2px] before:left-[2px] before:bg-[#F3F4F6] before:h-4 before:w-4 before:transition-all"></div>
+</label>
+</div>
+<div class="flex justify-between items-center">
+<div>
+<p class="font-body-md text-on-surface">Compact Layout</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant">MAXIMIZE DATA DENSITY</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-switch" type="checkbox"/>
+<div class="w-11 h-5 bg-[#2A2A2A] rounded-none transition-colors toggle-slider before:content-[''] before:absolute before:top-[2px] before:left-[2px] before:bg-[#F3F4F6] before:h-4 before:w-4 before:transition-all"></div>
+</label>
+</div>
+</section>
+<!-- Notifications Section -->
+<section class="bg-[#1E1E1E] border border-[#2A2A2A] p-6 space-y-6">
+<div class="flex items-center gap-3 border-b border-[#2A2A2A] pb-4 mb-4">
+<span class="material-symbols-outlined text-secondary" data-icon="notifications_active">notifications_active</span>
+<h2 class="font-headline-sm text-headline-sm">NOTIFICATIONS</h2>
+</div>
+<div class="flex justify-between items-center">
+<div>
+<p class="font-body-md text-on-surface">Daily Digest</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant">EVERY MORNING AT 08:00</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-switch" type="checkbox"/>
+<div class="w-11 h-5 bg-[#2A2A2A] rounded-none transition-colors toggle-slider before:content-[''] before:absolute before:top-[2px] before:left-[2px] before:bg-[#F3F4F6] before:h-4 before:w-4 before:transition-all"></div>
+</label>
+</div>
+<div class="flex justify-between items-center">
+<div>
+<p class="font-body-md text-on-surface">Weekly Progress</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant">SUNDAY PERFORMANCE RECAP</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only toggle-switch" type="checkbox"/>
+<div class="w-11 h-5 bg-[#2A2A2A] rounded-none transition-colors toggle-slider before:content-[''] before:absolute before:top-[2px] before:left-[2px] before:bg-[#F3F4F6] before:h-4 before:w-4 before:transition-all"></div>
+</label>
+</div>
+<div class="flex justify-between items-center">
+<div>
+<p class="font-body-md text-on-surface">Push Alerts</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant">BROWSER SYSTEM PING</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-switch" type="checkbox"/>
+<div class="w-11 h-5 bg-[#2A2A2A] rounded-none transition-colors toggle-slider before:content-[''] before:absolute before:top-[2px] before:left-[2px] before:bg-[#F3F4F6] before:h-4 before:w-4 before:transition-all"></div>
+</label>
+</div>
+</section>
+<!-- Account Section -->
+<section class="bg-[#1E1E1E] border border-[#2A2A2A] p-6 space-y-6 md:col-span-2 lg:col-span-1">
+<div class="flex items-center gap-3 border-b border-[#2A2A2A] pb-4 mb-4">
+<span class="material-symbols-outlined text-tertiary" data-icon="account_circle">account_circle</span>
+<h2 class="font-headline-sm text-headline-sm">ACCOUNT</h2>
+</div>
+<div class="space-y-4">
+<div class="group">
+<label class="font-label-caps text-label-caps text-on-surface-variant mb-1 block">DISPLAY NAME</label>
+<input class="w-full bg-[#151515] border border-[#2A2A2A] px-3 py-2 text-on-surface focus:outline-none focus:border-primary-container font-body-md transition-colors" type="text" value="Akshat"/>
+</div>
+<div class="group">
+<label class="font-label-caps text-label-caps text-on-surface-variant mb-1 block">EMAIL ADDRESS</label>
+<input class="w-full bg-[#151515] border border-[#2A2A2A] px-3 py-2 text-on-surface focus:outline-none focus:border-primary-container font-body-md transition-colors" type="email" value="user@sheetstride.dev"/>
+</div>
+<div class="pt-2">
+<button class="w-full bg-primary-container text-on-primary-container py-2 font-label-caps text-label-caps hover:brightness-90 transition-all">UPDATE IDENTITY</button>
+</div>
+</div>
+</section>
+<!-- Privacy Section -->
+<section class="bg-[#1E1E1E] border border-[#2A2A2A] p-6 space-y-6 md:col-span-2 lg:col-span-1">
+<div class="flex items-center gap-3 border-b border-[#2A2A2A] pb-4 mb-4">
+<span class="material-symbols-outlined text-error" data-icon="security">security</span>
+<h2 class="font-headline-sm text-headline-sm">PRIVACY &amp; SECURITY</h2>
+</div>
+<div class="flex justify-between items-center">
+<div>
+<p class="font-body-md text-on-surface">Public Profile</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant">VISIBLE TO THE ECOSYSTEM</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only toggle-switch" type="checkbox"/>
+<div class="w-11 h-5 bg-[#2A2A2A] rounded-none transition-colors toggle-slider before:content-[''] before:absolute before:top-[2px] before:left-[2px] before:bg-[#F3F4F6] before:h-4 before:w-4 before:transition-all"></div>
+</label>
+</div>
+<div class="flex justify-between items-center">
+<div>
+<p class="font-body-md text-on-surface">Show Progress</p>
+<p class="text-[10px] font-label-caps text-on-surface-variant">BROADCAST ACHIEVEMENTS</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only toggle-switch" type="checkbox"/>
+<div class="w-11 h-5 bg-[#2A2A2A] rounded-none transition-colors toggle-slider before:content-[''] before:absolute before:top-[2px] before:left-[2px] before:bg-[#F3F4F6] before:h-4 before:w-4 before:transition-all"></div>
+</label>
+</div>
+<div class="pt-2">
+<button class="w-full border border-[#2A2A2A] text-on-surface py-2 font-label-caps text-label-caps hover:border-primary-container transition-all">MANAGE TWO-FACTOR AUTH</button>
+</div>
+</section>
+<!-- Data Management (Asymmetric Full Width) -->
+<section class="md:col-span-2 bg-[#1E1E1E] border border-[#2A2A2A] p-6">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="flex items-center gap-4">
+<div class="h-12 w-12 bg-surface-container-high border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="database">database</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm">LOCAL DATA STORAGE</h2>
+<p class="text-on-surface-variant font-body-md">Manage your encrypted offline database nodes.</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-4">
+<button class="px-4 py-2 bg-transparent border border-outline-variant text-on-surface font-label-caps text-label-caps hover:bg-surface-container-high transition-colors">EXPORT JSON</button>
+<button class="px-4 py-2 bg-error-container text-on-error-container font-label-caps text-label-caps hover:brightness-110 transition-all">PURGE ALL DATA</button>
+</div>
+</div>
+<div class="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-gutter">
+<div class="bg-[#151515] p-4 border border-[#2A2A2A]">
+<p class="text-on-surface-variant font-label-caps text-[10px]">CACHE SIZE</p>
+<p class="font-data-md text-data-md text-primary mt-1">128.4 MB</p>
+</div>
+<div class="bg-[#151515] p-4 border border-[#2A2A2A]">
+<p class="text-on-surface-variant font-label-caps text-[10px]">TOTAL ENTRIES</p>
+<p class="font-data-md text-data-md text-secondary mt-1">14,204</p>
+</div>
+<div class="bg-[#151515] p-4 border border-[#2A2A2A]">
+<p class="text-on-surface-variant font-label-caps text-[10px]">LAST SYNC</p>
+<p class="font-data-md text-data-md text-tertiary mt-1">02:45 AM</p>
+</div>
+<div class="bg-[#151515] p-4 border border-[#2A2A2A]">
+<p class="text-on-surface-variant font-label-caps text-[10px]">STATUS</p>
+<p class="font-data-md text-data-md text-on-surface mt-1">READY</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer Decorative -->
+<footer class="mt-16 text-center border-t border-outline-variant pt-8">
+<p class="font-data-md text-data-md text-[#2A2A2A] tracking-widest opacity-50">SHEETSTRIDE // TERMINAL SETTINGS // 0X44A2</p>
+</footer>
+</div>
+</main>
+<!-- Navigation Shell Logic for Mobile -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-low border-t border-outline-variant grid grid-cols-5 h-16 z-50">
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="settings" data-weight="fill">settings</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions for the UI
+        document.querySelectorAll('input[type="text"], input[type="email"]').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.style.boxShadow = '0 0 0 1px #60A5FA';
+            });
+            input.addEventListener('blur', () => {
+                input.style.boxShadow = 'none';
+            });
+        });
+
+        // Toggle simulation
+        document.querySelectorAll('.toggle-switch').forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const parent = e.target.closest('section');
+                if(e.target.checked) {
+                    console.log('Feature enabled');
+                } else {
+                    console.log('Feature disabled');
+                }
+            });
+        });
+    </script>
+</body></html>

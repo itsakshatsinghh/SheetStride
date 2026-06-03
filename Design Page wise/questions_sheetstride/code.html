@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SHEETSTRIDE_ | Questions Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;family=Press+Start+2P&amp;family=VT323&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#3f2e00",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "on-error-container": "#ffdad6",
+                        "error": "#ffb4ab",
+                        "tertiary": "#f7be1d",
+                        "surface-tint": "#a4c9ff",
+                        "tertiary-fixed-dim": "#f7be1d",
+                        "error-container": "#93000a",
+                        "inverse-primary": "#0060ac",
+                        "surface-bright": "#37393b",
+                        "on-secondary-fixed-variant": "#005321",
+                        "secondary-fixed-dim": "#4ae176",
+                        "surface-dim": "#111415",
+                        "surface-container-high": "#282a2c",
+                        "surface-variant": "#323537",
+                        "on-surface-variant": "#c1c7d3",
+                        "surface-container-lowest": "#0c0f10",
+                        "surface-container-low": "#191c1e",
+                        "primary-fixed": "#d4e3ff",
+                        "inverse-on-surface": "#2e3132",
+                        "outline-variant": "#414751",
+                        "primary": "#a4c9ff",
+                        "on-primary-container": "#003a6b",
+                        "surface": "#111415",
+                        "on-tertiary-fixed": "#251a00",
+                        "on-secondary-container": "#004119",
+                        "on-tertiary-fixed-variant": "#5a4300",
+                        "surface-container": "#1d2022",
+                        "inverse-surface": "#e1e2e4",
+                        "on-secondary-fixed": "#002109",
+                        "tertiary-container": "#cc9b00",
+                        "surface-container-highest": "#323537",
+                        "outline": "#8b919d",
+                        "on-primary-fixed": "#001c39",
+                        "background": "#111415",
+                        "primary-container": "#60a5fa",
+                        "on-error": "#690005",
+                        "secondary": "#4ae176",
+                        "on-surface": "#e1e2e4",
+                        "on-primary-fixed-variant": "#004883",
+                        "secondary-container": "#00b954",
+                        "on-primary": "#00315d",
+                        "tertiary-fixed": "#ffdf9a",
+                        "secondary-fixed": "#6bff8f",
+                        "on-background": "#e1e2e4",
+                        "on-secondary": "#003915",
+                        "on-tertiary-container": "#493600"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "margin-desktop": "40px",
+                        "unit": "4px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "gutter": "20px",
+                        "xl": "48px"
+                    },
+                    "fontFamily": {
+                        "data-lg": ["VT323"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-lg": ["Press Start 2P"],
+                        "headline-sm": ["Press Start 2P"],
+                        "display-hero": ["Press Start 2P"],
+                        "data-md": ["VT323"],
+                        "body-lg": ["JetBrains Mono"],
+                        "body-md": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "data-lg": ["36px", {"lineHeight": "40px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "headline-lg": ["20px", {"lineHeight": "32px", "fontWeight": "400"}],
+                        "headline-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "display-hero": ["32px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+                        "data-md": ["24px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            background-color: #0B0B0B;
+            color: #e1e2e4;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111415;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2A2A2A;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #60A5FA;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-x-hidden">
+<!-- Global SideNavBar -->
+<nav class="fixed left-0 top-0 h-full hidden lg:flex flex-col border-r border-outline-variant w-64 pt-6 pb-4 bg-surface-container-low dark:bg-surface-dim z-50">
+<div class="px-6 mb-10">
+<h1 class="font-headline-sm text-headline-sm text-primary dark:text-primary tracking-tighter">SHEETSTRIDE_</h1>
+<p class="font-label-caps text-label-caps text-outline mt-1 uppercase">v1.0.4</p>
+</div>
+<div class="flex-1 space-y-1">
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface mx-2 rounded transition-none" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</a>
+<!-- Active State: Questions -->
+<a class="bg-surface-container-highest text-primary border-l-4 border-primary px-4 py-3 flex items-center gap-3 mx-2 rounded-r transition-none" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-body-md font-bold">Questions</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface mx-2 rounded transition-none" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-body-md">Progress</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface mx-2 rounded transition-none" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-body-md">Profile</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface mx-2 rounded transition-none" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md">Settings</span>
+</a>
+</div>
+<div class="mt-auto px-2">
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface rounded transition-none" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-body-md">Logout</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-0 lg:left-64 h-16 bg-surface dark:bg-surface border-b border-outline-variant flex justify-between items-center px-6 z-40">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded px-10 py-1.5 focus:outline-none focus:border-primary font-body-md text-on-surface placeholder:text-outline text-sm" placeholder="Search questions..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-surface-container-high rounded transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center border border-primary overflow-hidden">
+<img alt="Akshat" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJYrDh8KllK25OM_mi5RtNlpxUUbpwaPUL62NuASbMvJ6SqL3EPgXLnRzdTHIInJILaet5-zWAScEaU2F-2YR49Do2EavCN0ampxfhKG1CJMAwyOO5FM93G4jM7oUy8TXWPoTRD5OwM805-CRgMAB7YWLb4EdBTOc-wLc3nTpQIBPxa88Qqnhke5l2oz22V__eCcPZV8v92M0AwIi3PXjKdvTVbFhxBv3W5UlRaoHykFyfIMp2Z68MfogbiMQ4NWFoaquG4UqE2QQ"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="pt-24 px-6 pb-12 max-w-7xl mx-auto">
+<!-- Filters & Control Bar -->
+<section class="mb-10 flex flex-wrap gap-4 items-center justify-between">
+<div class="flex flex-wrap gap-3">
+<div class="flex items-center gap-2 bg-surface-container-low border border-outline-variant px-3 py-1.5 rounded">
+<span class="font-label-caps text-label-caps text-outline uppercase">Topic:</span>
+<select class="bg-transparent border-none focus:ring-0 font-body-md text-sm text-on-surface p-0 cursor-pointer">
+<option>All Topics</option>
+<option>Arrays</option>
+<option>Strings</option>
+<option>DP</option>
+</select>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-low border border-outline-variant px-3 py-1.5 rounded">
+<span class="font-label-caps text-label-caps text-outline uppercase">Difficulty:</span>
+<select class="bg-transparent border-none focus:ring-0 font-body-md text-sm text-on-surface p-0 cursor-pointer">
+<option>All</option>
+<option>Easy</option>
+<option>Medium</option>
+<option>Hard</option>
+</select>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-low border border-outline-variant px-3 py-1.5 rounded">
+<span class="font-label-caps text-label-caps text-outline uppercase">Status:</span>
+<select class="bg-transparent border-none focus:ring-0 font-body-md text-sm text-on-surface p-0 cursor-pointer">
+<option>All</option>
+<option>Solved</option>
+<option>Unsolved</option>
+</select>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-4 py-2 font-body-md font-bold text-sm flex items-center gap-2 hover:bg-primary-fixed-dim transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+                    NEW QUESTION
+                </button>
+</section>
+<!-- Categorized Lists -->
+<div class="space-y-12">
+<!-- Arrays Section -->
+<section>
+<div class="flex items-center gap-4 mb-4">
+<h2 class="font-headline-sm text-headline-sm text-secondary uppercase tracking-wider">01. Arrays</h2>
+<div class="h-[1px] flex-1 bg-outline-variant opacity-30"></div>
+<span class="font-data-md text-data-md text-outline">12/24</span>
+</div>
+<div class="bg-surface-container border border-outline-variant overflow-hidden">
+<!-- Table Header -->
+<div class="grid grid-cols-[48px_1fr_120px_140px_48px] px-4 py-3 bg-surface-container-low border-b border-outline-variant font-label-caps text-label-caps text-outline">
+<div></div>
+<div>NAME</div>
+<div>DIFFICULTY</div>
+<div>TOPIC</div>
+<div></div>
+</div>
+<!-- Question Rows -->
+<div class="divide-y divide-outline-variant/30">
+<!-- Row 1 -->
+<div class="grid grid-cols-[48px_1fr_120px_140px_48px] px-4 py-4 items-center hover:bg-surface-container-high transition-colors group cursor-pointer">
+<div class="flex justify-center">
+<input class="w-4 h-4 rounded-sm border-outline-variant bg-surface-dim text-primary focus:ring-0 cursor-pointer" type="checkbox"/>
+</div>
+<div class="font-body-lg text-on-surface group-hover:text-primary transition-colors">3Sum</div>
+<div>
+<span class="px-2 py-0.5 border border-tertiary text-tertiary font-label-caps text-[10px] uppercase">Medium</span>
+</div>
+<div>
+<span class="px-2 py-0.5 bg-surface-container-highest border border-outline-variant text-on-surface-variant font-label-caps text-[10px] uppercase">Arrays</span>
+</div>
+<div class="flex justify-end text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-lg">open_in_new</span>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-[48px_1fr_120px_140px_48px] px-4 py-4 items-center hover:bg-surface-container-high transition-colors group cursor-pointer">
+<div class="flex justify-center">
+<input checked="" class="w-4 h-4 rounded-sm border-outline-variant bg-surface-dim text-primary focus:ring-0 cursor-pointer" type="checkbox"/>
+</div>
+<div class="font-body-lg text-on-surface group-hover:text-primary transition-colors">Two Sum</div>
+<div>
+<span class="px-2 py-0.5 border border-secondary text-secondary font-label-caps text-[10px] uppercase">Easy</span>
+</div>
+<div>
+<span class="px-2 py-0.5 bg-surface-container-highest border border-outline-variant text-on-surface-variant font-label-caps text-[10px] uppercase">Arrays</span>
+</div>
+<div class="flex justify-end text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-lg">open_in_new</span>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-[48px_1fr_120px_140px_48px] px-4 py-4 items-center hover:bg-surface-container-high transition-colors group cursor-pointer">
+<div class="flex justify-center">
+<input class="w-4 h-4 rounded-sm border-outline-variant bg-surface-dim text-primary focus:ring-0 cursor-pointer" type="checkbox"/>
+</div>
+<div class="font-body-lg text-on-surface group-hover:text-primary transition-colors">Container With Most Water</div>
+<div>
+<span class="px-2 py-0.5 border border-tertiary text-tertiary font-label-caps text-[10px] uppercase">Medium</span>
+</div>
+<div>
+<span class="px-2 py-0.5 bg-surface-container-highest border border-outline-variant text-on-surface-variant font-label-caps text-[10px] uppercase">Arrays</span>
+</div>
+<div class="flex justify-end text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-lg">open_in_new</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Dynamic Programming Section -->
+<section>
+<div class="flex items-center gap-4 mb-4">
+<h2 class="font-headline-sm text-headline-sm text-primary uppercase tracking-wider">06. Dynamic Programming</h2>
+<div class="h-[1px] flex-1 bg-outline-variant opacity-30"></div>
+<span class="font-data-md text-data-md text-outline">05/30</span>
+</div>
+<div class="bg-surface-container border border-outline-variant overflow-hidden">
+<div class="grid grid-cols-[48px_1fr_120px_140px_48px] px-4 py-3 bg-surface-container-low border-b border-outline-variant font-label-caps text-label-caps text-outline">
+<div></div>
+<div>NAME</div>
+<div>DIFFICULTY</div>
+<div>TOPIC</div>
+<div></div>
+</div>
+<div class="divide-y divide-outline-variant/30">
+<!-- Row 1 -->
+<div class="grid grid-cols-[48px_1fr_120px_140px_48px] px-4 py-4 items-center hover:bg-surface-container-high transition-colors group cursor-pointer">
+<div class="flex justify-center">
+<input class="w-4 h-4 rounded-sm border-outline-variant bg-surface-dim text-primary focus:ring-0 cursor-pointer" type="checkbox"/>
+</div>
+<div class="font-body-lg text-on-surface group-hover:text-primary transition-colors">Longest Increasing Subsequence</div>
+<div>
+<span class="px-2 py-0.5 border border-tertiary text-tertiary font-label-caps text-[10px] uppercase">Medium</span>
+</div>
+<div>
+<span class="px-2 py-0.5 bg-surface-container-highest border border-outline-variant text-on-surface-variant font-label-caps text-[10px] uppercase">DP</span>
+</div>
+<div class="flex justify-end text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-lg">open_in_new</span>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-[48px_1fr_120px_140px_48px] px-4 py-4 items-center hover:bg-surface-container-high transition-colors group cursor-pointer">
+<div class="flex justify-center">
+<input class="w-4 h-4 rounded-sm border-outline-variant bg-surface-dim text-primary focus:ring-0 cursor-pointer" type="checkbox"/>
+</div>
+<div class="font-body-lg text-on-surface group-hover:text-primary transition-colors">Edit Distance</div>
+<div>
+<span class="px-2 py-0.5 border border-error text-error font-label-caps text-[10px] uppercase">Hard</span>
+</div>
+<div>
+<span class="px-2 py-0.5 bg-surface-container-highest border border-outline-variant text-on-surface-variant font-label-caps text-[10px] uppercase">DP</span>
+</div>
+<div class="flex justify-end text-outline hover:text-on-surface">
+<span class="material-symbols-outlined text-lg">open_in_new</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Trees Section -->
+<section>
+<div class="flex items-center gap-4 mb-4">
+<h2 class="font-headline-sm text-headline-sm text-tertiary uppercase tracking-wider">04. Trees</h2>
+<div class="h-[1px] flex-1 bg-outline-variant opacity-30"></div>
+<span class="font-data-md text-data-md text-outline">08/18</span>
+</div>
+<div class="bento-grid">
+<!-- Tree Card 1 -->
+<div class="bg-surface-container border border-outline-variant p-5 hover:border-primary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<span class="px-2 py-0.5 border border-secondary text-secondary font-label-caps text-[10px] uppercase">Easy</span>
+<input checked="" class="w-4 h-4 rounded-sm border-outline-variant bg-surface-dim text-primary focus:ring-0" type="checkbox"/>
+</div>
+<h3 class="font-body-lg text-on-surface group-hover:text-primary mb-2">Maximum Depth of Binary Tree</h3>
+<div class="flex items-center justify-between mt-6">
+<span class="font-label-caps text-label-caps text-outline uppercase text-[10px]">Topic: Trees</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary">arrow_forward</span>
+</div>
+</div>
+<!-- Tree Card 2 -->
+<div class="bg-surface-container border border-outline-variant p-5 hover:border-primary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<span class="px-2 py-0.5 border border-error text-error font-label-caps text-[10px] uppercase">Hard</span>
+<input class="w-4 h-4 rounded-sm border-outline-variant bg-surface-dim text-primary focus:ring-0" type="checkbox"/>
+</div>
+<h3 class="font-body-lg text-on-surface group-hover:text-primary mb-2">Binary Tree Maximum Path Sum</h3>
+<div class="flex items-center justify-between mt-6">
+<span class="font-label-caps text-label-caps text-outline uppercase text-[10px]">Topic: Trees</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary">arrow_forward</span>
+</div>
+</div>
+<!-- Tree Card 3 -->
+<div class="bg-surface-container border border-outline-variant p-5 hover:border-primary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<span class="px-2 py-0.5 border border-tertiary text-tertiary font-label-caps text-[10px] uppercase">Medium</span>
+<input class="w-4 h-4 rounded-sm border-outline-variant bg-surface-dim text-primary focus:ring-0" type="checkbox"/>
+</div>
+<h3 class="font-body-lg text-on-surface group-hover:text-primary mb-2">Invert Binary Tree</h3>
+<div class="flex items-center justify-between mt-6">
+<span class="font-label-caps text-label-caps text-outline uppercase text-[10px]">Topic: Trees</span>
+<span class="material-symbols-outlined text-outline group-hover:text-primary">arrow_forward</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Backtracking Section -->
+<section>
+<div class="flex items-center gap-4 mb-4">
+<h2 class="font-headline-sm text-headline-sm text-error uppercase tracking-wider">07. Backtracking</h2>
+<div class="h-[1px] flex-1 bg-outline-variant opacity-30"></div>
+<span class="font-data-md text-data-md text-outline">02/10</span>
+</div>
+<div class="bg-surface-container border border-outline-variant p-10 flex flex-col items-center justify-center text-center">
+<div class="w-16 h-16 bg-surface-container-low rounded flex items-center justify-center mb-4 border border-outline-variant">
+<span class="material-symbols-outlined text-3xl text-outline-variant">folder_open</span>
+</div>
+<p class="font-body-lg text-on-surface">View remaining Backtracking questions</p>
+<button class="mt-4 text-primary border border-primary px-6 py-2 font-label-caps hover:bg-primary/10 transition-colors uppercase">Expand Collection</button>
+</div>
+</section>
+</div>
+</div>
+<!-- Atmospheric Terminal Footer -->
+<footer class="border-t border-outline-variant bg-surface-dim py-6 px-6">
+<div class="flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+<span class="font-label-caps text-label-caps text-outline uppercase">System Online</span>
+</div>
+<div class="font-label-caps text-label-caps text-outline uppercase">Last Sync: 12:44:01 GMT</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-label-caps text-label-caps text-outline uppercase">SheetStride Question Engine v2.4.0</span>
+</div>
+</div>
+</footer>
+</main>
+<!-- Floating Action Visual Decoration -->
+<div class="fixed bottom-10 right-10 pointer-events-none opacity-10">
+<div class="font-data-lg text-data-lg text-primary select-none rotate-90 origin-right">
+            EXECUTE_SUCCESS
+        </div>
+</div>
+<script>
+        // Micro-interactions
+        document.querySelectorAll('.cursor-pointer').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+                    const ripple = document.createElement('div');
+                    ripple.className = 'absolute bg-primary/10 rounded-full animate-ping';
+                    ripple.style.width = '20px';
+                    ripple.style.height = '20px';
+                    ripple.style.left = `${e.clientX - 10}px`;
+                    ripple.style.top = `${e.clientY - 10}px`;
+                    document.body.appendChild(ripple);
+                    setTimeout(() => ripple.remove(), 1000);
+                }
+            });
+        });
+
+        // Search highlight logic
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('.font-body-lg').forEach(name => {
+                const text = name.textContent.toLowerCase();
+                if (term && text.includes(term)) {
+                    name.classList.add('text-primary');
+                } else if (term) {
+                    name.classList.remove('text-primary');
+                } else {
+                    name.classList.remove('text-primary');
+                }
+            });
+        });
+    </script>
+</body></html>

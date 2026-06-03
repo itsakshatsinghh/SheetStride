@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SHEETSTRIDE_ | Akshat Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;family=Press+Start+2P&amp;family=VT323&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..900&amp;family=Press+Start+2P:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#3f2e00",
+                    "primary-fixed-dim": "#a4c9ff",
+                    "on-error-container": "#ffdad6",
+                    "error": "#ffb4ab",
+                    "tertiary": "#f7be1d",
+                    "surface-tint": "#a4c9ff",
+                    "tertiary-fixed-dim": "#f7be1d",
+                    "error-container": "#93000a",
+                    "inverse-primary": "#0060ac",
+                    "surface-bright": "#37393b",
+                    "on-secondary-fixed-variant": "#005321",
+                    "secondary-fixed-dim": "#4ae176",
+                    "surface-dim": "#111415",
+                    "surface-container-high": "#282a2c",
+                    "surface-variant": "#323537",
+                    "on-surface-variant": "#c1c7d3",
+                    "surface-container-lowest": "#0c0f10",
+                    "surface-container-low": "#191c1e",
+                    "primary-fixed": "#d4e3ff",
+                    "inverse-on-surface": "#2e3132",
+                    "outline-variant": "#414751",
+                    "primary": "#a4c9ff",
+                    "on-primary-container": "#003a6b",
+                    "surface": "#111415",
+                    "on-tertiary-fixed": "#251a00",
+                    "on-secondary-container": "#004119",
+                    "on-tertiary-fixed-variant": "#5a4300",
+                    "surface-container": "#1d2022",
+                    "inverse-surface": "#e1e2e4",
+                    "on-secondary-fixed": "#002109",
+                    "tertiary-container": "#cc9b00",
+                    "surface-container-highest": "#323537",
+                    "outline": "#8b919d",
+                    "on-primary-fixed": "#001c39",
+                    "background": "#111415",
+                    "primary-container": "#60a5fa",
+                    "on-error": "#690005",
+                    "secondary": "#4ae176",
+                    "on-surface": "#e1e2e4",
+                    "on-primary-fixed-variant": "#004883",
+                    "secondary-container": "#00b954",
+                    "on-primary": "#00315d",
+                    "tertiary-fixed": "#ffdf9a",
+                    "secondary-fixed": "#6bff8f",
+                    "on-background": "#e1e2e4",
+                    "on-secondary": "#003915",
+                    "on-tertiary-container": "#493600"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "md": "16px",
+                    "xs": "4px",
+                    "margin-desktop": "40px",
+                    "unit": "4px",
+                    "sm": "8px",
+                    "margin-mobile": "16px",
+                    "gutter": "20px",
+                    "xl": "48px"
+            },
+            "fontFamily": {
+                    "data-lg": ["VT323"],
+                    "label-caps": ["JetBrains Mono"],
+                    "headline-lg": ["Press Start 2P"],
+                    "headline-sm": ["Press Start 2P"],
+                    "display-hero": ["Press Start 2P"],
+                    "data-md": ["VT323"],
+                    "body-lg": ["JetBrains Mono"],
+                    "body-md": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "data-lg": ["36px", {"lineHeight": "40px", "fontWeight": "400"}],
+                    "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "headline-lg": ["20px", {"lineHeight": "32px", "fontWeight": "400"}],
+                    "headline-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "display-hero": ["32px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+                    "data-md": ["24px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0B0B0B;
+            color: #e1e2e4;
+        }
+        .terminal-grid {
+            background-image: linear-gradient(#151515 1px, transparent 1px), linear-gradient(90deg, #151515 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .retro-border {
+            border: 1px solid #2A2A2A;
+        }
+        .retro-border-focus {
+            border: 1px solid #60A5FA;
+        }
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(96, 165, 250, 0.1);
+            position: absolute;
+            animation: scan 8s linear infinite;
+            z-index: 10;
+            pointer-events: none;
+        }
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-x-hidden">
+<div class="scanline"></div>
+<!-- SideNavBar (JSON Derived) -->
+<aside class="fixed left-0 top-0 h-full hidden lg:flex flex-col border-r border-outline-variant w-64 pt-6 pb-4 bg-surface-container-low dark:bg-surface-dim z-50">
+<div class="px-6 mb-10">
+<h1 class="font-headline-sm text-headline-sm text-primary dark:text-primary mb-1">SHEETSTRIDE_</h1>
+<p class="text-[10px] font-label-caps text-on-surface-variant opacity-50">v1.0.4</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-body-md">Questions</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-body-md">Progress</span>
+</a>
+<a class="bg-surface-container-highest text-primary border-l-4 border-primary px-4 py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-body-md">Profile</span>
+</a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-4">
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-on-surface transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-body-md">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="lg:ml-64 min-h-screen terminal-grid pb-20">
+<!-- TopNavBar (JSON Derived) -->
+<header class="fixed top-0 lg:left-64 right-0 z-40 flex justify-between items-center px-6 h-16 bg-surface dark:bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<span class="font-headline-sm text-headline-sm text-primary dark:text-primary animate-pulse">USER_PROFILE</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex bg-surface-container-high px-3 py-1 retro-border items-center gap-2">
+<span class="material-symbols-outlined text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-xs font-label-caps w-32" placeholder="CMD + K" type="text"/>
+</div>
+<span class="material-symbols-outlined text-primary cursor-pointer">notifications</span>
+<img alt="Akshat" class="w-8 h-8 rounded-none retro-border p-0.5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0L_F6YwY7frGIaYLS8GILodPHqBVOr2zknk9vqCQjSGtXQQCZMA4EZAyWxBX3lrav0WpQ54iaNI3OY3-7DJvn0lsL1c44W2mo6zD6kRy2wxurzfej4zifXxMM8ymCUY6z9RfgE5D40aNx0U0xRBZzwPYPgdvQa9G5Pg_xp6bBbpuKaDLl9qeCuj15RwoFetBtISla7tRAIpbzty5rtNIyk9LHbz426GYyTWVHpEryXXZzEzFvDyX-3jEqMmVKDcFLjZ3qXrjlb9Q"/>
+</div>
+</header>
+<div class="pt-24 px-6 md:px-margin-desktop max-w-7xl mx-auto">
+<!-- Profile Bento Section -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Main Identity Card -->
+<div class="lg:col-span-8 bg-[#1E1E1E] retro-border p-lg relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-2 opacity-10 font-data-lg text-primary select-none">ID_00824</div>
+<div class="flex flex-col md:flex-row gap-lg items-center md:items-start">
+<div class="relative">
+<img class="w-32 h-32 md:w-40 md:h-40 retro-border grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="A cinematic, low-poly 3D portrait of a software developer's avatar. The style is retro-futuristic with sharp edges and monochromatic blue highlights on a deep black background. Neon accents of electric blue outline the silhouette, mimicking a wireframe terminal aesthetic. The lighting is harsh and directional, creating high-contrast shadows that emphasize a technical, high-performance computing mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSqeImMJ0PbBZDFvXnOPg5QTVg2dFY2BI-FHSCWTwRiq1bQD4zSD4CUoUi4-frsSafy--QWYZ7ZOdIiRn_Qj8YwUO9Xsa7RzgG50cgycKqjCqTbVMgmFJWLF8b954Da-GJoJZ1Qwat9cr_ARh0g1296iPovIUJkoLgClElAjleVevFUBVpJLpNPc_ZLlYRX17ouH-g-QPJrkHKvBuWU3XrkgHjYMCS-NyyatQOe0rUFAZYqZigHNCK0zVOV4CCAv2adHU_JuXtbZM"/>
+<div class="absolute -bottom-2 -right-2 bg-secondary px-2 py-1 text-[8px] font-headline-sm text-on-secondary">LEVEL 42</div>
+</div>
+<div class="flex-1 space-y-4 text-center md:text-left">
+<div>
+<h2 class="font-display-hero text-display-hero text-primary uppercase">Akshat</h2>
+<p class="font-body-md text-on-surface-variant mt-1 flex items-center justify-center md:justify-start gap-2">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+                                    JOINED: OCTOBER 2023
+                                </p>
+</div>
+<div class="flex flex-wrap gap-sm justify-center md:justify-start">
+<span class="bg-surface-container-high retro-border px-3 py-1 font-label-caps text-secondary text-[10px]">#SYSTEM_ARCHITECT</span>
+<span class="bg-surface-container-high retro-border px-3 py-1 font-label-caps text-primary text-[10px]">#TYPESCRIPT_GURU</span>
+<span class="bg-surface-container-high retro-border px-3 py-1 font-label-caps text-tertiary text-[10px]">#ALGO_CRUSHER</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Stats Panel -->
+<div class="lg:col-span-4 grid grid-cols-2 gap-4">
+<div class="bg-[#1E1E1E] retro-border p-md flex flex-col justify-between">
+<p class="font-label-caps text-[10px] text-on-surface-variant">TOTAL SOLVED</p>
+<h3 class="font-data-lg text-data-lg text-primary">1,248</h3>
+<div class="w-full bg-[#2A2A2A] h-1 mt-2">
+<div class="bg-primary h-full w-[78%]"></div>
+</div>
+</div>
+<div class="bg-[#1E1E1E] retro-border p-md flex flex-col justify-between">
+<p class="font-label-caps text-[10px] text-on-surface-variant">STREAK</p>
+<h3 class="font-data-lg text-data-lg text-secondary">42 DAYS</h3>
+<p class="text-[9px] font-label-caps text-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">bolt</span> PERSONAL BEST
+                        </p>
+</div>
+<div class="col-span-2 bg-[#1E1E1E] retro-border p-md">
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-3">FAVORITE TOPIC</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary text-2xl">account_tree</span>
+<div>
+<h4 class="font-body-lg text-on-surface">Dynamic Programming</h4>
+<p class="text-[10px] font-label-caps text-on-surface-variant">324 SOLVED</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Achievements Section -->
+<section class="lg:col-span-12 mt-lg">
+<div class="flex items-center gap-4 mb-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">UNLOCKED_ACHIEVEMENTS</h2>
+<div class="flex-1 h-[1px] bg-outline-variant"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Badge 1 -->
+<div class="bg-[#151515] retro-border p-lg flex flex-col items-center text-center group hover:border-primary transition-colors duration-300">
+<div class="w-16 h-16 bg-surface-container-highest rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20">
+<span class="material-symbols-outlined text-4xl text-primary" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</div>
+<h4 class="font-body-lg font-bold mb-1 uppercase">First Question</h4>
+<p class="text-[10px] font-label-caps text-on-surface-variant">The terminal has recognized your presence. Initialization complete.</p>
+</div>
+<!-- Badge 2 -->
+<div class="bg-[#151515] retro-border p-lg flex flex-col items-center text-center group hover:border-secondary transition-colors duration-300">
+<div class="w-16 h-16 bg-surface-container-highest rounded-full flex items-center justify-center mb-4 group-hover:bg-secondary/20">
+<span class="material-symbols-outlined text-4xl text-secondary" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+<h4 class="font-body-lg font-bold mb-1 uppercase">10 Day Streak</h4>
+<p class="text-[10px] font-label-caps text-on-surface-variant">Consistency is the key to mastering the algorithm. Machine mode enabled.</p>
+</div>
+<!-- Badge 3 -->
+<div class="bg-[#151515] retro-border p-lg flex flex-col items-center text-center group hover:border-tertiary transition-colors duration-300">
+<div class="w-16 h-16 bg-surface-container-highest rounded-full flex items-center justify-center mb-4 group-hover:bg-tertiary/20">
+<span class="material-symbols-outlined text-4xl text-tertiary" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<h4 class="font-body-lg font-bold mb-1 uppercase">50 Solved</h4>
+<p class="text-[10px] font-label-caps text-on-surface-variant">System capacity expanded. Fifty logic gates successfully navigated.</p>
+</div>
+</div>
+</section>
+<!-- Activity Timeline -->
+<section class="lg:col-span-12 mt-lg">
+<div class="flex items-center gap-4 mb-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">ACTIVITY_LOG</h2>
+<div class="flex-1 h-[1px] bg-outline-variant"></div>
+</div>
+<div class="bg-[#1E1E1E] retro-border overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-[#151515] border-b border-outline-variant">
+<tr>
+<th class="p-md font-label-caps text-[11px] text-on-surface-variant">TIMESTAMP</th>
+<th class="p-md font-label-caps text-[11px] text-on-surface-variant">EVENT_TYPE</th>
+<th class="p-md font-label-caps text-[11px] text-on-surface-variant">DESCRIPTION</th>
+<th class="p-md font-label-caps text-[11px] text-on-surface-variant text-right">STATUS</th>
+</tr>
+</thead>
+<tbody class="font-body-md divide-y divide-[#2A2A2A]">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="p-md font-data-md text-sm text-outline">2023-10-24 14:22:10</td>
+<td class="p-md">
+<span class="text-secondary flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">check_circle</span> SOLVE
+                                        </span>
+</td>
+<td class="p-md text-on-surface">Resolved "Invert Binary Tree" in 14ms</td>
+<td class="p-md text-right text-secondary font-label-caps text-xs">SUCCESS</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="p-md font-data-md text-sm text-outline">2023-10-24 10:05:45</td>
+<td class="p-md">
+<span class="text-tertiary flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">military_tech</span> MILESTONE
+                                        </span>
+</td>
+<td class="p-md text-on-surface">Unlocked Badge: "50 Questions Solved"</td>
+<td class="p-md text-right text-tertiary font-label-caps text-xs">RECORDED</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="p-md font-data-md text-sm text-outline">2023-10-23 23:59:58</td>
+<td class="p-md">
+<span class="text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">bolt</span> STREAK
+                                        </span>
+</td>
+<td class="p-md text-on-surface">Maintained 42 Day Streak</td>
+<td class="p-md text-right text-primary font-label-caps text-xs">STABLE</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="p-md font-data-md text-sm text-outline">2023-10-23 18:12:30</td>
+<td class="p-md">
+<span class="text-secondary flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">check_circle</span> SOLVE
+                                        </span>
+</td>
+<td class="p-md text-on-surface">Resolved "House Robber II" in 21ms</td>
+<td class="p-md text-right text-secondary font-label-caps text-xs">SUCCESS</td>
+</tr>
+</tbody>
+</table>
+<div class="p-4 bg-[#151515] text-center border-t border-outline-variant">
+<button class="font-label-caps text-primary text-[10px] hover:underline uppercase tracking-widest">Load Full Log Cluster...</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Mobile Navigation (JSON Derived Logic) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full h-16 bg-surface-container-low border-t border-outline-variant flex justify-around items-center z-50">
+<a class="flex flex-col items-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[8px] font-label-caps mt-1">DASHBOARD</span>
+</a>
+<a class="flex flex-col items-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="text-[8px] font-label-caps mt-1">QUESTIONS</span>
+</a>
+<a class="flex flex-col items-center text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-[8px] font-label-caps mt-1">PROFILE</span>
+</a>
+<a class="flex flex-col items-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[8px] font-label-caps mt-1">SETTINGS</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions: Terminal Blinking Cursor Effect
+        const profileHeading = document.querySelector('h2.font-display-hero');
+        const originalText = profileHeading.textContent;
+        let showCursor = true;
+
+        setInterval(() => {
+            if (showCursor) {
+                profileHeading.textContent = originalText + '_';
+            } else {
+                profileHeading.textContent = originalText;
+            }
+            showCursor = !showCursor;
+        }, 530);
+
+        // Immediate color shift interaction simulation
+        document.querySelectorAll('.retro-border').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.borderColor = '#60A5FA';
+                card.style.backgroundColor = '#252525';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.borderColor = '#2A2A2A';
+                card.style.backgroundColor = '';
+            });
+        });
+    </script>
+</body></html>
