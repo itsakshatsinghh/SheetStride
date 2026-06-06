@@ -7,8 +7,19 @@ import { navItems } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { navIcons } from "@/components/icons";
 
+import { useAuth } from "@/components/providers/auth-provider";
+
 export function Sidebar() {
   const pathname = usePathname();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Failed to sign out:", err);
+    }
+  };
 
   return (
     <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-outline bg-surface-dim pt-6 pb-4 lg:flex">
@@ -36,7 +47,7 @@ export function Sidebar() {
         })}
       </nav>
       <div className="mt-auto px-6">
-        <button className="flex items-center gap-4 py-4 text-body-lg text-muted transition-colors hover:text-text">
+        <button onClick={handleLogout} className="flex items-center gap-4 py-4 text-body-lg text-muted transition-colors hover:text-text">
           <LogOut className="h-6 w-6" strokeWidth={1.8} />
           <span>Logout</span>
         </button>

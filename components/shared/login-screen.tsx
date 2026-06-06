@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { ArrowRight, Mail } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Mail, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/providers/auth-provider";
 
 function GoogleIcon() {
   return (
@@ -25,17 +26,133 @@ function GithubIcon() {
 }
 
 function LoginButtons() {
+  const { loginWithGoogle, loginWithGithub, loginWithEmail } = useAuth();
+  const [isEmailMode, setIsEmailMode] = useState(false);
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleGoogle = async () => {
+    try {
+      setStatus("loading");
+      await loginWithGoogle();
+    } catch (err: any) {
+      setStatus("error");
+      setErrorMsg(err.message || "Failed to log in with Google.");
+    }
+  };
+
+  const handleGithub = async () => {
+    try {
+      setStatus("loading");
+      await loginWithGithub();
+    } catch (err: any) {
+      setStatus("error");
+      setErrorMsg(err.message || "Failed to log in with GitHub.");
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    try {
+      setStatus("loading");
+      await loginWithEmail(email);
+      setStatus("success");
+    } catch (err: any) {
+      setStatus("error");
+      setErrorMsg(err.message || "Failed to send magic link.");
+    }
+  };
+
   const baseButton =
-    "group h-12 w-full justify-start gap-4 border border-outline bg-surface px-4 text-body-lg font-bold hover:border-primary-strong hover:bg-surface-high";
+    "group h-12 w-full justify-start gap-4 border border-outline bg-surface px-4 text-body-lg font-bold hover:border-primary-strong hover:bg-surface-high disabled:opacity-50";
+
+  if (isEmailMode) {
+    return (
+      <div className="space-y-4">
+        {status === "success" ? (
+          <div className="border border-secondary bg-secondary/10 px-4 py-4 text-left">
+            <p className="font-data text-data-md text-secondary">EMAIL_SENT_SUCCESS</p>
+            <p className="mt-2 text-body-md text-muted">
+              We've dispatched a secure access link to <span className="text-text">{email}</span>. Please verify your inbox.
+            </p>
+            <Button
+              variant="default"
+              size="sm"
+              className="mt-4 border-outline hover:bg-surface-dim"
+              onClick={() => {
+                setIsEmailMode(false);
+                setStatus("idle");
+                setEmail("");
+              }}
+            >
+              BACK_TO_TERMINAL
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <div>
+              <label className="mb-2 block text-label-caps text-muted">ENTER_IDENTITY_KEY (EMAIL)</label>
+              <input
+                type="email"
+                required
+                disabled={status === "loading"}
+                placeholder="user@sheetstride.dev"
+                className="sharp-input w-full bg-[#191c1e] text-text border border-outline focus:border-primary-strong focus:outline-none px-3 py-2 font-body"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            {status === "error" && (
+              <p className="text-body-md text-danger uppercase tracking-wider font-data">
+                ERR: {errorMsg}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <Button
+                type="submit"
+                disabled={status === "loading"}
+                className="flex-1 bg-primary text-background font-bold hover:bg-primary-strong"
+              >
+                {status === "loading" ? (
+                  <Loader2 className="h-5 w-5 animate-spin mx-auto text-background" />
+                ) : (
+                  "SEND_MAGIC_LINK"
+                )}
+              </Button>
+              <Button
+                type="button"
+                disabled={status === "loading"}
+                variant="default"
+                className="border-outline hover:bg-surface-dim"
+                onClick={() => {
+                  setIsEmailMode(false);
+                  setStatus("idle");
+                }}
+              >
+                CANCEL
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
-      <Button className={baseButton}>
+      {status === "error" && (
+        <p className="text-body-md text-danger uppercase tracking-wider font-data mb-2">
+          ERR: {errorMsg}
+        </p>
+      )}
+      <Button className={baseButton} onClick={handleGoogle} disabled={status === "loading"}>
         <GoogleIcon />
         <span>Continue with Google</span>
         <ArrowRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
       </Button>
-      <Button className={baseButton}>
+      <Button className={baseButton} onClick={handleGithub} disabled={status === "loading"}>
         <GithubIcon />
         <span>Continue with GitHub</span>
         <ArrowRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -45,7 +162,7 @@ function LoginButtons() {
         <span className="text-label-caps text-muted">OR</span>
         <div className="h-px flex-1 bg-outline" />
       </div>
-      <Button className={baseButton}>
+      <Button className={baseButton} onClick={() => setIsEmailMode(true)} disabled={status === "loading"}>
         <Mail className="h-5 w-5 text-muted" />
         <span>Continue with Email</span>
         <ArrowRight className="ml-auto h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />

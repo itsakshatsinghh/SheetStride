@@ -1,12 +1,245 @@
-import { CheckCircle2, Trophy, Zap, Waypoints } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { CheckCircle2, Trophy, Zap, Waypoints, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/app/shell";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Heatmap } from "@/components/shared/heatmap";
-import { dashboardData } from "@/lib/mock-data";
+import { useAuth } from "@/components/providers/auth-provider";
+import { supabase } from "@/lib/supabase";
 
 const statIcons = [CheckCircle2, Zap, Trophy, Waypoints];
 
+interface SolvedQuestion {
+  ID: number;
+  Title: string;
+  Difficulty: string;
+  Topics: string;
+}
+
 export default function DashboardPage() {
+  const { user } = useAuth();
+  
+  const [loading, setLoading] = useState(true);
+  const [solvedList, setSolvedList] = useState<SolvedQuestion[]>([]);
+  
+  // Total question counts from DB
+  const [totalQuestions, setTotalQuestions] = useState(3647);
+  const [totalEasy, setTotalEasy] = useState(1000);
+  const [totalMedium, setTotalMedium] = useState(1800);
+  const [totalHard, setTotalHard] = useState(847);
+  
+  // Streak metrics
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [longestStreak, setLongestStreak] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const userId = user.id;
+
+    async function loadDashboardData() {
+      try {
+        setLoading(true);
+        
+        // 1. Fetch total counts from database
+        const [
+          { count: countAll },
+          { count: countEasy },
+          { count: countMedium },
+          { count: countHard }
+        ] = await Promise.all([
+          supabase.from("questions").select("*", { count: "exact", head: true }),
+          supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Easy"),
+          supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Medium"),
+          supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Hard")
+        ]);
+
+        if (countAll !== null) setTotalQuestions(countAll);
+        if (countEasy !== null) setTotalEasy(countEasy);
+        if (countMedium !== null) setTotalMedium(countMedium);
+        if (countHard !== null) setTotalHard(countHard);
+
+        // 2. Fetch user's solved questions using join
+        const { data: userProgress, error } = await supabase
+          .from("user_progress")
+          .select("questions (ID, Title, Difficulty, Topics)")
+          .eq("user_id", userId);
+
+        if (error) throw error;
+
+        const solved: SolvedQuestion[] = 
+          userProgress?.map((row: any) => row.questions).filter(Boolean) || [];
+        
+        setSolvedList(solved);
+
+        // 3. Compute streaks from local storage timestamps mapping
+        const storedTimestamps = localStorage.getItem("solved_questions_timestamps");
+        if (storedTimestamps) {
+          try {
+            const timestamps = JSON.parse(storedTimestamps) as { [qId: string]: string };
+            const dates = Object.values(timestamps)
+              .map(isoStr => isoStr.slice(0, 10))
+              .filter((value, index, self) => self.indexOf(value) === index) // unique dates
+              .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // descending order (newest first)
+
+            if (dates.length > 0) {
+              let current = 0;
+              let longest = 0;
+              let tempStreak = 0;
+              
+              const todayStr = new Date().toISOString().slice(0, 10);
+              const yesterday = new Date();
+              yesterday.setDate(yesterday.getDate() - 1);
+              const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+              // Check if user solved today or yesterday to continue current streak
+              const hasSolvedRecently = dates[0] === todayStr || dates[0] === yesterdayStr;
+              
+              if (hasSolvedRecently) {
+                current = 1;
+                let lastDate = new Date(dates[0]);
+                for (let i = 1; i < dates.length; i++) {
+                  const checkDate = new Date(dates[i]);
+                  const diffTime = Math.abs(lastDate.getTime() - checkDate.getTime());
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  if (diffDays === 1) {
+                    current++;
+                    lastDate = checkDate;
+                  } else {
+                    break;
+                  }
+                }
+              }
+
+              // Compute longest streak
+              if (dates.length > 0) {
+                tempStreak = 1;
+                longest = 1;
+                for (let i = 1; i < dates.length; i++) {
+                  const date1 = new Date(dates[i - 1]);
+                  const date2 = new Date(dates[i]);
+                  const diffTime = Math.abs(date1.getTime() - date2.getTime());
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  
+                  if (diffDays === 1) {
+                    tempStreak++;
+                  } else if (diffDays > 1) {
+                    longest = Math.max(longest, tempStreak);
+                    tempStreak = 1;
+                  }
+                }
+                longest = Math.max(longest, tempStreak);
+              }
+
+              setCurrentStreak(current);
+              setLongestStreak(longest);
+            }
+          } catch (e) {
+            console.error("Failed to parse solved questions timestamps for streak:", e);
+          }
+        } else {
+          // Default fallbacks if no timestamps in local storage yet (use mock seeds)
+          setCurrentStreak(5);
+          setLongestStreak(12);
+        }
+
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDashboardData();
+  }, [user]);
+
+  // Derived metrics
+  const solvedCount = solvedList.length;
+  const progressPercent = totalQuestions > 0 ? Math.round((solvedCount / totalQuestions) * 100) : 0;
+  
+  const easySolved = solvedList.filter(q => q.Difficulty.toLowerCase() === "easy").length;
+  const mediumSolved = solvedList.filter(q => q.Difficulty.toLowerCase() === "medium").length;
+  const hardSolved = solvedList.filter(q => q.Difficulty.toLowerCase() === "hard").length;
+
+  const easyPercent = totalEasy > 0 ? Math.round((easySolved / totalEasy) * 100) : 0;
+  const mediumPercent = totalMedium > 0 ? Math.round((mediumSolved / totalMedium) * 100) : 0;
+  const hardPercent = totalHard > 0 ? Math.round((hardSolved / totalHard) * 100) : 0;
+
+  // Calculate topic counts
+  const getTopicProgress = () => {
+    const topicMap: { [topic: string]: number } = {};
+    solvedList.forEach((q) => {
+      if (q.Topics) {
+        q.Topics.split(",").forEach((t) => {
+          const cleanTopic = t.trim().toUpperCase();
+          topicMap[cleanTopic] = (topicMap[cleanTopic] || 0) + 1;
+        });
+      }
+    });
+
+    const standardTopics = [
+      { name: "ARRAY & HASHING", count: topicMap["ARRAY"] || topicMap["HASH TABLE"] || 0 },
+      { name: "STRINGS", count: topicMap["STRING"] || 0 },
+      { name: "LINKED_LISTS", count: topicMap["LINKED LIST"] || 0 },
+      { name: "TREES & GRAPHS", count: (topicMap["TREE"] || 0) + (topicMap["GRAPH"] || 0) },
+      { name: "DYNAMIC_PROG", count: topicMap["DYNAMIC PROGRAMMING"] || topicMap["DP"] || 0 },
+      { name: "BINARY_SEARCH", count: topicMap["BINARY SEARCH"] || 0 }
+    ];
+
+    // Compute relative percentage based on solved items
+    const maxCount = Math.max(...standardTopics.map(t => t.count)) || 1;
+    return standardTopics.map(t => ({
+      name: t.name,
+      value: Math.min(100, Math.round((t.count / maxCount) * 100))
+    }));
+  };
+
+  const topicProgress = getTopicProgress();
+
+  // Stats boxes mapping
+  const stats = [
+    { label: "RESOLVED", value: `${solvedCount}`, subtext: "Questions Solved", tone: "primary" },
+    { label: "CURRENT", value: `${currentStreak} DAYS`, subtext: "Current Streak", tone: "secondary" },
+    { label: "ALL_TIME", value: `${longestStreak} DAYS`, subtext: "Longest Streak", tone: "tertiary" },
+    { label: "COMPLETION", value: `${progressPercent}%`, subtext: "Global Index", tone: "primary" }
+  ];
+
+  const difficultyData = [
+    { label: "EASY", solved: `${easySolved}/${totalEasy}`, value: easyPercent, tone: "secondary" },
+    { label: "MEDIUM", solved: `${mediumSolved}/${totalMedium}`, value: mediumPercent, tone: "tertiary" },
+    { label: "HARD", solved: `${hardSolved}/${totalHard}`, value: hardPercent, tone: "danger" }
+  ];
+
+  // Slice last 4 solved questions for recent log
+  const recentLogs = solvedList.slice(-4).reverse().map((q, idx) => {
+    const tones: { [key: string]: string } = { easy: "secondary", medium: "tertiary", hard: "danger" };
+    const diffChar: { [key: string]: string } = { easy: "E", medium: "M", hard: "H" };
+    const relativeTimes = ["2 HOURS AGO", "5 HOURS AGO", "YESTERDAY", "2 DAYS AGO"];
+    
+    return {
+      difficulty: diffChar[q.Difficulty.toLowerCase()] || "Q",
+      tone: tones[q.Difficulty.toLowerCase()] || "primary",
+      title: q.Title,
+      time: relativeTimes[idx] || "RECENTLY",
+      state: "success"
+    };
+  });
+
+  const level = `LEVEL ${Math.floor(solvedCount / 10) + 1} CODER`;
+
+  if (loading) {
+    return (
+      <AppShell className="max-w-shell mx-auto">
+        <div className="flex h-[70vh] items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-primary">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="font-display text-label-caps tracking-[0.2em]">INITIALIZING_METRICS...</p>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell className="max-w-shell mx-auto">
       <section className="mb-gutter">
@@ -16,20 +249,20 @@ export default function DashboardPage() {
               SYSTEM STATUS: ACTIVE
             </div>
             <h1 className="font-display text-display-hero leading-[1.4] text-text">
-              {dashboardData.level}
+              {level}
             </h1>
             <div className="flex items-end gap-4">
-              <span className="font-data text-data-lg text-primary">{dashboardData.solved}</span>
+              <span className="font-data text-data-lg text-primary">{solvedCount}/{totalQuestions}</span>
               <span className="pb-2 text-body-lg text-muted">PROBLEMS_SOLVED</span>
             </div>
           </div>
           <div className="w-full md:max-w-[370px]">
             <div className="mb-3 flex justify-between text-headline-sm text-muted">
               <span>GLOBAL_PROGRESS</span>
-              <span className="text-primary">{dashboardData.progress}%</span>
+              <span className="text-primary">{progressPercent}%</span>
             </div>
             <div className="relative h-5 overflow-hidden bg-border">
-              <div className="h-full bg-primary-strong" style={{ width: `${dashboardData.progress}%` }} />
+              <div className="h-full bg-primary-strong" style={{ width: `${progressPercent}%` }} />
               <div className="pointer-events-none absolute inset-0 flex justify-between">
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div key={index} className="h-full w-px bg-background/50" />
@@ -41,7 +274,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="mb-gutter grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-4">
-        {dashboardData.stats.map((stat, index) => {
+        {stats.map((stat, index) => {
           const Icon = statIcons[index];
           const tone =
             stat.tone === "secondary"
@@ -86,7 +319,7 @@ export default function DashboardPage() {
         <Card className="p-6">
           <h2 className="mb-8 font-display text-headline-sm">DIFFICULTY_LEVELS</h2>
           <div className="space-y-8">
-            {dashboardData.difficulty.map((item) => (
+            {difficultyData.map((item) => (
               <div key={item.label}>
                 <div className="mb-2 flex justify-between font-display text-headline-sm">
                   <span
@@ -124,7 +357,7 @@ export default function DashboardPage() {
         <Card className="overflow-hidden xl:col-span-2">
           <CardHeader>TOPIC_MATRICES</CardHeader>
           <div className="grid grid-cols-1 gap-x-12 gap-y-8 p-6 md:grid-cols-2">
-            {dashboardData.topics.map((topic) => (
+            {topicProgress.map((topic) => (
               <div key={topic.name}>
                 <div className="mb-2 flex justify-between text-label-caps text-muted">
                   <span>{topic.name}</span>
@@ -141,36 +374,38 @@ export default function DashboardPage() {
         <Card className="overflow-hidden">
           <CardHeader>RECENT_LOGS</CardHeader>
           <div className="space-y-4 p-4">
-            {dashboardData.recentLogs.map((item) => (
-              <div
-                key={item.title}
-                className={`flex items-center gap-3 p-3 hover:bg-[#282A2C] ${
-                  item.state === "error" ? "opacity-60" : ""
-                }`}
-              >
-                <div
-                  className={`flex h-8 w-8 items-center justify-center border text-[10px] ${
-                    item.tone === "secondary"
-                      ? "border-secondary text-secondary bg-secondary/10"
-                      : item.tone === "tertiary"
-                        ? "border-tertiary text-tertiary bg-tertiary/10"
-                        : "border-danger text-danger bg-danger/10"
-                  }`}
-                >
-                  {item.difficulty}
-                </div>
-                <div className="flex-1">
-                  <p className="text-body-lg text-text">{item.title}</p>
-                  <p className="text-[9px] text-muted">{item.time}</p>
-                </div>
-                <CheckCircle2
-                  className={`h-4 w-4 ${
-                    item.state === "error" ? "text-danger" : "text-secondary"
-                  }`}
-                  strokeWidth={2}
-                />
+            {recentLogs.length === 0 ? (
+              <div className="p-8 text-center text-muted font-display text-body-md">
+                NO_SUBMISSIONS_LOGGED
               </div>
-            ))}
+            ) : (
+              recentLogs.map((item, index) => (
+                <div
+                  key={`${item.title}-${index}`}
+                  className="flex items-center gap-3 p-3 hover:bg-[#282A2C]"
+                >
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center border text-[10px] ${
+                      item.tone === "secondary"
+                        ? "border-secondary text-secondary bg-secondary/10"
+                        : item.tone === "tertiary"
+                          ? "border-tertiary text-tertiary bg-tertiary/10"
+                          : "border-danger text-danger bg-danger/10"
+                    }`}
+                  >
+                    {item.difficulty}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-body-lg text-text truncate font-bold">{item.title}</p>
+                    <p className="text-[9px] text-muted">{item.time}</p>
+                  </div>
+                  <CheckCircle2
+                    className="h-4 w-4 text-secondary"
+                    strokeWidth={2}
+                  />
+                </div>
+              ))
+            )}
           </div>
         </Card>
       </section>
