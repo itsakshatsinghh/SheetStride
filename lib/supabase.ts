@@ -7,4 +7,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Supabase credentials missing. Check your .env.local file.");
 }
 
-export const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "");
+// Fallback values prevent build/prerender errors during deployment (e.g., on Render) when environment variables are not available.
+export const supabase = createClient(
+  supabaseUrl || "https://placeholder-co-to-prevent-build-errors.supabase.co",
+  supabaseAnonKey || "placeholder-key-to-prevent-build-errors"
+);
+
