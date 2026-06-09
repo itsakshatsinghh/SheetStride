@@ -8,6 +8,7 @@ import { Heatmap } from "@/components/shared/heatmap";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 
 interface SolvedQuestion {
   ID: number;
@@ -436,7 +437,11 @@ export default function ProgressPage() {
             <tbody>
               {topicDistribution.map((row) => (
                 <tr key={row.label} className="border-b border-outline/30 hover:bg-[#282A2C]">
-                  <td className="px-6 py-5 text-body-lg text-text font-bold">{row.label.toUpperCase()}</td>
+                  <td className="px-6 py-5 text-body-lg font-bold">
+                    <Link href={`/questions?topic=${encodeURIComponent(row.label)}`} className="text-text hover:text-primary transition-colors block">
+                      {row.label.toUpperCase()}
+                    </Link>
+                  </td>
                   <td className="px-6 py-5">
                     <div className="h-2 border border-outline bg-[#323537]">
                       <div className="h-full bg-primary" style={{ width: `${row.progress}%` }} />

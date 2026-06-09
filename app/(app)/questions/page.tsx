@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { FolderOpen, Plus, Search, ExternalLink, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/app/shell";
 import { Topbar } from "@/components/app/topbar";
@@ -10,6 +10,8 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
+import { useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 const TOPICS = [
   "All Topics",
@@ -42,14 +44,96 @@ interface Question {
   "Similar Questions"?: any;
 }
 
+interface CustomDropdownProps {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (val: string) => void;
+}
+
+function CustomDropdown({ label, value, options, onChange }: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} className="relative inline-block text-left z-30 font-body">
+      <div 
+        className="flex items-center border border-outline bg-surface-dim px-3 py-1.5 text-label-caps uppercase text-primary cursor-pointer select-none hover:border-primary-strong transition-colors h-8" 
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="text-muted mr-2">{label}:</span>
+        <span className="text-text font-bold uppercase">{value}</span>
+        <span className="text-primary-strong ml-2 text-[8px] transform transition-transform duration-200" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}>▼</span>
+      </div>
+
+      {isOpen && (
+        <div className="absolute left-0 mt-2 w-56 border border-outline bg-[#191c1e] shadow-xl z-50">
+          <div className="max-h-60 overflow-y-auto py-1">
+            {options.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => {
+                  onChange(opt);
+                  setIsOpen(false);
+                }}
+                className={cn(
+                  "block w-full px-4 py-2 text-left text-body-md uppercase text-muted hover:bg-[#282A2C] hover:text-text transition-colors font-bold",
+                  value === opt && "bg-surface-dim text-primary border-l-2 border-primary-strong pl-3.5"
+                )}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function QuestionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-96 items-center justify-center bg-background text-primary font-display">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <p className="font-display text-label-caps tracking-[0.2em]">BOOTING_QUESTIONS_MODULE...</p>
+        </div>
+      </div>
+    }>
+      <QuestionsList />
+    </Suspense>
+  );
+}
+
+function QuestionsList() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const topicParam = searchParams.get("topic");
   
   // Filter states
   const [search, setSearch] = useState("");
-  const [selectedTopic, setSelectedTopic] = useState("All Topics");
+  const [selectedTopic, setSelectedTopic] = useState(topicParam || "All Topics");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
+
+  // Sync URL query params to state
+  useEffect(() => {
+    if (topicParam) {
+      setSelectedTopic(topicParam);
+    }
+  }, [topicParam]);
   
   // Questions and loading states
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -226,46 +310,28 @@ export default function QuestionsPage() {
           <div className="flex flex-wrap gap-4 items-center">
             
             {/* Topic Filter */}
-            <div className="flex items-center border border-outline bg-surface-dim px-3 py-1 text-label-caps uppercase text-primary">
-              <span className="text-muted mr-2">TOPIC:</span>
-              <select
-                className="bg-transparent text-text outline-none cursor-pointer font-bold font-body"
-                value={selectedTopic}
-                onChange={(e) => setSelectedTopic(e.target.value)}
-              >
-                {TOPICS.map(t => (
-                  <option key={t} value={t} className="bg-surface">{t}</option>
-                ))}
-              </select>
-            </div>
+            <CustomDropdown
+              label="TOPIC"
+              value={selectedTopic}
+              options={TOPICS}
+              onChange={setSelectedTopic}
+            />
 
             {/* Difficulty Filter */}
-            <div className="flex items-center border border-outline bg-surface-dim px-3 py-1 text-label-caps uppercase text-primary">
-              <span className="text-muted mr-2">DIFFICULTY:</span>
-              <select
-                className="bg-transparent text-text outline-none cursor-pointer font-bold font-body"
-                value={selectedDifficulty}
-                onChange={(e) => setSelectedDifficulty(e.target.value)}
-              >
-                {DIFFICULTIES.map(d => (
-                  <option key={d} value={d} className="bg-surface">{d}</option>
-                ))}
-              </select>
-            </div>
+            <CustomDropdown
+              label="DIFFICULTY"
+              value={selectedDifficulty}
+              options={DIFFICULTIES}
+              onChange={setSelectedDifficulty}
+            />
 
             {/* Status Filter */}
-            <div className="flex items-center border border-outline bg-surface-dim px-3 py-1 text-label-caps uppercase text-primary">
-              <span className="text-muted mr-2">STATUS:</span>
-              <select
-                className="bg-transparent text-text outline-none cursor-pointer font-bold font-body"
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-              >
-                {STATUSES.map(s => (
-                  <option key={s} value={s} className="bg-surface">{s}</option>
-                ))}
-              </select>
-            </div>
+            <CustomDropdown
+              label="STATUS"
+              value={selectedStatus}
+              options={STATUSES}
+              onChange={setSelectedStatus}
+            />
             
           </div>
           

@@ -1,14 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Trophy, Zap, Waypoints, Loader2 } from "lucide-react";
+import { CheckCircle2, Trophy, Zap, Waypoints, Loader2, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/app/shell";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Heatmap } from "@/components/shared/heatmap";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const statIcons = [CheckCircle2, Zap, Trophy, Waypoints];
+
+const TOPIC_QUERY_MAP: { [key: string]: string } = {
+  "ARRAY & HASHING": "Array",
+  "STRINGS": "String",
+  "LINKED_LISTS": "Linked List",
+  "TREES & GRAPHS": "Tree",
+  "DYNAMIC_PROG": "Dynamic Programming",
+  "BINARY_SEARCH": "Binary Search"
+};
 
 interface SolvedQuestion {
   ID: number;
@@ -33,125 +45,210 @@ export default function DashboardPage() {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [longestStreak, setLongestStreak] = useState(0);
 
-  useEffect(() => {
+  // Daily Mission states
+  const [dailyQuest, setDailyQuest] = useState<any>(null);
+  const [weakestTopic, setWeakestTopic] = useState("Array");
+
+  async function loadDashboardData() {
     if (!user) return;
     const userId = user.id;
 
-    async function loadDashboardData() {
-      try {
-        setLoading(true);
-        
-        // 1. Fetch total counts from database
-        const [
-          { count: countAll },
-          { count: countEasy },
-          { count: countMedium },
-          { count: countHard }
-        ] = await Promise.all([
-          supabase.from("questions").select("*", { count: "exact", head: true }),
-          supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Easy"),
-          supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Medium"),
-          supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Hard")
-        ]);
+    try {
+      setLoading(true);
+      
+      // 1. Fetch total counts from database
+      const [
+        { count: countAll },
+        { count: countEasy },
+        { count: countMedium },
+        { count: countHard }
+      ] = await Promise.all([
+        supabase.from("questions").select("*", { count: "exact", head: true }),
+        supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Easy"),
+        supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Medium"),
+        supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Hard")
+      ]);
 
-        if (countAll !== null) setTotalQuestions(countAll);
-        if (countEasy !== null) setTotalEasy(countEasy);
-        if (countMedium !== null) setTotalMedium(countMedium);
-        if (countHard !== null) setTotalHard(countHard);
+      if (countAll !== null) setTotalQuestions(countAll);
+      if (countEasy !== null) setTotalEasy(countEasy);
+      if (countMedium !== null) setTotalMedium(countMedium);
+      if (countHard !== null) setTotalHard(countHard);
 
-        // 2. Fetch user's solved questions using join
-        const { data: userProgress, error } = await supabase
-          .from("user_progress")
-          .select("questions (ID, Title, Difficulty, Topics)")
-          .eq("user_id", userId);
+      // 2. Fetch user's solved questions using join
+      const { data: userProgress, error } = await supabase
+        .from("user_progress")
+        .select("questions (ID, Title, Difficulty, Topics)")
+        .eq("user_id", userId);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        const solved: SolvedQuestion[] = 
-          userProgress?.map((row: any) => row.questions).filter(Boolean) || [];
-        
-        setSolvedList(solved);
+      const solved: SolvedQuestion[] = 
+        userProgress?.map((row: any) => row.questions).filter(Boolean) || [];
+      
+      setSolvedList(solved);
 
-        // 3. Compute streaks from local storage timestamps mapping
-        const storedTimestamps = localStorage.getItem("solved_questions_timestamps");
-        if (storedTimestamps) {
-          try {
-            const timestamps = JSON.parse(storedTimestamps) as { [qId: string]: string };
-            const dates = Object.values(timestamps)
-              .map(isoStr => isoStr.slice(0, 10))
-              .filter((value, index, self) => self.indexOf(value) === index) // unique dates
-              .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // descending order (newest first)
+      // 3. Compute streaks from local storage timestamps mapping
+      const storedTimestamps = localStorage.getItem("solved_questions_timestamps");
+      if (storedTimestamps) {
+        try {
+          const timestamps = JSON.parse(storedTimestamps) as { [qId: string]: string };
+          const dates = Object.values(timestamps)
+            .map(isoStr => isoStr.slice(0, 10))
+            .filter((value, index, self) => self.indexOf(value) === index) // unique dates
+            .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // descending order (newest first)
 
-            if (dates.length > 0) {
-              let current = 0;
-              let longest = 0;
-              let tempStreak = 0;
-              
-              const todayStr = new Date().toISOString().slice(0, 10);
-              const yesterday = new Date();
-              yesterday.setDate(yesterday.getDate() - 1);
-              const yesterdayStr = yesterday.toISOString().slice(0, 10);
+          if (dates.length > 0) {
+            let current = 0;
+            let longest = 0;
+            let tempStreak = 0;
+            
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().slice(0, 10);
 
-              // Check if user solved today or yesterday to continue current streak
-              const hasSolvedRecently = dates[0] === todayStr || dates[0] === yesterdayStr;
-              
-              if (hasSolvedRecently) {
-                current = 1;
-                let lastDate = new Date(dates[0]);
-                for (let i = 1; i < dates.length; i++) {
-                  const checkDate = new Date(dates[i]);
-                  const diffTime = Math.abs(lastDate.getTime() - checkDate.getTime());
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                  if (diffDays === 1) {
-                    current++;
-                    lastDate = checkDate;
-                  } else {
-                    break;
-                  }
+            // Check if user solved today or yesterday to continue current streak
+            const hasSolvedRecently = dates[0] === todayStr || dates[0] === yesterdayStr;
+            
+            if (hasSolvedRecently) {
+              current = 1;
+              let lastDate = new Date(dates[0]);
+              for (let i = 1; i < dates.length; i++) {
+                const checkDate = new Date(dates[i]);
+                const diffTime = Math.abs(lastDate.getTime() - checkDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays === 1) {
+                  current++;
+                  lastDate = checkDate;
+                } else {
+                  break;
                 }
               }
-
-              // Compute longest streak
-              if (dates.length > 0) {
-                tempStreak = 1;
-                longest = 1;
-                for (let i = 1; i < dates.length; i++) {
-                  const date1 = new Date(dates[i - 1]);
-                  const date2 = new Date(dates[i]);
-                  const diffTime = Math.abs(date1.getTime() - date2.getTime());
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                  
-                  if (diffDays === 1) {
-                    tempStreak++;
-                  } else if (diffDays > 1) {
-                    longest = Math.max(longest, tempStreak);
-                    tempStreak = 1;
-                  }
-                }
-                longest = Math.max(longest, tempStreak);
-              }
-
-              setCurrentStreak(current);
-              setLongestStreak(longest);
             }
-          } catch (e) {
-            console.error("Failed to parse solved questions timestamps for streak:", e);
+
+            // Compute longest streak
+            if (dates.length > 0) {
+              tempStreak = 1;
+              longest = 1;
+              for (let i = 1; i < dates.length; i++) {
+                const date1 = new Date(dates[i - 1]);
+                const date2 = new Date(dates[i]);
+                const diffTime = Math.abs(date1.getTime() - date2.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 1) {
+                  tempStreak++;
+                } else if (diffDays > 1) {
+                  longest = Math.max(longest, tempStreak);
+                  tempStreak = 1;
+                }
+              }
+              longest = Math.max(longest, tempStreak);
+            }
+
+            setCurrentStreak(current);
+            setLongestStreak(longest);
           }
-        } else {
-          // Default fallbacks if no timestamps in local storage yet (use mock seeds)
-          setCurrentStreak(5);
-          setLongestStreak(12);
+        } catch (e) {
+          console.error("Failed to parse solved questions timestamps for streak:", e);
         }
-
-      } catch (err) {
-        console.error("Failed to load dashboard data:", err);
-      } finally {
-        setLoading(false);
+      } else {
+        // Default fallbacks if no timestamps in local storage yet (use mock seeds)
+        setCurrentStreak(5);
+        setLongestStreak(12);
       }
-    }
 
+      // 4. Calculate weakest topic and fetch Daily Mission question
+      const topicStatsMap: { [key: string]: number } = {};
+      solved.forEach((q) => {
+        if (q.Topics) {
+          q.Topics.split(",").forEach((t) => {
+            const cleanTopic = t.trim();
+            topicStatsMap[cleanTopic] = (topicStatsMap[cleanTopic] || 0) + 1;
+          });
+        }
+      });
+
+      const TOPIC_DENOMINATORS: { [key: string]: number } = {
+        "Array": 500,
+        "String": 300,
+        "Hash Table": 250,
+        "Dynamic Programming": 350,
+        "Tree": 200,
+        "Graph": 150,
+        "Binary Search": 130,
+        "Linked List": 90
+      };
+
+      let computedWeakest = "Array";
+      let lowestRatio = 1.0;
+      Object.entries(TOPIC_DENOMINATORS).forEach(([topic, total]) => {
+        const solvedCount = topicStatsMap[topic] || 0;
+        const ratio = solvedCount / total;
+        if (ratio < lowestRatio) {
+          lowestRatio = ratio;
+          computedWeakest = topic;
+        }
+      });
+      setWeakestTopic(computedWeakest);
+
+      // Fetch unsolved questions in weakest topic
+      const solvedIdsSet = new Set(solved.map(q => q.ID));
+      const { data: topicQuestions } = await supabase
+        .from("questions")
+        .select("ID, Title, Difficulty, Link, Topics")
+        .ilike("Topics", `%${computedWeakest}%`)
+        .limit(50);
+
+      let quest = null;
+      if (topicQuestions) {
+        quest = topicQuestions.find(q => !solvedIdsSet.has(q.ID));
+      }
+
+      // Fallback
+      if (!quest) {
+        const { data: generalQuestions } = await supabase
+          .from("questions")
+          .select("ID, Title, Difficulty, Link, Topics")
+          .limit(100);
+        if (generalQuestions) {
+          quest = generalQuestions.find(q => !solvedIdsSet.has(q.ID));
+        }
+      }
+      setDailyQuest(quest);
+
+    } catch (err) {
+      console.error("Failed to load dashboard data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
     loadDashboardData();
   }, [user]);
+
+  const handleToggleDailyMission = async () => {
+    if (!user || !dailyQuest) return;
+    const userId = user.id;
+    const qId = dailyQuest.ID;
+    const timestamps = JSON.parse(localStorage.getItem("solved_questions_timestamps") || "{}");
+
+    try {
+      const { error } = await supabase
+        .from("user_progress")
+        .insert({ user_id: userId, question_id: qId });
+      if (error) throw error;
+
+      timestamps[qId] = new Date().toISOString();
+      localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
+      
+      // Reload dashboard data dynamically
+      await loadDashboardData();
+    } catch (err) {
+      console.error("Failed to log Daily Mission solve state:", err);
+    }
+  };
 
   // Derived metrics
   const solvedCount = solvedList.length;
@@ -242,10 +339,11 @@ export default function DashboardPage() {
 
   return (
     <AppShell className="max-w-shell mx-auto">
-      <section className="mb-gutter">
-        <Card className="flex flex-col justify-between gap-6 p-6 md:flex-row md:items-center">
+      <section className="mb-gutter grid grid-cols-1 gap-gutter lg:grid-cols-12">
+        <Card className="flex flex-col justify-between gap-6 p-6 md:flex-row md:items-center lg:col-span-8 bg-[#191c1e] hover-glow-card border-outline">
           <div className="space-y-3">
-            <div className="inline-block border border-primary px-2 py-1 text-label-caps uppercase text-primary">
+            <div className="inline-flex items-center gap-2 border border-primary px-2 py-1 text-label-caps uppercase text-primary">
+              <span className="h-2 w-2 rounded-full bg-secondary animate-dot-pulse" />
               SYSTEM STATUS: ACTIVE
             </div>
             <h1 className="font-display text-display-hero leading-[1.4] text-text">
@@ -271,6 +369,60 @@ export default function DashboardPage() {
             </div>
           </div>
         </Card>
+
+        {/* DAILY MISSION CARD */}
+        <Card className={cn(
+          "flex flex-col justify-between p-6 lg:col-span-4 bg-[#191c1e] hover-glow-card border-outline",
+          dailyQuest && "animate-alert-glow border-primary-strong/40"
+        )}>
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-label-caps text-primary flex items-center gap-1.5 font-bold">
+                <span className="h-2 w-2 rounded-full bg-primary-strong animate-dot-pulse" />
+                DAILY_MISSION_MODULE
+              </span>
+              <span className="text-[9px] text-muted font-bold">PRIORITY_HIGH</span>
+            </div>
+            
+            {dailyQuest ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-body text-body-md font-bold text-text hover:text-primary transition-colors line-clamp-1">
+                    <a href={dailyQuest.Link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
+                      {dailyQuest.Title} <ExternalLink className="h-3 w-3 inline opacity-70" />
+                    </a>
+                  </h3>
+                  <div className="mt-2 flex gap-2">
+                    <Badge tone={
+                      dailyQuest.Difficulty.toLowerCase() === "easy" ? "secondary" : 
+                      dailyQuest.Difficulty.toLowerCase() === "medium" ? "tertiary" : "danger"
+                    }>
+                      {dailyQuest.Difficulty.toUpperCase()}
+                    </Badge>
+                    <span className="text-[10px] text-muted self-center uppercase truncate">{dailyQuest.Topics?.split(",")[0]}</span>
+                  </div>
+                </div>
+                
+                <p className="text-[11px] leading-relaxed text-muted font-body">
+                  Resolve this logic gate to expand your cognitive index. Selected topic: <strong className="text-secondary">{weakestTopic.toUpperCase()}</strong>.
+                </p>
+              </div>
+            ) : (
+              <div className="py-6 text-center text-muted text-body-md font-display">
+                ALL_SYSTEMS_CLEAR
+              </div>
+            )}
+          </div>
+          
+          {dailyQuest && (
+            <button
+              onClick={handleToggleDailyMission}
+              className="mt-6 flex h-10 w-full items-center justify-center border border-primary-strong/40 bg-primary/5 text-label-caps text-primary-strong hover:bg-primary-strong hover:text-background transition-all font-bold"
+            >
+              MARK_AS_RESOLVED
+            </button>
+          )}
+        </Card>
       </section>
 
       <section className="mb-gutter grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-4">
@@ -282,13 +434,25 @@ export default function DashboardPage() {
               : stat.tone === "tertiary"
                 ? "group-hover:text-tertiary"
                 : "group-hover:text-primary";
+          
+          const isCurrentStreak = stat.label === "CURRENT" && currentStreak > 0;
+
           return (
-            <Card key={stat.label} className="group p-6 hover:border-primary-strong">
+            <Card 
+              key={stat.label} 
+              className={cn(
+                "group p-6 hover-glow-card border-outline",
+                isCurrentStreak && "animate-fire-glow border-secondary/40 bg-secondary/[0.02]"
+              )}
+            >
               <div className="mb-8 flex items-center justify-between">
-                <Icon className={`h-6 w-6 text-muted ${tone}`} strokeWidth={1.8} />
-                <span className="text-label-caps text-muted">{stat.label}</span>
+                <Icon className={cn("h-6 w-6 text-muted", tone, isCurrentStreak && "text-secondary animate-pulse")} strokeWidth={1.8} />
+                <span className="text-label-caps text-muted flex items-center gap-1 font-bold">
+                  {isCurrentStreak && <span className="inline-block h-2 w-2 rounded-full bg-secondary animate-ping" />}
+                  {stat.label}
+                </span>
               </div>
-              <div className="font-data text-data-lg leading-none text-text">{stat.value}</div>
+              <div className={cn("font-data text-data-lg leading-none text-text", isCurrentStreak && "text-secondary")}>{stat.value}</div>
               <div className="mt-3 text-body-lg text-muted">{stat.subtext}</div>
             </Card>
           );
@@ -357,17 +521,21 @@ export default function DashboardPage() {
         <Card className="overflow-hidden xl:col-span-2">
           <CardHeader>TOPIC_MATRICES</CardHeader>
           <div className="grid grid-cols-1 gap-x-12 gap-y-8 p-6 md:grid-cols-2">
-            {topicProgress.map((topic) => (
-              <div key={topic.name}>
-                <div className="mb-2 flex justify-between text-label-caps text-muted">
-                  <span>{topic.name}</span>
-                  <span>{topic.value}%</span>
-                </div>
-                <div className="h-1 bg-border">
-                  <div className="h-full bg-primary-strong" style={{ width: `${topic.value}%` }} />
-                </div>
-              </div>
-            ))}
+            {topicProgress.map((topic) => {
+              const queryTopic = TOPIC_QUERY_MAP[topic.name] || "";
+              const href = queryTopic ? `/questions?topic=${encodeURIComponent(queryTopic)}` : "/questions";
+              return (
+                <Link key={topic.name} href={href} className="group/topic block cursor-pointer">
+                  <div className="mb-2 flex justify-between text-label-caps text-muted group-hover/topic:text-primary transition-colors">
+                    <span>{topic.name}</span>
+                    <span>{topic.value}%</span>
+                  </div>
+                  <div className="h-1 bg-border overflow-hidden">
+                    <div className="h-full bg-primary-strong group-hover/topic:bg-primary transition-all duration-300" style={{ width: `${topic.value}%` }} />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </Card>
 
