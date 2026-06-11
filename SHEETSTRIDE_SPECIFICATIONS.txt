@@ -1,0 +1,211 @@
+================================================================================
+                    SHEETSTRIDE SYSTEM SPECIFICATION MANUAL
+================================================================================
+Product Version : 1.0.4-stable
+Architecture    : Next.js App Router Client-Server Hybrid
+Target Database : Supabase PostgreSQL Instance
+Theme Aesthetic : Retro Sci-Fi / Cyberpunk Terminal Interface
+================================================================================
+
+--------------------------------------------------------------------------------
+1. TECHNOLOGY STACK
+--------------------------------------------------------------------------------
+
+[Core Development Framework]
+- Next.js (version 15.0.3): Implements the App Router model, client/server 
+  component tree splitting, dynamic pre-rendering safety, and optimized loading hooks.
+- React (version 18.3.1): Drives UI composition, state-driven rendering, refs, 
+  and reactive life cycle effects.
+- TypeScript (version 5.6.3): Enforces static type safety, interfaces, strict 
+  null-checks, and clean code compilation.
+
+[Styling, Fonts & Layouts]
+- Tailwind CSS (version 3.4.15): Handles utilities, layout grids, spacing tokens,
+  and responsiveness.
+- PostCSS & Autoprefixer: Compiles modern CSS, handles styling vendor prefixes.
+- Fonts (via Google Fonts API):
+  * "Press Start 2P": Display headers, giving the app a pixelated retro feel.
+  * "JetBrains Mono": Body copy, input fields, tables, maintaining terminal layout.
+  * "VT323": Statistics numbers, mimicking classic green-screen data outputs.
+
+[Database & Backend Services]
+- Supabase (@supabase/supabase-js, version 2.107.0): Handles backend queries:
+  * PostgreSQL Database storage (tables: questions, user_progress).
+  * GoTrue Authentication Engine.
+  * Realtime state synchronization and join queries.
+
+[Iconography & Auxiliary Tools]
+- Lucide React (version 0.511.0): Unified vector SVG icon sets.
+- Axios (version 1.17.0): Handles HTTP API calls.
+- Dotenv (version 17.4.2): Loads local environment variables.
+- Clsx & Tailwind-Merge: Utility helpers for conditional class merge resolution.
+- Class-Variance-Authority: Handles design component variations.
+
+--------------------------------------------------------------------------------
+2. COMPREHENSIVE SITE FEATURES INDEX (EVERY FEATURE & SUB-FEATURE)
+--------------------------------------------------------------------------------
+
+[A] AUTHENTICATION GATE & ACCOUNT ACCESS
+1. Google OAuth: Single-click authentication using Google credentials.
+2. GitHub OAuth: Single-click authentication using GitHub credentials.
+3. Magic Link OTP: Passwordless authentication via dynamic email verification.
+4. Auto-Login Gate: Checks user session state on page load. Redirects to `/login` 
+   if unauthenticated.
+5. Avatar Integration: Pulls profile pictures from OAuth identity metadata and 
+   displays them in top navigation (in grayscale with color transition on hover).
+6. Profile Init Flow: Automatically maps Display Name from user metadata, fallback 
+   to email prefix.
+7. Authorization State Listener: Reacts instantly to auth events (Sign In, Sign Out).
+
+[B] GLOBAL WORKSPACE SHELL (NAVIGATION & INTERFACE)
+8. Responsive AppShell: Splits layout dynamically depending on viewport size.
+9. Left Sidebar Navigation: Fixed menu bar on desktop for accessing Dashboard, 
+   Questions, Progress, and Settings.
+10. Mobile Navigation: Bottom utility bar mapping the main navigation links for 
+    compact devices.
+11. Glowing Logout Trigger: Prompts session sign-out, deletes cookie references.
+12. Topbar Utility Header: Includes notification indicators, profile avatars, 
+    and search inputs.
+13. Global Scanline Overlay: A background animation mimicking vintage CRTs scanning 
+    vertically (`.scanline`).
+14. Grid Background Pattern: High-tech grid overlay (`.terminal-grid` / `.code-grid`).
+15. Dynamic Custom Scrollbar: Customized track and thumb, glowing blue on hover.
+
+[C] CENTRAL METRICS DASHBOARD (`/dashboard`)
+16. Code Level Title: Dynamically calculates Coder Level (Level increases by 1 
+    for every 10 questions solved).
+17. Active System Status Indicator: Pulsing status message (`SYSTEM STATUS: ACTIVE`) 
+    with a blinking green status dot.
+18. Live Global Progress Gauge: Computes completion percent against database total, 
+    rendering a stylized segmented progress bar.
+19. Quick Metric Boxes:
+    - "RESOLVED": Total number of solved questions.
+    - "CURRENT": Daily streak tracker.
+    - "ALL_TIME": Longest recorded solve streak.
+    - "COMPLETION": Total completion percentage.
+20. Active Streak Flame Animation: Applies a neon-pulsing fire border glow to the 
+    Current Streak box when streak is > 0.
+21. Interactive Heatmap Grid: Custom calendar widget mapping solved questions over 
+    the calendar days, with color intensity matching solve density.
+22. Difficulty Levels Chart: Bar representation of Easy (green), Medium (orange), 
+    and Hard (red) completions.
+23. Clickable Topic Progress Cards: Lists Arrays, Strings, Linked Lists, Trees/Graphs, 
+    DP, and Binary Search, linking directly to `/questions?topic=TopicName`.
+24. Recent Logs Panel: Displays details of the last 4 solved questions:
+    - Difficulty letters (E, M, H) in colored badges.
+    - Full titles with truncation safety.
+    - Relative solve times (e.g. 2 HOURS AGO, YESTERDAY).
+    - Completion checkmark icon.
+25. Daily Mission Module:
+    - Calculates the user's weakest topic based on completion percentages.
+    - Searches the DB for unsolved questions in that topic.
+    - Displays 1 recommended question with difficulty badges.
+    - Direct External link to LeetCode.
+    - Checkbox trigger to mark as solved, dynamically updating metrics on the fly.
+    - Alert-glow card animation if a mission is active.
+
+[D] INTERACTIVE QUESTION DATABASE CLUSTER (`/questions`)
+26. Search Filter: Full-text search matching substring titles.
+27. Custom Cyber Dropdowns: Styled selector buttons replacing native select options:
+    - "TOPIC" filter (15 standard DSA topics).
+    - "DIFFICULTY" filter (Easy, Medium, Hard).
+    - "STATUS" filter (Solved, Unsolved).
+28. URL Param Sync: Parses query params on load (e.g. from Dashboard click) to 
+    auto-apply filter settings.
+29. Total Matches Indicator: Displays live match counts (`CLUSTER_MATCHES`).
+30. Suspense Loading Gate: Shows a spinner when fetching questions from Supabase.
+31. Zero State Handling: Displays a retro empty folder icon if search filters return 
+    no questions.
+32. Grouping by Primary Topic: Automatically parses database topic fields and splits 
+    questions into visual topic sections.
+33. Solve Checkboxes: Click toggling logs solved status.
+34. Optimistic State Updates: Checked state reflects instantly on the UI while 
+    syncing with database asynchronously.
+35. Local Storage Timestamp Logging: Saves ISO completion times locally under key 
+    `solved_questions_timestamps` to track streaks offline.
+36. External Link Redirects: Launches the target LeetCode problem page in a new tab.
+37. Pagination System: Limits pages to 50 rows, navigates via `PREV_CLUSTER` and 
+    `NEXT_CLUSTER`.
+
+[E] REAL-TIME ANALYTICS MODULE (`/progress`)
+38. Export/Print Utility: "EXPORT_PRINT" button opening print dialog.
+39. Stats Recalculator: Re-fetches fresh stats from the DB.
+40. System Insights Panel:
+    - Calculated "STRONGEST_TOPIC" based on relative accuracy.
+    - Calculated "WEAKEST_TOPIC" indicating focus recommendations.
+    - "PEAK_ACTIVITY" day based on solve patterns.
+41. Solve Frequency Chart: Bar chart displaying solve count comparisons for the 
+    last 7 days (Monday through Sunday).
+42. Progress Module Table: Interactive table mapping topic modules, progress percentages, 
+    and exact solve fractions, linking cells to the questions page.
+43. Advanced Difficulty Breakdown: Segmented visualization bars for levels of difficulty.
+
+[F] ENCRYPTED USER PROFILE (`/profile`)
+44. Profile Card ID: Displays short hash ID representing the user's Supabase UUID.
+45. Skill Title Badges: Decorative terminal tags (`#SYSTEM_ARCHITECT`, `#ALGO_CRUSHER`).
+46. Milestones/Achievements System:
+    - "FIRST QUESTION": Unlocked if solvedCount >= 1.
+    - "10 DAY STREAK": Unlocked if longestStreak >= 10.
+    - "50 SOLVED": Unlocked if solvedCount >= 50.
+    - Renders padlocks or gold star icons according to criteria.
+47. Event History activity logs: Lists the last 10 solves in a command-line 
+    audit log table detailing timestamp, event type (e.g. SOLVE), title, and status.
+
+[G] WORKSPACE SETTINGS & TOOLS (`/settings`)
+48. Quick Deauth Button: Standardized logout shortcut.
+49. Appearance Toggles:
+    - Dark Theme switch.
+    - Retro Pixel Mode switch (Appends retro style overlays across the root layout).
+    - Compact Layout switch (Shrinks font size/paddings for data density).
+50. Notification Settings: Switch options for digest emails, weekly summaries, 
+    and browser alert pings.
+51. User Information Form: Update full name metadata in Supabase accounts.
+52. JSON Config Backup Utility: Exports solved questions, local preferences, and 
+    timestamps as a `.json` backup file download.
+53. System Purging Command: Erases local storage, cookies, and database progress 
+    records in one click, resetting profile database logs.
+54. Storage Meter Gauges: Displays active cache indicators, storage quotas (5.0MB max), 
+    and stability indices.
+================================================================================
+
+--------------------------------------------------------------------------------
+3. FUNCTIONAL STATUS MAP (ACTIVE INTEGRATIONS VS. PASSIVE PREFERENCES)
+--------------------------------------------------------------------------------
+
+[A] FULLY OPERATIONAL (DATABASE & CLIENT RUNTIME INTERACTIVE)
+================================================================================
+* OAuth & Magic Link Login: Actively integrates with Supabase authentication.
+* Auto-Login Redirects: Middleware-like gate blocks unauthenticated sessions.
+* Coder Level Progression: Real-time calculation based on solved counts.
+* Solved Status Checkboxes: Checking a question performs immediate optimistic 
+  state updates, writes timestamps to localStorage, and updates Supabase database.
+* Heatmap Contribution Map: Reads timestamps from localStorage to render dynamic 
+  daily grids. Automatically seeds mock solves initially if data is fresh.
+* Active Streak Counter: Executes a date-parsing streak algorithm in JavaScript 
+  to track consecutive solve days (current and best streak).
+* Daily Mission Module: Calculates weakest topic from solve lists, queries 
+  Supabase questions table for unsolved items, renders details, and handles 
+  quick resolving clicks.
+* Clickable Topic Links: Redirects between dashboard/progress to questions page, 
+  pre-setting search filters.
+* Advanced Search & Dropdowns: custom dropdown components filter database query 
+  parameters dynamically.
+* JSON Configuration Backup: Encodes and exports local preferences as a JSON 
+  file download.
+* Full Database Purge: Executes DB deletes on Supabase, wipes local storage, 
+  resets authentication tokens.
+* Account Info Updates: Triggers Supabase user metadata update requests.
+* Export/Print Document: Dispatches client print/pdf rendering threads.
+
+[B] PREFERENCE PERSISTENCE ONLY (PASSIVE CONTROL SWITCHES)
+================================================================================
+* Dark Mode Switch: Toggles checked state and saves state in localStorage. Since 
+  SheetStride is dark-first by design, it does not alter background values.
+* Compact Layout Switch: Toggles checked state and saves state in localStorage. 
+  It is a mock configuration switch.
+* Pixel Mode Switch: Toggles state and appends class selectors to HTML tag nodes.
+* Notification Switches (Daily Digest, Weekly summaries, Push Alerts): Save state 
+  to localStorage, but there are no backend push notifications/email servers 
+  linked (mock preference switches).
+
+================================================================================

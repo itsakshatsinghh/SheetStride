@@ -24,12 +24,22 @@ const config: Config = {
         secondary: "#4AE176",
         tertiary: "#F7BE1D",
         danger: "#FFB4AB",
-        "danger-solid": "#93000A"
+        "danger-solid": "#93000A",
+        "brand-charcoal": "#111317",
+        "brand-sapphire": "#2e5bff",
+        "brand-sapphire-glow": "rgba(46, 91, 255, 0.4)",
+        "brand-surface-lowest": "#0c0e12",
+        "brand-surface-high": "#282a2e",
+        "brand-surface-low": "#1a1c20",
+        "brand-on-surface-variant": "#c4c5d9"
       },
       fontFamily: {
         display: ["'Press Start 2P'", "monospace"],
         body: ["'JetBrains Mono'", "monospace"],
-        data: ["VT323", "monospace"]
+        data: ["VT323", "monospace"],
+        sans: ["Inter", "sans-serif"],
+        "press-start": ["'Press Start 2P'", "monospace"],
+        vt323: ["'VT323'", "monospace"]
       },
       fontSize: {
         "display-hero": ["32px", { lineHeight: "48px" }],

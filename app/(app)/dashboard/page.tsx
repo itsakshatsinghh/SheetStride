@@ -277,10 +277,10 @@ export default function DashboardPage() {
     const standardTopics = [
       { name: "ARRAY & HASHING", count: topicMap["ARRAY"] || topicMap["HASH TABLE"] || 0 },
       { name: "STRINGS", count: topicMap["STRING"] || 0 },
-      { name: "LINKED_LISTS", count: topicMap["LINKED LIST"] || 0 },
+      { name: "LINKED LISTS", count: topicMap["LINKED LIST"] || 0 },
       { name: "TREES & GRAPHS", count: (topicMap["TREE"] || 0) + (topicMap["GRAPH"] || 0) },
-      { name: "DYNAMIC_PROG", count: topicMap["DYNAMIC PROGRAMMING"] || topicMap["DP"] || 0 },
-      { name: "BINARY_SEARCH", count: topicMap["BINARY SEARCH"] || 0 }
+      { name: "DYNAMIC PROG", count: topicMap["DYNAMIC PROGRAMMING"] || topicMap["DP"] || 0 },
+      { name: "BINARY SEARCH", count: topicMap["BINARY SEARCH"] || 0 }
     ];
 
     // Compute relative percentage based on solved items
@@ -297,7 +297,7 @@ export default function DashboardPage() {
   const stats = [
     { label: "RESOLVED", value: `${solvedCount}`, subtext: "Questions Solved", tone: "primary" },
     { label: "CURRENT", value: `${currentStreak} DAYS`, subtext: "Current Streak", tone: "secondary" },
-    { label: "ALL_TIME", value: `${longestStreak} DAYS`, subtext: "Longest Streak", tone: "tertiary" },
+    { label: "ALL TIME", value: `${longestStreak} DAYS`, subtext: "Longest Streak", tone: "tertiary" },
     { label: "COMPLETION", value: `${progressPercent}%`, subtext: "Global Index", tone: "primary" }
   ];
 
@@ -409,7 +409,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="py-6 text-center text-muted text-body-md font-display">
-                ALL_SYSTEMS_CLEAR
+                ALL SYSTEMS CLEAR
               </div>
             )}
           </div>
@@ -419,7 +419,7 @@ export default function DashboardPage() {
               onClick={handleToggleDailyMission}
               className="mt-6 flex h-10 w-full items-center justify-center border border-primary-strong/40 bg-primary/5 text-label-caps text-primary-strong hover:bg-primary-strong hover:text-background transition-all font-bold"
             >
-              MARK_AS_RESOLVED
+              MARK AS RESOLVED
             </button>
           )}
         </Card>
@@ -462,7 +462,7 @@ export default function DashboardPage() {
       <section className="mb-gutter grid grid-cols-1 gap-gutter xl:grid-cols-3">
         <Card className="xl:col-span-2 p-6">
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="font-display text-headline-sm">CONTRIBUTION_MAP</h2>
+            <h2 className="font-display text-headline-sm">CONTRIBUTION MAP</h2>
             <div className="flex items-center gap-2 text-label-caps text-muted">
               <span>Less</span>
               <div className="flex gap-1">
@@ -579,7 +579,7 @@ export default function DashboardPage() {
       </section>
 
       <footer className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-outline py-8 opacity-50 md:flex-row">
-        <p className="text-label-caps">TERMINAL_SESSION_ID: 88A4-5F22-PX11</p>
+        <p className="text-label-caps">TERMINAL SESSION ID: 88A4-5F22-PX11</p>
         <div className="flex gap-6 text-label-caps">
           <span>DOCS</span>
           <span>SUPPORT</span>
