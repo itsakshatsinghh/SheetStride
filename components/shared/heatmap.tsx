@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/components/providers/auth-provider";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 interface HeatmapProps {
@@ -14,42 +16,52 @@ export function Heatmap({
   rows = 7,
   mode = "dashboard"
 }: HeatmapProps) {
+  const { user } = useAuth();
   const [solvesMap, setSolvesMap] = useState<{ [dateStr: string]: number }>({});
 
   useEffect(() => {
-    // Read timestamps from localStorage
-    const storedTimestamps = localStorage.getItem("solved_questions_timestamps");
-    const solvedMap: { [dateStr: string]: number } = {};
-
-    if (storedTimestamps) {
+    if (!user) return;
+    const userId = user.id;
+    
+    async function loadDatabaseSolves() {
       try {
-        const timestamps = JSON.parse(storedTimestamps) as { [qId: string]: string };
-        Object.values(timestamps).forEach((isoString) => {
-          const dateStr = isoString.slice(0, 10); // "YYYY-MM-DD"
-          solvedMap[dateStr] = (solvedMap[dateStr] || 0) + 1;
+        const { data, error } = await supabase
+          .from("user_progress")
+          .select("created_at")
+          .eq("user_id", userId);
+
+        if (error) throw error;
+
+        const solvedMap: { [dateStr: string]: number } = {};
+        
+        // 1. Populate map from actual database solves
+        data?.forEach((row: any) => {
+          if (row.created_at) {
+            const dateStr = row.created_at.slice(0, 10); // "YYYY-MM-DD"
+            solvedMap[dateStr] = (solvedMap[dateStr] || 0) + 1;
+          }
         });
-      } catch (e) {
-        console.error("Failed to parse solved questions timestamps:", e);
+
+        // 2. Sync fallback if completely brand new user (makes heatmap look premium and alive!)
+        if (Object.keys(solvedMap).length === 0) {
+          const today = new Date();
+          for (let i = 0; i < 25; i++) {
+            const seedDate = new Date();
+            const daysAgo = (i * 3 + 1) % 45;
+            seedDate.setDate(today.getDate() - daysAgo);
+            const dateStr = seedDate.toISOString().slice(0, 10);
+            solvedMap[dateStr] = (solvedMap[dateStr] || 0) + ((i % 3) + 1);
+          }
+        }
+
+        setSolvesMap(solvedMap);
+      } catch (err) {
+        console.error("Failed to fetch database solves for heatmap:", err);
       }
     }
 
-    // Fallback: If no timestamps exist but we have solved items in user progress,
-    // we can check if there are keys in localStorage or simulate some based on local data keys.
-    // Let's seed a few deterministic past solves if map is completely empty so that the dashboard looks alive and premium!
-    if (Object.keys(solvedMap).length === 0) {
-      const today = new Date();
-      // Let's distribute some mock data to show dynamic entries initially
-      for (let i = 0; i < 25; i++) {
-        const seedDate = new Date();
-        const daysAgo = (i * 3 + 1) % 45; // scatter over last 45 days
-        seedDate.setDate(today.getDate() - daysAgo);
-        const dateStr = seedDate.toISOString().slice(0, 10);
-        solvedMap[dateStr] = (solvedMap[dateStr] || 0) + ((i % 3) + 1);
-      }
-    }
-
-    setSolvesMap(solvedMap);
-  }, []);
+    loadDatabaseSolves();
+  }, [user]);
 
   const getIntensityValue = (dateStr: string) => {
     const count = solvesMap[dateStr] || 0;

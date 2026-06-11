@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SheetStride v3 | Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Press+Start+2P&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#231b00",
+                    "surface-tint": "#a0c9ff",
+                    "inverse-primary": "#1461a2",
+                    "error-container": "#93000a",
+                    "on-primary-fixed-variant": "#00497f",
+                    "tertiary": "#f9cb13",
+                    "on-primary-fixed": "#001c37",
+                    "on-secondary-container": "#003e1c",
+                    "primary-fixed": "#d2e4ff",
+                    "on-error-container": "#ffdad6",
+                    "primary-container": "#7cb8ff",
+                    "on-surface": "#e5e2e1",
+                    "primary-fixed-dim": "#a0c9ff",
+                    "outline": "#8b919b",
+                    "tertiary-fixed-dim": "#eec200",
+                    "surface-variant": "#353534",
+                    "surface-container-high": "#2a2a2a",
+                    "on-tertiary-container": "#564400",
+                    "surface-container-lowest": "#0e0e0e",
+                    "secondary-container": "#00b55d",
+                    "inverse-surface": "#e5e2e1",
+                    "primary": "#b2d2ff",
+                    "on-secondary": "#003919",
+                    "secondary-fixed-dim": "#4de082",
+                    "on-primary-container": "#00487e",
+                    "inverse-on-surface": "#313030",
+                    "on-tertiary-fixed-variant": "#574500",
+                    "on-primary": "#00325a",
+                    "surface-container": "#201f1f",
+                    "surface-container-low": "#1c1b1b",
+                    "on-tertiary": "#3c2f00",
+                    "on-error": "#690005",
+                    "on-secondary-fixed-variant": "#005227",
+                    "surface-container-highest": "#353534",
+                    "background": "#131313",
+                    "tertiary-container": "#d9b000",
+                    "on-secondary-fixed": "#00210c",
+                    "surface-bright": "#3a3939",
+                    "error": "#ffb4ab",
+                    "surface": "#131313",
+                    "outline-variant": "#414750",
+                    "secondary-fixed": "#6dfe9c",
+                    "secondary": "#4de082",
+                    "on-surface-variant": "#c1c7d2",
+                    "tertiary-fixed": "#ffe083",
+                    "on-background": "#e5e2e1",
+                    "surface-dim": "#131313"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-md": "1rem",
+                    "gutter": "1.5rem",
+                    "margin-mobile": "1rem",
+                    "container-max": "1280px",
+                    "stack-lg": "2rem",
+                    "stack-sm": "0.5rem"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Space Grotesk"],
+                    "display-arcade": ["Press Start 2P"],
+                    "headline-md": ["Space Grotesk"],
+                    "headline-lg": ["Space Grotesk"],
+                    "body-sm": ["Space Grotesk"],
+                    "body-lg": ["Space Grotesk"],
+                    "mono-label": ["JetBrains Mono"],
+                    "mono-stats": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-arcade": ["14px", {"lineHeight": "24px", "letterSpacing": "0.1em", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "mono-label": ["13px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "mono-stats": ["18px", {"lineHeight": "24px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            scroll-behavior: smooth;
+        }
+        .glass-card {
+            background: rgba(28, 28, 28, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid #2B2B2B;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            background: rgba(34, 34, 34, 0.9);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            border-color: #414750;
+        }
+        .status-glow-green {
+            box-shadow: 0 0 15px rgba(77, 224, 130, 0.3);
+        }
+        .pixel-border {
+            position: relative;
+        }
+        .pixel-border::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border: 2px solid transparent;
+            pointer-events: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #131313;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2B2B2B;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #414750;
+        }
+        .stagger-in > * {
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stagger-in > *:nth-child(1) { animation-delay: 0.1s; }
+        .stagger-in > *:nth-child(2) { animation-delay: 0.2s; }
+        .stagger-in > *:nth-child(3) { animation-delay: 0.3s; }
+        .stagger-in > *:nth-child(4) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body class="bg-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full h-16 z-50 border-b border-outline-variant/30 bg-surface/80 backdrop-blur-md">
+<div class="flex justify-between items-center px-gutter max-w-container-max mx-auto h-full">
+<div class="flex items-center gap-stack-md">
+<span class="font-display-arcade text-display-arcade text-primary uppercase">SHEETSTRIDE</span>
+</div>
+<div class="hidden md:flex items-center gap-gutter">
+<a class="text-on-surface-variant hover:text-on-surface transition-colors duration-200 font-body-lg text-body-lg" href="#">Dashboard</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors duration-200 font-body-lg text-body-lg" href="#">Questions</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors duration-200 font-body-lg text-body-lg" href="#">Progress</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-body-lg text-body-lg" href="#">Profile</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors duration-200 font-body-lg text-body-lg" href="#">Settings</a>
+</div>
+<div class="flex items-center gap-stack-md">
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant/20 rounded-xl transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant/50">
+<img alt="User profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRWX08xbVVpesahFNA9ONhYvwkAYzo-jUeIMGEwvPnzPuNKJawAPXFd0s_C5NQZIuIY_NPzo-KPmqiGY-ynN4QKEDOnHcDUN_o_5RLUpHsdmTziZQqv_Izz1FDk-6GbWVJjp516Q_dChs-F673JTLwIF3st0hX4w0GpcaO7JZylzO_ud_gANpvrvUlr6ZA3T5xGcKtfEaiWi6UmBO5S8kpZLNlxQSW-k6w2HaU-FGGqaUjkt0FbYJvbbmR9safyohWTBtKmYmsvEE"/>
+</div>
+</div>
+</div>
+</nav>
+<main class="pt-24 pb-stack-lg px-gutter max-w-container-max mx-auto overflow-x-hidden">
+<!-- Profile Header Section -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-stack-lg stagger-in">
+<!-- Developer Identity Card -->
+<div class="lg:col-span-8 glass-card p-stack-lg flex flex-col md:flex-row items-center md:items-start gap-gutter relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</div>
+<div class="relative group">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-xl overflow-hidden border-2 border-primary-container/30 group-hover:border-primary-container transition-colors duration-500">
+<img alt="Avatar" class="w-full h-full bg-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsgR_LVVh3WEZGxyr2oVw0DsyKBmK7SWpOgqdKeSam1OZ2EkWvE0XTSUqPsY-ZqeY9Is4J6LuEooAwfuX8qoe9t7tbMUCZvTDUCPrm6fbpuLSfKbPTQJsdCPcQ_EOKel1pG1tj7Hiq82dvBfEfSYoPQwJidjqlA_0mfEvJeayxqqK29NUvP-ZDYPJ5qhXqjLS_3LmXbGczxX75KeDe2yUVUdhZyzBhgbi-Z_-5yTHAxGgTc7ElRarxa27iFxW_940tHWb952s0Hlo"/>
+</div>
+<div class="absolute -bottom-2 -right-2 bg-secondary text-on-secondary px-2 py-1 rounded-lg text-[10px] font-mono-label uppercase tracking-widest status-glow-green">
+                        Online
+                    </div>
+</div>
+<div class="flex-1 text-center md:text-left">
+<div class="flex flex-col md:flex-row md:items-center gap-stack-sm mb-stack-sm">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Alex_Stride_v3</h1>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-primary-container/10 border border-primary-container/20 text-primary-container font-mono-label text-[11px] uppercase w-fit mx-auto md:mx-0">
+                            Elite Rank
+                        </span>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg mb-stack-md">
+                        Full-stack architect specializing in complex algorithmic challenges. Currently optimizing dynamic programming approaches for large-scale data sets.
+                    </p>
+<div class="flex flex-wrap justify-center md:justify-start gap-2">
+<span class="px-3 py-1 bg-surface-container rounded-lg border border-outline-variant/30 font-mono-label text-[12px] text-on-surface-variant">#GraphMaster</span>
+<span class="px-3 py-1 bg-surface-container rounded-lg border border-outline-variant/30 font-mono-label text-[12px] text-on-surface-variant">#RecursionLover</span>
+<span class="px-3 py-1 bg-surface-container rounded-lg border border-outline-variant/30 font-mono-label text-[12px] text-on-surface-variant">#SystemDesign</span>
+<span class="px-3 py-1 bg-surface-container rounded-lg border border-outline-variant/30 font-mono-label text-[12px] text-on-surface-variant">#TypeScript</span>
+</div>
+</div>
+</div>
+<!-- Fast Stats Sidebar -->
+<div class="lg:col-span-4 grid grid-cols-2 gap-stack-md">
+<div class="glass-card p-stack-md flex flex-col justify-between">
+<span class="font-mono-label text-mono-label text-outline uppercase">Global Rank</span>
+<div class="flex flex-col">
+<span class="font-mono-stats text-mono-stats text-primary">#1,204</span>
+<span class="text-[10px] text-secondary-fixed-dim flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">trending_up</span> +12 today
+                        </span>
+</div>
+</div>
+<div class="glass-card p-stack-md flex flex-col justify-between">
+<span class="font-mono-label text-mono-label text-outline uppercase">Sprint Streak</span>
+<div class="flex flex-col">
+<span class="font-mono-stats text-mono-stats text-tertiary">42 Days</span>
+<span class="text-[10px] text-on-surface-variant">Personal Record: 58</span>
+</div>
+</div>
+<div class="glass-card p-stack-md flex flex-col justify-between">
+<span class="font-mono-label text-mono-label text-outline uppercase">Time Invested</span>
+<div class="flex flex-col">
+<span class="font-mono-stats text-mono-stats text-on-surface">1,420 Hr</span>
+<span class="text-[10px] text-on-surface-variant">avg 3h/day</span>
+</div>
+</div>
+<div class="glass-card p-stack-md flex flex-col justify-between">
+<span class="font-mono-label text-mono-label text-outline uppercase">Accuracy</span>
+<div class="flex flex-col">
+<span class="font-mono-stats text-mono-stats text-secondary">94.2%</span>
+<span class="text-[10px] text-on-surface-variant">Top 5% overall</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats & Heatmap Section -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-stack-lg stagger-in">
+<!-- Cumulative Coding Metrics -->
+<div class="lg:col-span-5 glass-card p-stack-lg flex flex-col">
+<div class="flex justify-between items-center mb-stack-md">
+<h2 class="font-headline-md text-headline-md">Solution Pulse</h2>
+<span class="material-symbols-outlined text-outline">analytics</span>
+</div>
+<div class="space-y-stack-md flex-1 flex flex-col justify-center">
+<div>
+<div class="flex justify-between font-mono-label text-[12px] mb-2 uppercase">
+<span class="text-secondary">Easy</span>
+<span class="text-on-surface">342 / 400</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[85%] transition-all duration-1000"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-mono-label text-[12px] mb-2 uppercase">
+<span class="text-tertiary">Medium</span>
+<span class="text-on-surface">184 / 600</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[30%] transition-all duration-1000"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-mono-label text-[12px] mb-2 uppercase">
+<span class="text-error">Hard</span>
+<span class="text-on-surface">28 / 250</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-error w-[11%] transition-all duration-1000"></div>
+</div>
+</div>
+</div>
+<div class="mt-stack-lg pt-stack-md border-t border-outline-variant/20 flex justify-around text-center">
+<div>
+<p class="font-mono-stats text-primary">554</p>
+<p class="font-mono-label text-[10px] text-outline uppercase">Total Solved</p>
+</div>
+<div>
+<p class="font-mono-stats text-on-surface">12k</p>
+<p class="font-mono-label text-[10px] text-outline uppercase">Lines Committed</p>
+</div>
+<div>
+<p class="font-mono-stats text-on-surface">89</p>
+<p class="font-mono-label text-[10px] text-outline uppercase">Rank Up Points</p>
+</div>
+</div>
+</div>
+<!-- Heatmap / Contributions -->
+<div class="lg:col-span-7 glass-card p-stack-lg overflow-hidden">
+<div class="flex justify-between items-center mb-stack-md">
+<h2 class="font-headline-md text-headline-md">Commit History</h2>
+<div class="flex gap-2 items-center">
+<span class="font-mono-label text-[10px] text-outline uppercase">Less</span>
+<div class="flex gap-1">
+<div class="w-3 h-3 rounded-sm bg-surface-container"></div>
+<div class="w-3 h-3 rounded-sm bg-primary/20"></div>
+<div class="w-3 h-3 rounded-sm bg-primary/40"></div>
+<div class="w-3 h-3 rounded-sm bg-primary/70"></div>
+<div class="w-3 h-3 rounded-sm bg-primary"></div>
+</div>
+<span class="font-mono-label text-[10px] text-outline uppercase">More</span>
+</div>
+</div>
+<div class="overflow-x-auto custom-scrollbar pb-2">
+<div class="grid grid-flow-col grid-rows-7 gap-1 min-w-[600px]">
+<!-- Render 52 weeks of dummy heatmap data -->
+<script>
+                            const container = document.currentScript.parentElement;
+                            for (let i = 0; i < 364; i++) {
+                                const level = Math.floor(Math.random() * 5);
+                                const cell = document.createElement('div');
+                                cell.className = `w-3 h-3 rounded-sm transition-all duration-300 hover:scale-125 cursor-pointer ${
+                                    level === 0 ? 'bg-surface-container' : 
+                                    level === 1 ? 'bg-primary/20' : 
+                                    level === 2 ? 'bg-primary/40' : 
+                                    level === 3 ? 'bg-primary/70' : 'bg-primary'
+                                }`;
+                                container.appendChild(cell);
+                            }
+                        </script>
+</div>
+</div>
+<div class="mt-4 flex gap-stack-lg items-center text-outline">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+<span class="font-mono-label text-[12px]">Last 12 Months: 1,284 Submissions</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-mono-label text-[12px]">Max Output: 24 Solved/Day</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Milestones & Achievements -->
+<section class="mb-stack-lg stagger-in">
+<h2 class="font-headline-md text-headline-md mb-stack-md flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary">military_tech</span>
+                Hall of Valor
+            </h2>
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-stack-md">
+<!-- Badge 1 -->
+<div class="glass-card p-stack-md text-center flex flex-col items-center group">
+<div class="w-16 h-16 mb-2 rounded-full bg-tertiary/10 border border-tertiary/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-tertiary text-3xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<h3 class="font-mono-label text-[12px] text-on-surface uppercase mb-1">Founder</h3>
+<p class="font-body-sm text-[10px] text-outline">v1.0 Contributor</p>
+</div>
+<!-- Badge 2 -->
+<div class="glass-card p-stack-md text-center flex flex-col items-center group">
+<div class="w-16 h-16 mb-2 rounded-full bg-secondary/10 border border-secondary/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-secondary text-3xl" style="font-variation-settings: 'FILL' 1;">timer</span>
+</div>
+<h3 class="font-mono-label text-[12px] text-on-surface uppercase mb-1">Speedster</h3>
+<p class="font-body-sm text-[10px] text-outline">&lt;10min Solutions</p>
+</div>
+<!-- Badge 3 -->
+<div class="glass-card p-stack-md text-center flex flex-col items-center group opacity-50 grayscale hover:grayscale-0 transition-all duration-300">
+<div class="w-16 h-16 mb-2 rounded-full bg-on-surface-variant/10 border border-outline-variant flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl">psychology</span>
+</div>
+<h3 class="font-mono-label text-[12px] text-on-surface uppercase mb-1">Deep Thinker</h3>
+<p class="font-body-sm text-[10px] text-outline">Solve 50 Hards</p>
+</div>
+<!-- Badge 4 -->
+<div class="glass-card p-stack-md text-center flex flex-col items-center group">
+<div class="w-16 h-16 mb-2 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">groups</span>
+</div>
+<h3 class="font-mono-label text-[12px] text-on-surface uppercase mb-1">Mentor</h3>
+<p class="font-body-sm text-[10px] text-outline">50+ Explanations</p>
+</div>
+<!-- Badge 5 -->
+<div class="glass-card p-stack-md text-center flex flex-col items-center group">
+<div class="w-16 h-16 mb-2 rounded-full bg-error/10 border border-error/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-error text-3xl" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<h3 class="font-mono-label text-[12px] text-on-surface uppercase mb-1">Persistence</h3>
+<p class="font-body-sm text-[10px] text-outline">100 Day Streak</p>
+</div>
+<!-- Badge 6 -->
+<div class="glass-card p-stack-md text-center flex flex-col items-center group">
+<div class="w-16 h-16 mb-2 rounded-full bg-surface-tint/10 border border-surface-tint/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-surface-tint text-3xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<h3 class="font-mono-label text-[12px] text-on-surface uppercase mb-1">Bug Hunter</h3>
+<p class="font-body-sm text-[10px] text-outline">Find 5 System Bugs</p>
+</div>
+</div>
+</section>
+<!-- Activity Timeline -->
+<section class="stagger-in">
+<h2 class="font-headline-md text-headline-md mb-stack-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">history</span>
+                Deployment Timeline
+            </h2>
+<div class="glass-card p-stack-lg relative">
+<!-- Vertical Line -->
+<div class="absolute left-[39px] top-stack-lg bottom-stack-lg w-px bg-outline-variant/30 hidden md:block"></div>
+<div class="space-y-stack-lg">
+<!-- Activity Item 1 -->
+<div class="flex gap-gutter items-start relative group">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center z-10 border border-outline-variant/50 group-hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<h4 class="font-headline-md text-[16px] text-on-surface">Solved: "Reverse Nodes in k-Group"</h4>
+<span class="font-mono-label text-[11px] text-outline uppercase">2 hours ago</span>
+</div>
+<div class="flex gap-2 mb-2">
+<span class="px-2 py-0.5 rounded bg-error/10 border border-error/20 text-error font-mono-label text-[10px]">Hard</span>
+<span class="px-2 py-0.5 rounded bg-surface-container border border-outline-variant/20 text-outline font-mono-label text-[10px]">Linked List</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Optimal solution achieved using an iterative constant-space approach. Beat 98.4% of submissions in memory usage.</p>
+</div>
+</div>
+<!-- Activity Item 2 -->
+<div class="flex gap-gutter items-start relative group">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center z-10 border border-outline-variant/50 group-hover:border-tertiary transition-colors">
+<span class="material-symbols-outlined text-[16px] text-tertiary">military_tech</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<h4 class="font-headline-md text-[16px] text-on-surface">Milestone Unlocked: "Graph Sensei"</h4>
+<span class="font-mono-label text-[11px] text-outline uppercase">Yesterday</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Completed 100 graph-based problems including Dijkstra, A*, and Tarjan's algorithms.</p>
+</div>
+</div>
+<!-- Activity Item 3 -->
+<div class="flex gap-gutter items-start relative group">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center z-10 border border-outline-variant/50 group-hover:border-secondary transition-colors">
+<span class="material-symbols-outlined text-[16px] text-secondary">forum</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<h4 class="font-headline-md text-[16px] text-on-surface">Published Guide: "Trie Optimization 101"</h4>
+<span class="font-mono-label text-[11px] text-outline uppercase">3 days ago</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Shared a comprehensive walkthrough on implementing efficient prefix trees for multi-word search engines.</p>
+</div>
+</div>
+<!-- Activity Item 4 -->
+<div class="flex gap-gutter items-start relative group">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center z-10 border border-outline-variant/50 group-hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">login</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<h4 class="font-headline-md text-[16px] text-on-surface">Sprint Started: "Dynamic Programming Week"</h4>
+<span class="font-mono-label text-[11px] text-outline uppercase">5 days ago</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Enrolled in the intensive DP masterclass. Goal: Master state transition matrices.</p>
+</div>
+</div>
+</div>
+<button class="mt-stack-lg w-full py-stack-sm border border-outline-variant/30 rounded-lg hover:bg-surface-variant/10 transition-colors font-mono-label text-[12px] text-outline uppercase tracking-widest">
+                    View Full Deployment History
+                </button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-stack-md border-t border-outline-variant/20 bg-background">
+<div class="flex flex-col md:flex-row justify-between items-center px-gutter max-w-container-max mx-auto gap-stack-md">
+<div class="flex items-center gap-stack-md">
+<span class="font-display-arcade text-display-arcade text-primary">SHEETSTRIDE v3.0.0-STABLE</span>
+</div>
+<div class="flex gap-gutter">
+<a class="text-outline hover:text-primary transition-colors duration-200 font-mono-label text-mono-label uppercase opacity-80 hover:opacity-100" href="#">System Status</a>
+<a class="text-outline hover:text-primary transition-colors duration-200 font-mono-label text-mono-label uppercase opacity-80 hover:opacity-100" href="#">API Docs</a>
+<a class="text-outline hover:text-primary transition-colors duration-200 font-mono-label text-mono-label uppercase opacity-80 hover:opacity-100" href="#">Changelog</a>
+<a class="text-outline hover:text-primary transition-colors duration-200 font-mono-label text-mono-label uppercase opacity-80 hover:opacity-100" href="#">Security</a>
+</div>
+<div class="flex items-center gap-stack-sm text-secondary font-mono-label text-[10px]">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                ALL SYSTEMS OPERATIONAL
+            </div>
+</div>
+</footer>
+<!-- Atmosphere/Easter Egg: Small floating "dots" effect using JS -->
+<canvas class="fixed inset-0 pointer-events-none -z-10" id="ambient-canvas"></canvas>
+<script>
+        const canvas = document.getElementById('ambient-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < 30; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 1.5 + 0.5,
+                    speedX: (Math.random() - 0.5) * 0.5,
+                    speedY: (Math.random() - 0.5) * 0.5,
+                    color: i % 5 === 0 ? '#b2d2ff' : '#2B2B2B'
+                });
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+                
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        animate();
+    </script>
+</body></html>

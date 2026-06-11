@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { CheckCircle2, Trophy, Zap, Waypoints, Loader2, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/app/shell";
-import { Card, CardHeader } from "@/components/ui/card";
 import { Heatmap } from "@/components/shared/heatmap";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
@@ -11,7 +11,34 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const statIcons = [CheckCircle2, Zap, Trophy, Waypoints];
+// requestAnimationFrame count-up hook for GPU-friendly 60fps animations
+function CountUp({ end, duration = 1.0, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    let cancelled = false;
+
+    const step = (timestamp: number) => {
+      if (cancelled) return;
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / (duration * 1000), 1);
+      setCount(Math.floor(progress * end));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        setCount(end);
+      }
+    };
+    window.requestAnimationFrame(step);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [end, duration]);
+
+  return <>{count}{suffix}</>;
+}
 
 const TOPIC_QUERY_MAP: { [key: string]: string } = {
   "ARRAY & HASHING": "Array",
@@ -35,7 +62,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [solvedList, setSolvedList] = useState<SolvedQuestion[]>([]);
   
-  // Total question counts from DB
+  // Total question counts from Supabase DB
   const [totalQuestions, setTotalQuestions] = useState(3647);
   const [totalEasy, setTotalEasy] = useState(1000);
   const [totalMedium, setTotalMedium] = useState(1800);
@@ -208,10 +235,17 @@ export default function DashboardPage() {
       // Fallback
       if (!quest) {
         const { data: generalQuestions } = await supabase
-          .from("questions")
+          .from("general_questions" as any) // fallback table or questions fallback
           .select("ID, Title, Difficulty, Link, Topics")
           .limit(100);
-        if (generalQuestions) {
+
+        if (!generalQuestions) {
+          const { data: altQuestions } = await supabase
+            .from("questions")
+            .select("ID, Title, Difficulty, Link, Topics")
+            .limit(100);
+          quest = altQuestions?.find(q => !solvedIdsSet.has(q.ID));
+        } else {
           quest = generalQuestions.find(q => !solvedIdsSet.has(q.ID));
         }
       }
@@ -283,7 +317,6 @@ export default function DashboardPage() {
       { name: "BINARY SEARCH", count: topicMap["BINARY SEARCH"] || 0 }
     ];
 
-    // Compute relative percentage based on solved items
     const maxCount = Math.max(...standardTopics.map(t => t.count)) || 1;
     return standardTopics.map(t => ({
       name: t.name,
@@ -295,297 +328,334 @@ export default function DashboardPage() {
 
   // Stats boxes mapping
   const stats = [
-    { label: "RESOLVED", value: `${solvedCount}`, subtext: "Questions Solved", tone: "primary" },
-    { label: "CURRENT", value: `${currentStreak} DAYS`, subtext: "Current Streak", tone: "secondary" },
-    { label: "ALL TIME", value: `${longestStreak} DAYS`, subtext: "Longest Streak", tone: "tertiary" },
-    { label: "COMPLETION", value: `${progressPercent}%`, subtext: "Global Index", tone: "primary" }
-  ];
-
-  const difficultyData = [
-    { label: "EASY", solved: `${easySolved}/${totalEasy}`, value: easyPercent, tone: "secondary" },
-    { label: "MEDIUM", solved: `${mediumSolved}/${totalMedium}`, value: mediumPercent, tone: "tertiary" },
-    { label: "HARD", solved: `${hardSolved}/${totalHard}`, value: hardPercent, tone: "danger" }
+    { label: "GLOBAL PROGRESS", value: progressPercent, subtext: "System completion", tone: "primary", suffix: "%" },
+    { label: "CURRENT STREAK", value: currentStreak, subtext: "Consecutive solves", tone: "secondary", suffix: " DAYS" },
+    { label: "LONGEST STREAK", value: longestStreak, subtext: "Personal record", tone: "tertiary", suffix: " DAYS" }
   ];
 
   // Slice last 4 solved questions for recent log
   const recentLogs = solvedList.slice(-4).reverse().map((q, idx) => {
     const tones: { [key: string]: string } = { easy: "secondary", medium: "tertiary", hard: "danger" };
-    const diffChar: { [key: string]: string } = { easy: "E", medium: "M", hard: "H" };
     const relativeTimes = ["2 HOURS AGO", "5 HOURS AGO", "YESTERDAY", "2 DAYS AGO"];
     
     return {
-      difficulty: diffChar[q.Difficulty.toLowerCase()] || "Q",
-      tone: tones[q.Difficulty.toLowerCase()] || "primary",
       title: q.Title,
+      difficulty: q.Difficulty.toUpperCase(),
       time: relativeTimes[idx] || "RECENTLY",
-      state: "success"
+      tone: tones[q.Difficulty.toLowerCase()] || "primary"
     };
   });
 
-  const level = `LEVEL ${Math.floor(solvedCount / 10) + 1} CODER`;
+  // const level = `LEVEL ${Math.floor(solvedCount / 10) + 1} CODER`;
 
   if (loading) {
     return (
-      <AppShell className="max-w-shell mx-auto">
+      <AppShell>
         <div className="flex h-[70vh] items-center justify-center">
           <div className="flex flex-col items-center gap-4 text-primary">
             <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="font-display text-label-caps tracking-[0.2em]">INITIALIZING_METRICS...</p>
+            <p className="font-mono-label text-mono-label tracking-[0.2em]">INITIALIZING_METRICS...</p>
           </div>
         </div>
       </AppShell>
     );
   }
 
+  // Animation layout variants
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const revealItem = {
+    hidden: { opacity: 0, y: 15 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } }
+  };
+
   return (
-    <AppShell className="max-w-shell mx-auto">
-      <section className="mb-gutter grid grid-cols-1 gap-gutter lg:grid-cols-12">
-        <Card className="flex flex-col justify-between gap-6 p-6 md:flex-row md:items-center lg:col-span-8 bg-[#191c1e] hover-glow-card border-outline">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 border border-primary px-2 py-1 text-label-caps uppercase text-primary">
-              <span className="h-2 w-2 rounded-full bg-secondary animate-dot-pulse" />
-              SYSTEM STATUS: ACTIVE
-            </div>
-            <h1 className="font-display text-display-hero leading-[1.4] text-text">
-              {level}
-            </h1>
-            <div className="flex items-end gap-4">
-              <span className="font-data text-data-lg text-primary">{solvedCount}/{totalQuestions}</span>
-              <span className="pb-2 text-body-lg text-muted">PROBLEMS_SOLVED</span>
-            </div>
+    <AppShell className="space-y-stack-lg max-w-container-max mx-auto px-gutter" gridBackground>
+      
+      {/* Hero section */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="lg:col-span-8 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+            <span className="material-symbols-outlined text-[120px]" style={{ fontVariationSettings: "'FILL' 1" }}>terminal</span>
           </div>
-          <div className="w-full md:max-w-[370px]">
-            <div className="mb-3 flex justify-between text-headline-sm text-muted">
-              <span>GLOBAL_PROGRESS</span>
-              <span className="text-primary">{progressPercent}%</span>
+
+          <header className="flex justify-between items-start mb-stack-lg">
+            <div>
+              <span className="font-mono-label text-mono-label text-primary uppercase mb-2 block">Mission Hub</span>
+              <h1 className="font-headline-lg text-headline-lg uppercase tracking-tight text-on-surface">
+                MISSION STATUS: <span className="text-secondary">ACTIVE</span>
+              </h1>
             </div>
-            <div className="relative h-5 overflow-hidden bg-border">
-              <div className="h-full bg-primary-strong" style={{ width: `${progressPercent}%` }} />
-              <div className="pointer-events-none absolute inset-0 flex justify-between">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-full w-px bg-background/50" />
-                ))}
+            <div className="text-right select-none hidden sm:block">
+              <span className="font-mono-label text-mono-label text-outline flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs">info</span> System v2.0.0
+              </span>
+            </div>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-stack-lg relative z-10">
+            <div className="space-y-stack-sm">
+              <p className="font-mono-label text-mono-label text-outline uppercase">Current Track</p>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                  <span className="material-symbols-outlined text-primary">dynamic_form</span>
+                </div>
+                <div>
+                  <h3 className="font-headline-md text-headline-md uppercase">Patterns Mastered</h3>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">{solvedCount} solved</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-stack-sm">
+              <p className="font-mono-label text-mono-label text-outline uppercase">Next Milestone</p>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-tertiary/10 rounded-lg border border-tertiary/20">
+                  <span className="material-symbols-outlined text-tertiary">military_tech</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-headline-md text-headline-md">Top 1% Global Rank</h3>
+                  <div className="w-full bg-surface-container-lowest h-1.5 mt-2 rounded-full overflow-hidden relative">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progressPercent}%` }}
+                      transition={{ duration: 1.2, ease: "easeOut" }}
+                      className="h-full bg-gradient-to-r from-primary to-secondary"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </Card>
+        </motion.div>
 
-        {/* DAILY MISSION CARD */}
-        <Card className={cn(
-          "flex flex-col justify-between p-6 lg:col-span-4 bg-[#191c1e] hover-glow-card border-outline",
-          dailyQuest && "animate-alert-glow border-primary-strong/40"
-        )}>
-          <div>
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-label-caps text-primary flex items-center gap-1.5 font-bold">
-                <span className="h-2 w-2 rounded-full bg-primary-strong animate-dot-pulse" />
-                DAILY_MISSION_MODULE
+        {/* Stats metrics block */}
+        <motion.div 
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          className="lg:col-span-4 grid grid-rows-3 gap-stack-md"
+        >
+          {stats.map((stat, i) => (
+            <motion.div 
+              key={stat.label}
+              variants={revealItem}
+              whileHover={{ y: -2, scale: 1.01, borderColor: "rgba(178,210,255,0.4)" }}
+              className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-md rounded-lg flex items-center justify-between group transition-all"
+            >
+              <div>
+                <p className="font-mono-label text-mono-label text-outline uppercase">{stat.label}</p>
+                <h2 className={cn(
+                  "font-mono-stats text-mono-stats",
+                  stat.tone === "secondary" ? "text-secondary" : stat.tone === "tertiary" ? "text-tertiary" : "text-on-surface"
+                )}>
+                  <CountUp end={stat.value} suffix={stat.suffix} />
+                </h2>
+              </div>
+              <span className={cn(
+                "material-symbols-outlined text-4xl opacity-50 transition-opacity group-hover:opacity-80",
+                stat.tone === "secondary" ? "text-secondary" : stat.tone === "tertiary" ? "text-tertiary" : "text-primary"
+              )}>
+                {i === 0 ? "data_exploration" : i === 1 ? "local_fire_department" : "workspace_premium"}
               </span>
-              <span className="text-[9px] text-muted font-bold">PRIORITY_HIGH</span>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* Contribution Heatmap Map Section */}
+      <motion.section 
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.4 }}
+        className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
+      >
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div>
+            <h2 className="font-headline-md text-headline-md text-on-surface">Contribution Map</h2>
+            <p className="font-body-sm text-body-sm text-on-surface-variant">Visualizing problem solving consistency across the cycles.</p>
+          </div>
+          <div className="flex items-center gap-2 font-mono-label text-mono-label text-outline">
+            <span>Less</span>
+            <div className="flex gap-1">
+              <div className="w-3 h-3 rounded-sm bg-surface-container-lowest"></div>
+              <div className="w-3 h-3 bg-primary/20 rounded-sm"></div>
+              <div className="w-3 h-3 bg-primary/40 rounded-sm"></div>
+              <div className="w-3 h-3 bg-primary/60 rounded-sm"></div>
+              <div className="w-3 h-3 bg-primary rounded-sm"></div>
+            </div>
+            <span>More</span>
+          </div>
+        </header>
+
+        {/* Heatmap renderer */}
+        <div className="overflow-x-auto custom-scrollbar pb-2">
+          <Heatmap mode="dashboard" />
+        </div>
+      </motion.section>
+
+      {/* Bottom widgets grid */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+        {/* Daily Mission */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.4 }}
+          className="lg:col-span-1 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg mission-pulse flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex justify-between items-start mb-6">
+              <span className="font-mono-label text-mono-label text-primary bg-primary/10 px-2 py-1 rounded">PRIORITY: OMEGA</span>
+              <span className="material-symbols-outlined text-primary">target</span>
             </div>
             
             {dailyQuest ? (
               <div className="space-y-4">
-                <div>
-                  <h3 className="font-body text-body-md font-bold text-text hover:text-primary transition-colors line-clamp-1">
-                    <a href={dailyQuest.Link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5">
-                      {dailyQuest.Title} <ExternalLink className="h-3 w-3 inline opacity-70" />
-                    </a>
-                  </h3>
-                  <div className="mt-2 flex gap-2">
-                    <Badge tone={
+                <h2 className="font-headline-md text-headline-md text-on-surface line-clamp-1">{dailyQuest.Title}</h2>
+                <div className="flex gap-2">
+                  <Badge 
+                    tone={
                       dailyQuest.Difficulty.toLowerCase() === "easy" ? "secondary" : 
                       dailyQuest.Difficulty.toLowerCase() === "medium" ? "tertiary" : "danger"
-                    }>
-                      {dailyQuest.Difficulty.toUpperCase()}
-                    </Badge>
-                    <span className="text-[10px] text-muted self-center uppercase truncate">{dailyQuest.Topics?.split(",")[0]}</span>
-                  </div>
+                    }
+                  >
+                    {dailyQuest.Difficulty.toUpperCase()}
+                  </Badge>
+                  <span className="text-[10px] text-muted self-center uppercase truncate">{dailyQuest.Topics?.split(",")[0]}</span>
                 </div>
-                
-                <p className="text-[11px] leading-relaxed text-muted font-body">
+                <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
                   Resolve this logic gate to expand your cognitive index. Selected topic: <strong className="text-secondary">{weakestTopic.toUpperCase()}</strong>.
                 </p>
+                
+                <div className="space-y-3 pt-4">
+                  <a 
+                    href={dailyQuest.Link} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="flex items-center justify-center gap-2 text-on-secondary text-body-sm bg-secondary p-3 rounded-lg font-bold cursor-pointer hover:brightness-110 active:scale-95 transition-all text-center uppercase"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">play_arrow</span>
+                    INITIATE PROBLEM SOLVING
+                  </a>
+                  <button 
+                    onClick={handleToggleDailyMission}
+                    className="w-full flex items-center justify-center gap-2 text-on-surface-variant text-body-sm border border-[#2B2B2B] p-3 rounded-lg hover:bg-surface-variant/10 cursor-pointer transition-all uppercase"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">check_circle</span>
+                    MARK AS RESOLVED
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="py-6 text-center text-muted text-body-md font-display">
+              <div className="py-12 text-center text-muted font-display-arcade text-xs">
                 ALL SYSTEMS CLEAR
               </div>
             )}
           </div>
+          <div className="mt-8 flex items-center justify-between border-t border-outline-variant/30 pt-4">
+            <span className="font-mono-label text-mono-label text-outline">REWARD: 500 XP</span>
+            <span className="material-symbols-outlined text-tertiary">workspace_premium</span>
+          </div>
+        </motion.div>
+
+        {/* Topic Proficiency */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+          className="lg:col-span-1 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:translate-y-[-4px] transition-all"
+        >
+          <h2 className="font-headline-md text-headline-md mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">schema</span>
+            TOPIC PROFICIENCY
+          </h2>
           
-          {dailyQuest && (
-            <button
-              onClick={handleToggleDailyMission}
-              className="mt-6 flex h-10 w-full items-center justify-center border border-primary-strong/40 bg-primary/5 text-label-caps text-primary-strong hover:bg-primary-strong hover:text-background transition-all font-bold"
-            >
-              MARK AS RESOLVED
-            </button>
-          )}
-        </Card>
-      </section>
-
-      <section className="mb-gutter grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => {
-          const Icon = statIcons[index];
-          const tone =
-            stat.tone === "secondary"
-              ? "group-hover:text-secondary"
-              : stat.tone === "tertiary"
-                ? "group-hover:text-tertiary"
-                : "group-hover:text-primary";
-          
-          const isCurrentStreak = stat.label === "CURRENT" && currentStreak > 0;
-
-          return (
-            <Card 
-              key={stat.label} 
-              className={cn(
-                "group p-6 hover-glow-card border-outline",
-                isCurrentStreak && "animate-fire-glow border-secondary/40 bg-secondary/[0.02]"
-              )}
-            >
-              <div className="mb-8 flex items-center justify-between">
-                <Icon className={cn("h-6 w-6 text-muted", tone, isCurrentStreak && "text-secondary animate-pulse")} strokeWidth={1.8} />
-                <span className="text-label-caps text-muted flex items-center gap-1 font-bold">
-                  {isCurrentStreak && <span className="inline-block h-2 w-2 rounded-full bg-secondary animate-ping" />}
-                  {stat.label}
-                </span>
-              </div>
-              <div className={cn("font-data text-data-lg leading-none text-text", isCurrentStreak && "text-secondary")}>{stat.value}</div>
-              <div className="mt-3 text-body-lg text-muted">{stat.subtext}</div>
-            </Card>
-          );
-        })}
-      </section>
-
-      <section className="mb-gutter grid grid-cols-1 gap-gutter xl:grid-cols-3">
-        <Card className="xl:col-span-2 p-6">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="font-display text-headline-sm">CONTRIBUTION MAP</h2>
-            <div className="flex items-center gap-2 text-label-caps text-muted">
-              <span>Less</span>
-              <div className="flex gap-1">
-                <div className="h-3 w-3 border border-background/20 bg-[#151515]" />
-                <div className="h-3 w-3 bg-primary/20" />
-                <div className="h-3 w-3 bg-primary/40" />
-                <div className="h-3 w-3 bg-primary/60" />
-                <div className="h-3 w-3 bg-primary" />
-              </div>
-              <span>More</span>
-            </div>
-          </div>
-          <div className="overflow-x-auto pb-4">
-            <Heatmap mode="dashboard" />
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="mb-8 font-display text-headline-sm">DIFFICULTY_LEVELS</h2>
-          <div className="space-y-8">
-            {difficultyData.map((item) => (
-              <div key={item.label}>
-                <div className="mb-2 flex justify-between font-display text-headline-sm">
-                  <span
-                    className={
-                      item.tone === "secondary"
-                        ? "text-secondary"
-                        : item.tone === "tertiary"
-                          ? "text-tertiary"
-                          : "text-danger"
-                    }
-                  >
-                    {item.label}
-                  </span>
-                  <span className="text-text">{item.solved}</span>
-                </div>
-                <div className="h-3 bg-border">
-                  <div
-                    className={
-                      item.tone === "secondary"
-                        ? "h-full bg-secondary"
-                        : item.tone === "tertiary"
-                          ? "h-full bg-tertiary"
-                          : "h-full bg-danger"
-                    }
-                    style={{ width: `${item.value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </section>
-
-      <section className="grid grid-cols-1 gap-gutter xl:grid-cols-3">
-        <Card className="overflow-hidden xl:col-span-2">
-          <CardHeader>TOPIC_MATRICES</CardHeader>
-          <div className="grid grid-cols-1 gap-x-12 gap-y-8 p-6 md:grid-cols-2">
+          <div className="space-y-6">
             {topicProgress.map((topic) => {
               const queryTopic = TOPIC_QUERY_MAP[topic.name] || "";
               const href = queryTopic ? `/questions?topic=${encodeURIComponent(queryTopic)}` : "/questions";
+              
               return (
-                <Link key={topic.name} href={href} className="group/topic block cursor-pointer">
-                  <div className="mb-2 flex justify-between text-label-caps text-muted group-hover/topic:text-primary transition-colors">
-                    <span>{topic.name}</span>
-                    <span>{topic.value}%</span>
-                  </div>
-                  <div className="h-1 bg-border overflow-hidden">
-                    <div className="h-full bg-primary-strong group-hover/topic:bg-primary transition-all duration-300" style={{ width: `${topic.value}%` }} />
+                <Link key={topic.name} href={href} className="block group/topic">
+                  <div className="space-y-2">
+                    <div className="flex justify-between font-mono-label text-mono-label">
+                      <span className="text-on-surface group-hover/topic:text-primary transition-colors">{topic.name}</span>
+                      <span className="text-secondary">{topic.value}%</span>
+                    </div>
+                    <div className="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${topic.value}%` }}
+                        transition={{ duration: 1.0, ease: "easeOut" }}
+                        className="h-full bg-primary"
+                      />
+                    </div>
                   </div>
                 </Link>
               );
             })}
           </div>
-        </Card>
+        </motion.div>
 
-        <Card className="overflow-hidden">
-          <CardHeader>RECENT_LOGS</CardHeader>
-          <div className="space-y-4 p-4">
+        {/* Recent logs activity list */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.4 }}
+          className="lg:col-span-1 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
+        >
+          <h2 className="font-headline-md text-headline-md mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">history</span>
+            RECENT LOGS
+          </h2>
+
+          <div className="space-y-4">
             {recentLogs.length === 0 ? (
-              <div className="p-8 text-center text-muted font-display text-body-md">
+              <div className="py-12 text-center text-muted font-display-arcade text-xs">
                 NO_SUBMISSIONS_LOGGED
               </div>
             ) : (
-              recentLogs.map((item, index) => (
-                <div
-                  key={`${item.title}-${index}`}
-                  className="flex items-center gap-3 p-3 hover:bg-[#282A2C]"
-                >
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center border text-[10px] ${
-                      item.tone === "secondary"
-                        ? "border-secondary text-secondary bg-secondary/10"
-                        : item.tone === "tertiary"
-                          ? "border-tertiary text-tertiary bg-tertiary/10"
-                          : "border-danger text-danger bg-danger/10"
-                    }`}
-                  >
-                    {item.difficulty}
+              recentLogs.map((log, idx) => (
+                <div key={idx} className="flex items-start gap-3 group">
+                  <div className={cn(
+                    "w-2 h-2 mt-2 rounded-full",
+                    log.tone === "secondary" ? "bg-secondary shadow-[0_0_8px_#4de082]" : 
+                    log.tone === "tertiary" ? "bg-tertiary shadow-[0_0_8px_#f9cb13]" : "bg-danger shadow-[0_0_8px_#ffb4ab]"
+                  )} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-body-sm text-body-sm text-on-surface truncate group-hover:text-primary transition-colors">{log.title}</p>
+                    <span className="font-mono-label text-[10px] text-outline uppercase">{log.time} | {log.difficulty}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-body-lg text-text truncate font-bold">{item.title}</p>
-                    <p className="text-[9px] text-muted">{item.time}</p>
-                  </div>
-                  <CheckCircle2
-                    className="h-4 w-4 text-secondary"
-                    strokeWidth={2}
-                  />
                 </div>
               ))
             )}
           </div>
-        </Card>
+        </motion.div>
       </section>
 
-      <footer className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-outline py-8 opacity-50 md:flex-row">
-        <p className="text-label-caps">TERMINAL SESSION ID: 88A4-5F22-PX11</p>
-        <div className="flex gap-6 text-label-caps">
-          <span>DOCS</span>
-          <span>SUPPORT</span>
-          <span>GITHUB</span>
+      {/* Footer metadata */}
+      <footer className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[#2B2B2B] py-8 opacity-50 md:flex-row">
+        <p className="font-mono-label text-xs">TERMINAL SESSION ID: SS-v2.0.0-{user?.id?.slice(0, 8).toUpperCase()}</p>
+        <div className="flex gap-6 font-mono-label text-xs">
+          <a href="#" className="hover:text-primary transition-colors">DOCS</a>
+          <a href="#" className="hover:text-primary transition-colors">SUPPORT</a>
+          <a href="#" className="hover:text-primary transition-colors">GITHUB</a>
         </div>
       </footer>
+
     </AppShell>
   );
 }

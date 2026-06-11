@@ -1,54 +1,166 @@
-import { Bell, Search } from "lucide-react";
+"use client";
 
-export function Topbar({
-  searchValue,
-  onSearchChange,
-  searchPlaceholder,
-  commandLabel = "CMD + K",
-  showSearchField = true,
-  userAvatarUrl
-}: {
-  searchValue?: string;
-  onSearchChange?: (val: string) => void;
-  searchPlaceholder?: string;
-  commandLabel?: string;
-  showSearchField?: boolean;
-  userAvatarUrl?: string;
-}) {
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, Menu, X, LogOut } from "lucide-react";
+import { useAuth } from "@/components/providers/auth-provider";
+import { cn } from "@/lib/utils";
+
+const NAV_ITEMS = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/questions", label: "Questions" },
+  { href: "/progress", label: "Progress" },
+  { href: "/profile", label: "Profile" },
+  { href: "/settings", label: "Settings" }
+] as const;
+
+export function Topbar() {
+  const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Sign out failed:", err);
+    }
+  };
+
+  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.display_name || user?.email?.split("@")[0] || "OPERATOR";
+  const avatarUrl = user?.user_metadata?.avatar_url;
+
   return (
-    <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-outline bg-surface px-6 lg:left-64">
-      <div className="flex flex-1 items-center gap-4">
-        {showSearchField ? (
-          <div className="relative w-full max-w-[520px]">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-            <input
-              className="h-10 w-full border border-outline bg-surface-dim pl-12 pr-4 text-body-lg text-text outline-none placeholder:text-muted focus:border-primary-strong"
-              placeholder={searchPlaceholder ?? commandLabel}
-              value={searchValue || ""}
-              onChange={(e) => onSearchChange?.(e.target.value)}
-            />
+    <header className={cn(
+      "fixed top-0 left-0 w-full z-50 transition-all duration-300 border-b border-outline-variant/30 bg-[#131313]/80 backdrop-blur-md",
+      scrolled ? "h-14 shadow-[0_4px_30px_rgba(0,0,0,0.5)]" : "h-16 shadow-none"
+    )}>
+      <nav className="flex justify-between items-center px-gutter max-w-container-max mx-auto h-full w-full">
+        {/* Brand Logo */}
+        <div className="flex items-center gap-8">
+          <Link href="/dashboard" className="active:scale-95 transition-all">
+            <span className="font-display-arcade text-display-arcade text-primary uppercase tracking-wider hover:text-primary-strong transition-colors">
+              SHEETSTRIDE
+            </span>
+          </Link>
+
+          {/* Desktop Nav Links */}
+          <div className="hidden md:flex items-center gap-6">
+            {NAV_ITEMS.map((item) => {
+              const active = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "relative py-1 px-3 text-body-lg font-body transition-colors duration-200 hover:text-text rounded-xl hover:bg-surface-variant/20",
+                    active ? "text-primary font-bold" : "text-on-surface-variant"
+                  )}
+                >
+                  <span className="relative z-10">{item.label}</span>
+                  {active && (
+                    <motion.div
+                      layoutId="activeNavIndicator"
+                      className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary shadow-[0_0_8px_rgba(178,210,255,0.8)]"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
           </div>
-        ) : (
-          <div className="hidden items-center gap-2 border border-outline bg-[#282A2C] px-3 py-2 md:flex">
-            <Search className="h-4 w-4 text-muted" />
-            <span className="text-label-caps text-muted">{commandLabel}</span>
-          </div>
+        </div>
+
+        {/* Right Nav Utilities */}
+        <div className="flex items-center gap-4">
+          {/* User profile bubble */}
+          <Link href="/profile" className="flex items-center gap-3 active:scale-95 transition-all">
+            {avatarUrl ? (
+              <img
+                alt={displayName}
+                className="h-8 w-8 rounded-full border border-outline-variant object-cover grayscale hover:grayscale-0 transition-all cursor-pointer"
+                src={avatarUrl}
+              />
+            ) : (
+              <div className="h-8 w-8 rounded-full border border-outline-variant bg-surface-container flex items-center justify-center font-display text-primary text-[10px] cursor-pointer">
+                S_
+              </div>
+            )}
+          </Link>
+
+          {/* Logout Button */}
+          <button 
+            onClick={handleLogout}
+            className="p-2 hover:bg-danger/10 text-on-surface-variant hover:text-danger rounded-xl transition-all cursor-pointer flex items-center justify-center border border-transparent hover:border-danger/20"
+            title="Logout Session"
+          >
+            <LogOut className="h-5 w-5" strokeWidth={1.8} />
+          </button>
+
+          {/* Mobile Menu Toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 md:hidden hover:bg-surface-variant/20 rounded-xl text-on-surface-variant hover:text-text transition-colors"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Nav Menu Dropdown */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="absolute top-full left-0 w-full bg-[#131313] border-b border-outline-variant/30 flex flex-col md:hidden z-40 overflow-hidden shadow-2xl"
+          >
+            <div className="flex flex-col py-4 px-6 space-y-3">
+              {NAV_ITEMS.map((item) => {
+                const active = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "py-2 px-4 rounded-lg font-body text-body-lg tracking-wide transition-all uppercase flex items-center justify-between",
+                      active ? "bg-primary/10 text-primary border-l-2 border-primary-strong pl-3" : "text-on-surface-variant hover:bg-surface-variant/10 hover:text-text"
+                    )}
+                  >
+                    <span>{item.label}</span>
+                    {active && <span className="text-[10px]">●</span>}
+                  </Link>
+                );
+              })}
+              
+              <button 
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="py-2 px-4 rounded-lg font-body text-body-lg text-danger hover:bg-danger/10 text-left uppercase flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout Session</span>
+              </button>
+            </div>
+          </motion.div>
         )}
-      </div>
-      <div className="flex items-center gap-5">
-        <Bell className="h-6 w-6 text-primary" strokeWidth={1.8} />
-        {userAvatarUrl ? (
-          <img
-            alt="User Profile"
-            className="h-9 w-9 border border-primary object-cover grayscale hover:grayscale-0 transition-all"
-            src={userAvatarUrl}
-          />
-        ) : (
-          <div className="h-9 w-9 border border-primary bg-surface-dim flex items-center justify-center font-display text-primary text-body-md font-bold">
-            S_
-          </div>
-        )}
-      </div>
+      </AnimatePresence>
     </header>
   );
 }

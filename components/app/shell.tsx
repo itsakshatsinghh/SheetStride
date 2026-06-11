@@ -1,32 +1,48 @@
-import { Sidebar } from "@/components/app/sidebar";
-import { MobileNav } from "@/components/app/mobile-nav";
+"use client";
+
+import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Topbar } from "@/components/app/topbar";
 import { cn } from "@/lib/utils";
 
 export function AppShell({
   children,
   className,
-  topbar,
   gridBackground = false
 }: {
   children: React.ReactNode;
   className?: string;
-  topbar?: React.ReactNode;
   gridBackground?: boolean;
 }) {
+  const pathname = usePathname();
+
   return (
-    <div className="min-h-screen bg-background text-text">
-      <Sidebar />
-      {topbar}
-      <main
-        className={cn(
-          "min-h-screen px-margin-mobile pb-24 pt-24 lg:ml-64 lg:px-margin-desktop lg:pb-12",
-          gridBackground && "terminal-grid",
-          className
-        )}
-      >
-        {children}
+    <div className="min-h-screen bg-background text-text selection:bg-primary-container selection:text-on-primary-container relative">
+      {/* Sticky Top Nav */}
+      <Topbar />
+
+      {/* Animated Scanline overlay */}
+      <div className="scanline" />
+
+      {/* Main Content Layout with Transition Animation */}
+      <main className="w-full">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={pathname}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+            className={cn(
+              "min-h-screen pt-24 pb-12 px-gutter max-w-container-max mx-auto space-y-stack-lg",
+              gridBackground && "terminal-grid",
+              className
+            )}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </main>
-      <MobileNav />
     </div>
   );
 }

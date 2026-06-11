@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SHEETSTRIDE | System Status</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&amp;family=Press+Start+2P&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed": "#231b00",
+                      "surface-tint": "#a0c9ff",
+                      "inverse-primary": "#1461a2",
+                      "error-container": "#93000a",
+                      "on-primary-fixed-variant": "#00497f",
+                      "tertiary": "#f9cb13",
+                      "on-primary-fixed": "#001c37",
+                      "on-secondary-container": "#003e1c",
+                      "primary-fixed": "#d2e4ff",
+                      "on-error-container": "#ffdad6",
+                      "primary-container": "#7cb8ff",
+                      "on-surface": "#e5e2e1",
+                      "primary-fixed-dim": "#a0c9ff",
+                      "outline": "#8b919b",
+                      "tertiary-fixed-dim": "#eec200",
+                      "surface-variant": "#353534",
+                      "surface-container-high": "#2a2a2a",
+                      "on-tertiary-container": "#564400",
+                      "surface-container-lowest": "#0e0e0e",
+                      "secondary-container": "#00b55d",
+                      "inverse-surface": "#e5e2e1",
+                      "primary": "#b2d2ff",
+                      "on-secondary": "#003919",
+                      "secondary-fixed-dim": "#4de082",
+                      "on-primary-container": "#00487e",
+                      "inverse-on-surface": "#313030",
+                      "on-tertiary-fixed-variant": "#574500",
+                      "on-primary": "#00325a",
+                      "surface-container": "#201f1f",
+                      "surface-container-low": "#1c1b1b",
+                      "on-tertiary": "#3c2f00",
+                      "on-error": "#690005",
+                      "on-secondary-fixed-variant": "#005227",
+                      "surface-container-highest": "#353534",
+                      "background": "#131313",
+                      "tertiary-container": "#d9b000",
+                      "on-secondary-fixed": "#00210c",
+                      "surface-bright": "#3a3939",
+                      "error": "#ffb4ab",
+                      "surface": "#131313",
+                      "outline-variant": "#414750",
+                      "secondary-fixed": "#6dfe9c",
+                      "secondary": "#4de082",
+                      "on-surface-variant": "#c1c7d2",
+                      "tertiary-fixed": "#ffe083",
+                      "on-background": "#e5e2e1",
+                      "surface-dim": "#131313"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-md": "1rem",
+                      "gutter": "1.5rem",
+                      "margin-mobile": "1rem",
+                      "container-max": "1280px",
+                      "stack-lg": "2rem",
+                      "stack-sm": "0.5rem"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": ["Space Grotesk"],
+                      "display-arcade": ["Press Start 2P"],
+                      "headline-md": ["Space Grotesk"],
+                      "headline-lg": ["Space Grotesk"],
+                      "body-sm": ["Space Grotesk"],
+                      "body-lg": ["Space Grotesk"],
+                      "mono-label": ["JetBrains Mono"],
+                      "mono-stats": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "display-arcade": ["14px", {"lineHeight": "24px", "letterSpacing": "0.1em", "fontWeight": "400"}],
+                      "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "mono-label": ["13px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                      "mono-stats": ["18px", {"lineHeight": "24px", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .glitch-text {
+            position: relative;
+            text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.75),
+                        -0.025em -0.05em 0 rgba(0, 255, 0, 0.75),
+                        0.025em 0.05em 0 rgba(0, 0, 255, 0.75);
+            animation: glitch 500ms infinite;
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 rgba(255,0,0,.75), -0.05em -0.025em 0 rgba(0,255,0,.75), -0.025em 0.05em 0 rgba(0,0,255,.75); }
+            14% { text-shadow: 0.05em 0 0 rgba(255,0,0,.75), -0.05em -0.025em 0 rgba(0,255,0,.75), -0.025em 0.05em 0 rgba(0,0,255,.75); }
+            15% { text-shadow: -0.05em -0.025em 0 rgba(255,0,0,.75), 0.025em 0.025em 0 rgba(0,255,0,.75), -0.05em -0.05em 0 rgba(0,0,255,.75); }
+            49% { text-shadow: -0.05em -0.025em 0 rgba(255,0,0,.75), 0.025em 0.025em 0 rgba(0,255,0,.75), -0.05em -0.05em 0 rgba(0,0,255,.75); }
+            50% { text-shadow: 0.025em 0.05em 0 rgba(255,0,0,.75), 0.05em 0 0 rgba(0,255,0,.75), 0 -0.05em 0 rgba(0,0,255,.75); }
+            99% { text-shadow: 0.025em 0.05em 0 rgba(255,0,0,.75), 0.05em 0 0 rgba(0,255,0,.75), 0 -0.05em 0 rgba(0,0,255,.75); }
+            100% { text-shadow: -0.025em 0 0 rgba(255,0,0,.75), -0.025em -0.025em 0 rgba(0,255,0,.75), -0.025em -0.05em 0 rgba(0,0,255,.75); }
+        }
+
+        .pacman {
+            width: 32px;
+            height: 32px;
+            background: #f9cb13;
+            border-radius: 50%;
+            position: relative;
+            animation: move-right 4s linear infinite;
+        }
+
+        .pacman-mouth {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #131313;
+            clip-path: polygon(100% 50%, 50% 50%, 100% 0, 100% 100%);
+            animation: chomp 0.3s ease-in-out infinite alternate;
+        }
+
+        @keyframes chomp {
+            0% { clip-path: polygon(100% 50%, 50% 50%, 100% 50%, 100% 50%); }
+            100% { clip-path: polygon(100% 50%, 50% 50%, 100% 0%, 100% 100%); }
+        }
+
+        @keyframes move-right {
+            0% { left: -50px; }
+            100% { left: calc(100% + 50px); }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #1c1c1c 25%, #2b2b2b 50%, #1c1c1c 75%);
+            background-size: 200% 100%;
+            animation: loading-shimmer 1.5s infinite;
+        }
+
+        @keyframes loading-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .terminal-grid {
+            background-image: radial-gradient(rgba(43, 43, 43, 0.4) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(178, 210, 255, 0.05);
+            position: fixed;
+            top: 0;
+            z-index: 100;
+            pointer-events: none;
+            animation: scan 4s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(-100vh); }
+            100% { transform: translateY(100vh); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col terminal-grid overflow-x-hidden">
+<div class="scanline"></div>
+<header class="bg-surface/80 dark:bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 fixed top-0 w-full h-16 z-50 transition-all duration-300 ease-in-out">
+<div class="flex justify-between items-center px-gutter max-w-container-max mx-auto h-full">
+<div class="font-display-arcade text-display-arcade text-primary uppercase">SHEETSTRIDE</div>
+<nav class="hidden md:flex items-center gap-stack-lg">
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-on-surface transition-colors duration-200" href="#">Dashboard</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-on-surface transition-colors duration-200" href="#">Questions</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-on-surface transition-colors duration-200" href="#">Progress</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-on-surface transition-colors duration-200" href="#">Profile</a>
+<a class="font-body-lg text-body-lg text-on-surface-variant hover:text-on-surface transition-colors duration-200" href="#">Settings</a>
+</nav>
+<div class="flex items-center gap-stack-md">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-variant/20 p-2 rounded-xl transition-all">notifications</button>
+<div class="w-8 h-8 rounded-full bg-primary-container border border-primary/20 flex items-center justify-center overflow-hidden">
+<img alt="User profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCD0w618H-We_5PMWHlYyrBHYeTOtlZTGMiXBqeoY8g1z4LC-HQREXX0hm2o5CbQviS3zdULOa9oNerkbe5Sair9uoNRd1UCrP9T9BcL1IQ-mivxEspSnm_BK2F8nAaXo5On0C9nkV626Gp6GXvcRP9zbf5jY5FSa1BRJ7AJRr5h2DtZXCdEAw4Sn7KybDnCA2J01HjxSIsnXD2Pb3WOCrU4AfGdfxZmZsc_u6DoWvEOjRFPnuO1IzuTdEw_QxTUZl1UDg0zd1ztZc"/>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow pt-16 flex flex-col items-center justify-center relative px-gutter">
+<section class="hidden w-full max-w-2xl flex flex-col items-center text-center space-y-stack-lg py-stack-lg" id="section-404">
+<div class="relative group">
+<h1 class="font-display-arcade text-[80px] md:text-[120px] text-primary glitch-text" data-text="404">404</h1>
+<div class="absolute -bottom-8 left-0 w-full overflow-hidden h-12">
+<div class="pacman">
+<div class="pacman-mouth"></div>
+</div>
+<div class="flex gap-4 absolute top-1/2 -translate-y-1/2 left-10">
+<div class="w-2 h-2 bg-on-surface rounded-full opacity-50"></div>
+<div class="w-2 h-2 bg-on-surface rounded-full opacity-50"></div>
+<div class="w-2 h-2 bg-on-surface rounded-full opacity-50"></div>
+<div class="w-2 h-2 bg-on-surface rounded-full opacity-50"></div>
+</div>
+</div>
+</div>
+<div class="space-y-stack-sm mt-8">
+<p class="font-mono-label text-mono-label text-secondary uppercase tracking-widest">STATUS_CODE: 404</p>
+<h2 class="font-headline-lg text-headline-lg uppercase text-on-surface">PAGE_NOT_FOUND</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-md mx-auto">
+                    The requested data segment is corrupted or has been relocated to an unreachable memory address.
+                </p>
+</div>
+<div class="flex flex-col sm:flex-row gap-stack-md pt-stack-md">
+<button class="px-8 py-3 bg-primary text-on-primary font-mono-label uppercase tracking-wider rounded-lg transition-all hover:shadow-[0_0_20px_rgba(178,210,255,0.4)] active:scale-95" onclick="showLoading()">Reboot System</button>
+<button class="px-8 py-3 border border-outline-variant text-on-surface-variant font-mono-label uppercase tracking-wider rounded-lg hover:bg-surface-variant/20 transition-all" onclick="showError()">Run Diagnostics</button>
+</div>
+</section>
+<section class="w-full max-w-container-max mx-auto py-stack-lg grid grid-cols-1 md:grid-cols-3 gap-gutter" id="section-loading">
+<div class="col-span-full flex flex-col items-center mb-stack-lg">
+<div class="relative w-full h-12 overflow-hidden border-y border-outline-variant/20 flex items-center mb-stack-sm">
+<div class="pacman" style="animation-duration: 2s">
+<div class="pacman-mouth"></div>
+</div>
+<div class="flex justify-between px-10 w-full opacity-20">
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+</div>
+</div>
+<p class="font-mono-label text-mono-label text-primary animate-pulse">DECRYPTING_DATA_STRUCTURES...</p>
+</div>
+<div class="h-64 bg-surface-container-low border border-outline-variant/30 rounded-xl p-stack-md flex flex-col gap-stack-md overflow-hidden">
+<div class="flex justify-between items-center">
+<div class="skeleton h-6 w-24 rounded"></div>
+<div class="skeleton h-6 w-6 rounded-full"></div>
+</div>
+<div class="skeleton h-8 w-3/4 rounded mt-2"></div>
+<div class="space-y-2 mt-4">
+<div class="skeleton h-4 w-full rounded"></div>
+<div class="skeleton h-4 w-full rounded"></div>
+<div class="skeleton h-4 w-2/3 rounded"></div>
+</div>
+<div class="mt-auto flex gap-2">
+<div class="skeleton h-6 w-16 rounded-full"></div>
+<div class="skeleton h-6 w-16 rounded-full"></div>
+</div>
+</div>
+<div class="h-64 bg-surface-container-low border border-outline-variant/30 rounded-xl p-stack-md flex flex-col gap-stack-md overflow-hidden">
+<div class="flex justify-between items-center">
+<div class="skeleton h-6 w-24 rounded"></div>
+<div class="skeleton h-6 w-6 rounded-full"></div>
+</div>
+<div class="skeleton h-8 w-1/2 rounded mt-2"></div>
+<div class="space-y-2 mt-4">
+<div class="skeleton h-4 w-full rounded"></div>
+<div class="skeleton h-4 w-full rounded"></div>
+<div class="skeleton h-4 w-1/2 rounded"></div>
+</div>
+<div class="mt-auto flex gap-2">
+<div class="skeleton h-6 w-16 rounded-full"></div>
+</div>
+</div>
+<div class="h-64 bg-surface-container-low border border-outline-variant/30 rounded-xl p-stack-md flex flex-col gap-stack-md overflow-hidden">
+<div class="flex justify-between items-center">
+<div class="skeleton h-6 w-24 rounded"></div>
+<div class="skeleton h-6 w-6 rounded-full"></div>
+</div>
+<div class="skeleton h-8 w-2/3 rounded mt-2"></div>
+<div class="space-y-2 mt-4">
+<div class="skeleton h-4 w-full rounded"></div>
+<div class="skeleton h-4 w-5/6 rounded"></div>
+<div class="skeleton h-4 w-full rounded"></div>
+</div>
+<div class="mt-auto flex gap-2">
+<div class="skeleton h-6 w-16 rounded-full"></div>
+<div class="skeleton h-6 w-16 rounded-full"></div>
+<div class="skeleton h-6 w-16 rounded-full"></div>
+</div>
+</div>
+</section>
+<section class="hidden fixed inset-0 z-[100] flex items-center justify-center p-gutter bg-background/80 backdrop-blur-sm" id="section-error">
+<div class="w-full max-w-xl bg-surface-container-high border border-error/30 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+<div class="bg-error-container/20 border-b border-error/30 px-gutter py-stack-md flex items-center justify-between">
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined">report</span>
+<span class="font-display-arcade text-display-arcade">SYSTEM_FAILURE</span>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface material-symbols-outlined" onclick="hideError()">close</button>
+</div>
+<div class="p-gutter space-y-stack-md">
+<div class="bg-surface-container-lowest p-stack-md border border-outline-variant/20 rounded font-mono-label text-mono-label overflow-x-auto text-on-surface-variant leading-relaxed">
+<p class="text-error mb-2">[CRITICAL_KERNEL_ERROR]</p>
+<p>&gt; Timestamp: <span class="text-on-surface">2024-05-24T14:22:09.442Z</span></p>
+<p>&gt; Module: <span class="text-on-surface">DATA_ORCHESTRATOR_V3</span></p>
+<p>&gt; Trace ID: <span class="text-on-surface">0x7FFD-STRIDE-0021</span></p>
+<p class="mt-4 text-error">&gt; SIGSEGV: Segmentation fault at address 0x00000000</p>
+<p>&gt; Connection timed out after 30000ms</p>
+<p class="mt-2 text-secondary">&gt; Auto-recovery protocol: <span class="animate-pulse">INITIALIZING...</span></p>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+                        Our servers encountered an unexpected exception while processing your DSA progress. Engineers have been notified.
+                    </p>
+<div class="flex justify-end gap-stack-md pt-stack-sm">
+<button class="px-6 py-2 border border-outline-variant text-on-surface-variant font-mono-label uppercase rounded hover:bg-surface-variant/20 transition-all" onclick="hideError()">Dismiss</button>
+<button class="px-6 py-2 bg-error text-on-error font-mono-label uppercase rounded hover:shadow-[0_0_15px_rgba(255,180,171,0.3)] transition-all" onclick="location.reload()">Force Reset</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="border-t border-outline-variant/20 bg-background dark:bg-background w-full py-stack-md">
+<div class="flex flex-col md:flex-row justify-between items-center px-gutter max-w-container-max mx-auto gap-stack-md">
+<div class="font-display-arcade text-display-arcade text-primary">SHEETSTRIDE v3.0.0-STABLE</div>
+<div class="flex gap-stack-lg">
+<a class="font-mono-label text-mono-label uppercase text-outline hover:text-primary transition-colors duration-200" href="#">System Status</a>
+<a class="font-mono-label text-mono-label uppercase text-outline hover:text-primary transition-colors duration-200" href="#">API Docs</a>
+<a class="font-mono-label text-mono-label uppercase text-outline hover:text-primary transition-colors duration-200" href="#">Changelog</a>
+<a class="font-mono-label text-mono-label uppercase text-outline hover:text-primary transition-colors duration-200" href="#">Security</a>
+</div>
+<div class="font-mono-label text-mono-label uppercase text-secondary">© 2024 TERMINAL_CMD</div>
+</div>
+</footer>
+<script>
+        function showLoading() {
+            document.getElementById('section-404').classList.add('hidden');
+            document.getElementById('section-loading').classList.remove('hidden');
+            document.getElementById('section-error').classList.add('hidden');
+            
+            // Simulate switch for demo
+            setTimeout(() => {
+                document.getElementById('section-loading').classList.add('hidden');
+                document.getElementById('section-404').classList.remove('hidden');
+            }, 3000);
+        }
+
+        function showError() {
+            document.getElementById('section-error').classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('section-error').classList.add('hidden');
+        }
+
+        // Cycle through states on mount for demo purposes
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('section-loading').classList.add('hidden');
+                document.getElementById('section-404').classList.remove('hidden');
+            }, 2500);
+        });
+    </script>
+</body></html>
