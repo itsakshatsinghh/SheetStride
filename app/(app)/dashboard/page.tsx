@@ -271,12 +271,20 @@ export default function DashboardPage() {
     try {
       const { error } = await supabase
         .from("user_progress")
-        .insert({ user_id: userId, question_id: qId });
+        .insert({ 
+          user_id: userId, 
+          question_id: qId,
+          completed: true,
+          "completed-at": new Date().toISOString()
+        });
       if (error) throw error;
 
       timestamps[qId] = new Date().toISOString();
       localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
       
+      // Dispatch solve event to update heatmap
+      window.dispatchEvent(new Event("question-solved"));
+
       // Reload dashboard data dynamically
       await loadDashboardData();
     } catch (err) {

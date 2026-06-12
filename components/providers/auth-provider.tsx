@@ -24,6 +24,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session && process.env.NODE_ENV === "development") {
+        const mockUser: User = {
+          id: "00000000-0000-0000-0000-000000000000",
+          email: "developer@sheetstride.com",
+          created_at: new Date().toISOString(),
+          app_metadata: {},
+          user_metadata: {},
+          aud: "authenticated",
+          role: "authenticated"
+        };
+        const mockSession: Session = {
+          access_token: "mock-token",
+          token_type: "bearer",
+          expires_in: 3600,
+          refresh_token: "mock-refresh",
+          user: mockUser
+        };
+        setSession(mockSession);
+        setUser(mockUser);
+        setLoading(false);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -31,6 +53,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session && process.env.NODE_ENV === "development") {
+        const mockUser: User = {
+          id: "00000000-0000-0000-0000-000000000000",
+          email: "developer@sheetstride.com",
+          created_at: new Date().toISOString(),
+          app_metadata: {},
+          user_metadata: {},
+          aud: "authenticated",
+          role: "authenticated"
+        };
+        const mockSession: Session = {
+          access_token: "mock-token",
+          token_type: "bearer",
+          expires_in: 3600,
+          refresh_token: "mock-refresh",
+          user: mockUser
+        };
+        setSession(mockSession);
+        setUser(mockUser);
+        setLoading(false);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);

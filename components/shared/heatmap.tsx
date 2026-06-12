@@ -27,7 +27,7 @@ export function Heatmap({
       try {
         const { data, error } = await supabase
           .from("user_progress")
-          .select("created_at")
+          .select("completed-at")
           .eq("user_id", userId);
 
         if (error) throw error;
@@ -36,23 +36,14 @@ export function Heatmap({
         
         // 1. Populate map from actual database solves
         data?.forEach((row: any) => {
-          if (row.created_at) {
-            const dateStr = row.created_at.slice(0, 10); // "YYYY-MM-DD"
+          const completedAt = row["completed-at"];
+          if (completedAt) {
+            const dateStr = completedAt.slice(0, 10); // "YYYY-MM-DD"
             solvedMap[dateStr] = (solvedMap[dateStr] || 0) + 1;
           }
         });
 
-        // 2. Sync fallback if completely brand new user (makes heatmap look premium and alive!)
-        if (Object.keys(solvedMap).length === 0) {
-          const today = new Date();
-          for (let i = 0; i < 25; i++) {
-            const seedDate = new Date();
-            const daysAgo = (i * 3 + 1) % 45;
-            seedDate.setDate(today.getDate() - daysAgo);
-            const dateStr = seedDate.toISOString().slice(0, 10);
-            solvedMap[dateStr] = (solvedMap[dateStr] || 0) + ((i % 3) + 1);
-          }
-        }
+
 
         setSolvesMap(solvedMap);
       } catch (err) {
@@ -61,6 +52,11 @@ export function Heatmap({
     }
 
     loadDatabaseSolves();
+
+    window.addEventListener("question-solved", loadDatabaseSolves);
+    return () => {
+      window.removeEventListener("question-solved", loadDatabaseSolves);
+    };
   }, [user]);
 
   const getIntensityValue = (dateStr: string) => {

@@ -4,3 +4,5 @@ node_modules/
 .env*.local
 check-supabase-db.js
 get-openapi.js
+scratch/
+refinequestionsv2/
