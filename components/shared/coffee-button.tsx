@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Script from "next/script";
 import { AlertTriangle, CheckCircle } from "lucide-react";
 
@@ -13,6 +13,20 @@ declare global {
 export function CoffeeButton() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [dismissed, setDismissed] = useState(true); // default to true to prevent flash before mount
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isDismissed = localStorage.getItem("coffee_button_dismissed") === "true";
+      setDismissed(isDismissed);
+    }
+  }, []);
+
+  const handleDismiss = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering checkout
+    setDismissed(true);
+    localStorage.setItem("coffee_button_dismissed", "true");
+  };
 
   const handleCoffeeCheckout = async () => {
     if (status === "loading" || status === "success") return;
@@ -100,6 +114,8 @@ export function CoffeeButton() {
     }
   };
 
+  if (dismissed) return null;
+
   return (
     <>
       <Script
@@ -112,7 +128,7 @@ export function CoffeeButton() {
           onClick={handleCoffeeCheckout}
           disabled={status === "loading"}
           className={`
-            group flex items-center gap-3 px-4 py-3 rounded-lg border text-[10px] tracking-widest uppercase transition-all duration-300 active:scale-95 select-none backdrop-blur-md
+            group relative flex items-center gap-3 pl-4 pr-10 py-3 rounded-lg border text-[10px] tracking-widest uppercase transition-all duration-300 active:scale-95 select-none backdrop-blur-md
             ${
               status === "idle"
                 ? "bg-[#131313]/90 hover:bg-[#1c1c1c]/95 border-white/10 hover:border-tertiary text-text hover:text-tertiary hover:shadow-[0_0_15px_rgba(249,203,19,0.25)]"
@@ -223,6 +239,29 @@ export function CoffeeButton() {
               </>
             )}
           </div>
+
+          {/* Close / Dismiss Button */}
+          <span
+            onClick={handleDismiss}
+            role="button"
+            aria-label="Dismiss Coffee Alert"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-outline/50 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-all duration-200 pointer-events-auto"
+            title="Dismiss support button"
+          >
+            <svg
+              width="8"
+              height="8"
+              viewBox="0 0 8 8"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="1" y1="1" x2="7" y2="7" />
+              <line x1="7" y1="1" x2="1" y2="7" />
+            </svg>
+          </span>
         </button>
       </div>
     </>
