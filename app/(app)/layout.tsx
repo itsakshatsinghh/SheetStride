@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Pacman } from "@/components/shared/pacman";
 
+import { CoffeeButton } from "@/components/shared/coffee-button";
+
 export default function AppRoutesLayout({
   children
 }: {
@@ -38,5 +40,10 @@ export default function AppRoutesLayout({
     return null; // Redirecting to /login
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      <CoffeeButton />
+    </>
+  );
 }

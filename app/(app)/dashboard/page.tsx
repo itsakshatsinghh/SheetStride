@@ -101,16 +101,25 @@ export default function DashboardPage() {
       if (countMedium !== null) setTotalMedium(countMedium);
       if (countHard !== null) setTotalHard(countHard);
 
-      // 2. Fetch user's solved questions using join
-      const { data: userProgress, error } = await supabase
+      // 2. Fetch user's solved questions IDs, then query their details
+      const { data: userProgress, error: progressError } = await supabase
         .from("user_progress")
-        .select("questions (ID, Title, Difficulty, Topics)")
+        .select("question_id")
         .eq("user_id", userId);
 
-      if (error) throw error;
+      if (progressError) throw progressError;
 
-      const solved: SolvedQuestion[] = 
-        userProgress?.map((row: any) => row.questions).filter(Boolean) || [];
+      const solvedIds = userProgress?.map((row: any) => row.question_id).filter(Boolean) || [];
+      let solved: SolvedQuestion[] = [];
+
+      if (solvedIds.length > 0) {
+        const { data: qData, error: qError } = await supabase
+          .from("questions")
+          .select("ID, Title, Difficulty, Topics")
+          .in("ID", solvedIds);
+        if (qError) throw qError;
+        solved = qData || [];
+      }
       
       setSolvedList(solved);
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ExternalLink, Check, Play, Info, Lightbulb, AlertCircle, X } from "lucide-react";
+import { Loader2, ExternalLink, Check, Play, Info, Lightbulb, AlertCircle, X, Brain, Tag, Clock, Database, BarChart3, Code2 } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,34 @@ function slugifyPattern(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+const highlightCpp = (code: string) => {
+  if (!code) return "";
+  
+  return code
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/(#include\s+&lt;.*&gt;)/g, '<span class="text-primary">$1</span>')
+    .replace(/\b(using namespace std)\b/g, '<span class="text-primary">using namespace</span> <span class="text-secondary">std</span>')
+    .replace(/\b(void|int|double|float|char|bool|struct|public|private|protected|static|const)\b/g, '<span class="text-secondary">$1</span>')
+    .replace(/\bclass\b(?!\s*=)/g, '<span class="text-secondary">class</span>')
+    .replace(/\b(while|for|if|else|return|break|continue|switch|case|new|delete)\b/g, '<span class="text-primary">$1</span>')
+    .replace(/\b(\d+)\b/g, '<span class="text-tertiary">$1</span>')
+    .replace(/(\/\/.*)/g, '<span class="text-outline/60">$1</span>')
+    .replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="text-outline/60">$1</span>');
+};
+
+const getKeywordsArray = (keywords: any): string[] => {
+  if (!keywords) return [];
+  if (Array.isArray(keywords)) return keywords;
+  try {
+    const parsed = JSON.parse(keywords);
+    if (Array.isArray(parsed)) return parsed;
+  } catch (e) {}
+  return [];
+};
+
+
 interface Question {
   ID: number;
   Title: string;
@@ -64,6 +92,18 @@ interface Question {
   Link: string;
   Topics: string;
   "Acceptance Rate (%)"?: number;
+}
+
+interface PatternMetadata {
+  id: string;
+  pattern_name: string;
+  topic_name: string | null;
+  core_idea: string | null;
+  recognition_keywords: string[] | null;
+  tc: string | null;
+  sc: string | null;
+  difficulty: string | null;
+  cpp_template: string | null;
 }
 
 export default function QuestionExplorerPage({ params }: { params: Promise<{ topic: string; pattern: string }> }) {
@@ -78,6 +118,10 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
   const [dbPatternName, setDbPatternName] = useState("");
   const [topicDisplayName, setTopicDisplayName] = useState("");
   
+  const [patternMetadata, setPatternMetadata] = useState<PatternMetadata | null>(null);
+  const [metaLoading, setMetaLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<string>("core_idea");
+  
   const [questions, setQuestions] = useState<Question[]>([]);
   const [solvedIds, setSolvedIds] = useState<Set<number>>(new Set());
   const [solvedTimestamps, setSolvedTimestamps] = useState<{ [qId: number]: string }>({});
@@ -86,9 +130,7 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
   const [toastMessage, setToastMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
 
-  // Simulation state
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [simulationStep, setSimulationStep] = useState(0);
+
 
   useEffect(() => {
     const dbName = TOPIC_SLUGS[topicSlug];
@@ -151,8 +193,10 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
           return slugifyPattern(row.Pattern_name || "") === patternSlug;
         });
 
+        let resolvedPatternName = "";
         if (matched && matched.length > 0) {
-          setDbPatternName(matched[0].Pattern_name);
+          resolvedPatternName = matched[0].Pattern_name;
+          setDbPatternName(resolvedPatternName);
           const mappedQList = matched
             .map((row: any) => row.questions)
             .filter(Boolean) as Question[];
@@ -164,10 +208,31 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
           setQuestions([]);
         }
 
+        // Fetch pattern metadata
+        if (resolvedPatternName) {
+          const { data: metaDataList, error: metaError } = await supabase
+            .from("pattern_metadata")
+            .select("*")
+            .eq("pattern_name", resolvedPatternName)
+            .limit(1);
+
+          if (metaError) {
+            console.warn("Failed to fetch pattern metadata:", metaError);
+            setPatternMetadata(null);
+          } else {
+            const metaData = metaDataList && metaDataList.length > 0 ? metaDataList[0] : null;
+            setPatternMetadata(metaData);
+          }
+        } else {
+          setPatternMetadata(null);
+        }
+
       } catch (err) {
         console.error("Failed to load question explorer data:", err);
+        setPatternMetadata(null);
       } finally {
         setLoading(false);
+        setMetaLoading(false);
       }
     }
 
@@ -241,22 +306,7 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
     }, 4000);
   };
 
-  const runSimulation = () => {
-    if (isSimulating) return;
-    setIsSimulating(true);
-    setSimulationStep(0);
-    
-    const interval = setInterval(() => {
-      setSimulationStep(prev => {
-        if (prev >= 4) {
-          clearInterval(interval);
-          setIsSimulating(false);
-          return 4;
-        }
-        return prev + 1;
-      });
-    }, 1200);
-  };
+
 
   if (loading) {
     return (
@@ -485,90 +535,301 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
         </div>
       </div>
 
-      {/* Pattern details / complexity analysis bento grid */}
-      <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-6 select-none">
-        {/* Efficiency Analysis */}
-        <div className="lg:col-span-2 bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-8 border-l-4 border-l-primary flex flex-col justify-between">
-          <div className="flex items-center gap-3 mb-6">
-            <Lightbulb className="w-5 h-5 text-primary" />
-            <h3 className="font-headline-md text-headline-md text-on-surface">Efficiency Analysis</h3>
+      {/* Pattern Details / Pro-tip Bento Section (Pattern Handbook) */}
+      {metaLoading ? (
+        <section className="mt-12 grid grid-cols-1 lg:grid-cols-10 gap-6 animate-pulse select-none">
+          {/* Left Panel Skeleton */}
+          <div className="lg:col-span-3 flex flex-col gap-4">
+            <div className="mb-4">
+              <div className="h-6 w-48 bg-[#2B2B2B] rounded mb-2" />
+              <div className="h-4 w-24 bg-[#2B2B2B] rounded" />
+            </div>
+            <div className="flex flex-col gap-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-14 bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl" />
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Right Panel Skeleton */}
+          <div className="lg:col-span-7 bg-[#1C1C1C]/80 border border-[#2B2B2B] rounded-xl p-8 h-[400px] flex flex-col justify-between">
             <div>
-              <p className="font-mono-label text-mono-label text-outline uppercase mb-2">Time Complexity</p>
-              <p className="font-body-lg text-body-lg text-on-surface mb-4">
-                O(N) for linear pass pointers, O(N log N) if elements require sorting.
-              </p>
-              <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
-                <div className="bg-secondary h-full" style={{ width: "85%" }} />
+              <div className="flex justify-between items-center mb-8">
+                <div className="h-6 w-32 bg-[#2B2B2B] rounded" />
+                <div className="h-4 w-20 bg-[#2B2B2B] rounded" />
+              </div>
+              <div className="space-y-4">
+                <div className="h-4 w-full bg-[#2B2B2B] rounded" />
+                <div className="h-4 w-5/6 bg-[#2B2B2B] rounded" />
+                <div className="h-4 w-4/6 bg-[#2B2B2B] rounded" />
               </div>
             </div>
-            <div>
-              <p className="font-mono-label text-mono-label text-outline uppercase mb-2">Space Complexity</p>
-              <p className="font-body-lg text-body-lg text-on-surface mb-4">
-                O(1) auxiliary space, keeping variable declarations static.
+            <div className="h-32 w-full bg-[#0E0E0E] border border-[#2B2B2B] rounded-lg" />
+          </div>
+        </section>
+      ) : !patternMetadata ? (
+        <section className="mt-12 bg-[#1C1C1C] border border-dashed border-error/30 rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-4">
+          <AlertCircle className="w-10 h-10 text-error animate-pulse" />
+          <h3 className="font-headline-md text-error">Pattern handbook data unavailable.</h3>
+          <p className="text-outline text-body-sm max-w-md">
+            The metadata for this algorithmic pattern could not be retrieved from the database.
+          </p>
+        </section>
+      ) : (() => {
+        const availableTabs = [];
+        if (patternMetadata.core_idea) {
+          availableTabs.push({ id: "core_idea", label: "Core Idea", icon: Brain });
+        }
+        const keywords = getKeywordsArray(patternMetadata.recognition_keywords);
+        if (keywords.length > 0) {
+          availableTabs.push({ id: "recognition_keywords", label: "Recognition Keywords", icon: Tag });
+        }
+        if (patternMetadata.tc) {
+          availableTabs.push({ id: "tc", label: "Time Complexity", icon: Clock });
+        }
+        if (patternMetadata.sc) {
+          availableTabs.push({ id: "sc", label: "Space Complexity", icon: Database });
+        }
+        if (patternMetadata.difficulty) {
+          availableTabs.push({ id: "difficulty", label: "Difficulty Level", icon: BarChart3 });
+        }
+        if (patternMetadata.cpp_template) {
+          availableTabs.push({ id: "cpp_template", label: "CPP Template", icon: Code2 });
+        }
+
+        if (availableTabs.length === 0) {
+          return (
+            <section className="mt-12 bg-[#1C1C1C] border border-dashed border-error/30 rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-4">
+              <AlertCircle className="w-10 h-10 text-error" />
+              <h3 className="font-headline-md text-error">Pattern handbook data unavailable.</h3>
+              <p className="text-outline text-body-sm max-w-md">
+                No handbook fields are populated for this pattern.
               </p>
-              <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
-                <div className="bg-primary h-full" style={{ width: "95%" }} />
+            </section>
+          );
+        }
+
+        const activeTabObj = availableTabs.find(t => t.id === activeTab) || availableTabs[0];
+        const currentTabId = activeTabObj.id;
+        const currentTabIndex = availableTabs.findIndex(t => t.id === currentTabId);
+
+        return (
+          <section className="mt-12 grid grid-cols-1 lg:grid-cols-10 gap-6">
+            {/* Left Panel: Navigation Rail (30%) */}
+            <div className="lg:col-span-3 flex flex-col gap-4">
+              <div className="mb-4 select-none">
+                <h2 className="font-display-arcade text-headline-md text-primary uppercase tracking-tight">PATTERN HANDBOOK</h2>
+                <p className="font-mono-label text-mono-label text-outline uppercase">Knowledge Base</p>
+              </div>
+              <div className="flex flex-col gap-3">
+                {availableTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = tab.id === currentTabId;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={cn(
+                        "p-4 rounded-xl text-left flex items-center gap-4 transition-all duration-300",
+                        isActive
+                          ? "bg-[#b2d2ff]/5 border border-[#2B2B2B] border-l-4 border-l-primary shadow-[0_0_15px_rgba(178,210,255,0.1)]"
+                          : "bg-[#1C1C1C] border border-[#2B2B2B] hover:bg-surface-container-high/40 group"
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          "w-5 h-5 transition-colors",
+                          isActive ? "text-primary" : "text-outline group-hover:text-primary"
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "font-body-lg text-body-lg transition-colors",
+                          isActive ? "text-primary font-bold" : "text-on-surface"
+                        )}
+                      >
+                        {tab.label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Algorithm Visualizer mockup */}
-        <div className="bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-8 relative overflow-hidden group">
-          <h3 className="font-headline-md text-headline-md text-on-surface mb-4">Algorithm Visualizer</h3>
-          
-          <div className="aspect-video bg-[#0E0E0E] rounded-lg border border-[#2B2B2B] flex flex-col items-center justify-center mb-4 relative overflow-hidden">
-            
-            {/* Visualizer animation nodes */}
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between items-center px-8">
-              {/* Left pointer node */}
-              <motion.div 
-                animate={isSimulating ? { x: [0, 40, 70, 70, 0] } : {}}
-                transition={{ duration: 4 }}
-                className={cn(
-                  "w-8 h-8 rounded-full border border-primary flex items-center justify-center font-mono-label text-[10px] text-primary font-bold shadow-lg",
-                  isSimulating && "bg-primary/10 shadow-primary/40"
-                )}
-              >
-                P1
-              </motion.div>
+            {/* Right Panel: Content Viewer (70%) */}
+            <div className="lg:col-span-7 bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-8 relative overflow-hidden select-none min-h-[380px] flex flex-col justify-between">
+              {currentTabId === "core_idea" && (
+                <div className="flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="font-headline-md text-headline-md text-on-surface">Core Idea</h3>
+                    <span className="font-mono-label text-mono-label text-outline uppercase">
+                      Module {currentTabIndex + 1 < 10 ? `0${currentTabIndex + 1}` : currentTabIndex + 1} / {availableTabs.length < 10 ? `0${availableTabs.length}` : availableTabs.length}
+                    </span>
+                  </div>
+                  <div className="prose prose-invert max-w-none flex-1">
+                    <p className="text-on-surface-variant font-body-lg leading-relaxed mb-6 whitespace-pre-line">
+                      {patternMetadata.core_idea}
+                    </p>
+                  </div>
+                </div>
+              )}
 
-              {/* Dotted bridge */}
-              <div className="flex-1 border-t border-dashed border-outline-variant/40 mx-4 h-0" />
+              {currentTabId === "recognition_keywords" && (
+                <div className="flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="font-headline-md text-headline-md text-on-surface">Recognition Keywords</h3>
+                    <span className="font-mono-label text-mono-label text-outline uppercase">
+                      Module {currentTabIndex + 1 < 10 ? `0${currentTabIndex + 1}` : currentTabIndex + 1} / {availableTabs.length < 10 ? `0${availableTabs.length}` : availableTabs.length}
+                    </span>
+                  </div>
+                  <div className="space-y-4 flex-1">
+                    <p className="text-on-surface-variant font-body-lg leading-relaxed">
+                      Identify when to apply this pattern in coding exercises by looking for these key terms:
+                    </p>
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      {keywords.map((keyword, i) => (
+                        <span
+                          key={i}
+                          className="px-4 py-2 bg-[#0E0E0E] border border-[#2B2B2B] hover:border-primary hover:text-primary text-on-surface font-body-sm rounded-xl transition-all duration-200 cursor-default select-none shadow-md"
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-              {/* Right pointer node */}
-              <motion.div 
-                animate={isSimulating ? { x: [0, -40, -70, -70, 0] } : {}}
-                transition={{ duration: 4 }}
-                className={cn(
-                  "w-8 h-8 rounded-full border border-secondary flex items-center justify-center font-mono-label text-[10px] text-secondary font-bold shadow-lg",
-                  isSimulating && "bg-secondary/10 shadow-secondary/40"
-                )}
-              >
-                P2
-              </motion.div>
+              {currentTabId === "tc" && (
+                <div className="flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="font-headline-md text-headline-md text-on-surface">Typical Time Complexity</h3>
+                    <span className="font-mono-label text-mono-label text-outline uppercase">
+                      Module {currentTabIndex + 1 < 10 ? `0${currentTabIndex + 1}` : currentTabIndex + 1} / {availableTabs.length < 10 ? `0${availableTabs.length}` : availableTabs.length}
+                    </span>
+                  </div>
+                  <div className="flex flex-col md:flex-row gap-8 items-center flex-1 justify-center">
+                    <div className="flex-1 space-y-4">
+                      <p className="text-on-surface-variant font-body-lg leading-relaxed">
+                        In algorithm analysis, <span className="text-primary font-mono-stats">{patternMetadata.tc}</span> describes the growth rate of runtime as a function of the input size.
+                      </p>
+                      <div className="flex gap-4 pt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+                          <span className="text-on-surface-variant font-mono-label text-mono-label">Efficiency: Optimized</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>
+                          <span className="text-on-surface-variant font-mono-label text-mono-label">Complexity Scale</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-full md:w-64 h-40 bg-[#0E0E0E] rounded-xl border border-[#2B2B2B] flex flex-col items-center justify-center relative overflow-hidden shrink-0">
+                      <div className="relative z-10 text-center">
+                        <span className="font-mono-stats text-4xl text-secondary tracking-tighter">{patternMetadata.tc}</span>
+                        <div className="mt-1 font-mono-label text-[11px] text-secondary uppercase tracking-widest opacity-80">Time Complexity</div>
+                      </div>
+                      <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2B2B2B]">
+                        <div className="h-full bg-secondary w-[75%]"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentTabId === "sc" && (
+                <div className="flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="font-headline-md text-headline-md text-on-surface">Typical Space Complexity</h3>
+                    <span className="font-mono-label text-mono-label text-outline uppercase">
+                      Module {currentTabIndex + 1 < 10 ? `0${currentTabIndex + 1}` : currentTabIndex + 1} / {availableTabs.length < 10 ? `0${availableTabs.length}` : availableTabs.length}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center p-8 bg-[#0E0E0E]/50 border border-[#2B2B2B] rounded-xl flex-1">
+                    <span className="font-mono-label text-mono-label text-on-surface-variant mb-4 tracking-widest uppercase opacity-60">Typical Space Complexity</span>
+                    <div className="font-mono-stats text-[72px] leading-none text-primary mb-4" style={{ textShadow: "0 0 20px rgba(124, 184, 255, 0.4)" }}>{patternMetadata.sc}</div>
+                    <div className="h-1.5 w-32 bg-primary/20 rounded-full overflow-hidden mb-6">
+                      <div className="h-full w-1/3 bg-primary"></div>
+                    </div>
+                    <span className="font-mono-label text-mono-label text-primary">Space Optimized</span>
+                  </div>
+                </div>
+              )}
+
+              {currentTabId === "difficulty" && (
+                <div className="flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="font-headline-md text-headline-md text-on-surface">Difficulty Level</h3>
+                    <span className="font-mono-label text-mono-label text-outline uppercase">
+                      Module {currentTabIndex + 1 < 10 ? `0${currentTabIndex + 1}` : currentTabIndex + 1} / {availableTabs.length < 10 ? `0${availableTabs.length}` : availableTabs.length}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-6 flex-1 justify-center">
+                    <p className="text-on-surface-variant max-w-2xl font-body-lg leading-relaxed">
+                      This pattern is primarily categorized as <strong className="text-on-surface">{patternMetadata.difficulty}</strong>, which signifies the conceptual complexity and state-tracking accuracy required.
+                    </p>
+                    <div className="flex items-center gap-3">
+                      {["Beginner", "Intermediate", "Advanced"].map((level) => {
+                        const isActive = patternMetadata.difficulty?.toLowerCase() === level.toLowerCase();
+                        return (
+                          <span
+                            key={level}
+                            className={cn(
+                              "font-mono-label text-mono-label px-3 py-1 rounded-full border transition-all duration-200 cursor-default select-none",
+                              isActive
+                                ? "bg-secondary/10 text-secondary border-secondary/20 shadow-lg shadow-secondary/10"
+                                : "bg-surface-variant/20 text-outline border-outline-variant/30 opacity-45"
+                            )}
+                          >
+                            {level}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentTabId === "cpp_template" && (
+                <div className="flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-headline-md text-headline-md text-on-surface">CPP Template</h3>
+                    <span className="font-mono-label text-mono-label text-outline uppercase">
+                      Module {currentTabIndex + 1 < 10 ? `0${currentTabIndex + 1}` : currentTabIndex + 1} / {availableTabs.length < 10 ? `0${availableTabs.length}` : availableTabs.length}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex-1">
+                    <div className="bg-[#0A101E] rounded-xl border border-outline-variant/30 overflow-hidden shadow-2xl">
+                      <div className="bg-[#111A2E] border-b border-outline-variant/30 px-4 h-10 flex items-center justify-between">
+                        <div className="flex h-full">
+                          <div className="flex items-center gap-2 bg-[#0A101E] border-x border-outline-variant/30 px-4 h-full text-secondary font-mono-label text-[13px]">
+                            <span className="material-symbols-outlined text-[16px]">description</span> main.cpp
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full bg-danger/40"></div>
+                          <div className="w-2.5 h-2.5 rounded-full bg-tertiary/40"></div>
+                          <div className="w-2.5 h-2.5 rounded-full bg-secondary/40"></div>
+                        </div>
+                      </div>
+                      <div className="p-6 font-mono-stats text-[14px] leading-relaxed flex gap-6 overflow-x-auto custom-scrollbar max-h-[400px]">
+                        <div className="text-outline/30 text-right select-none border-r border-outline-variant/20 pr-4 shrink-0 font-mono">
+                          {patternMetadata.cpp_template?.split("\n").map((_, idx) => (
+                            <div key={idx}>{idx + 1}</div>
+                          ))}
+                        </div>
+                        <pre 
+                          className="text-[#A9B7C6] whitespace-pre font-mono text-sm leading-relaxed overflow-x-auto select-text flex-1"
+                          dangerouslySetInnerHTML={{ __html: highlightCpp(patternMetadata.cpp_template || "") }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-
-            <span className="font-mono-label text-outline uppercase text-[10px] absolute bottom-3 select-none">
-              {isSimulating ? `RUNNING SIMULATION (STEP ${simulationStep}/4)...` : "CLICK RUN TO INITIALIZE"}
-            </span>
-          </div>
-
-          <button 
-            disabled={isSimulating}
-            onClick={runSimulation}
-            className={cn(
-              "w-full py-3 bg-primary text-background font-bold rounded-lg transition-all flex items-center justify-center gap-2",
-              isSimulating ? "opacity-40 cursor-not-allowed" : "hover:bg-primary-container active:scale-[0.98]"
-            )}
-          >
-            <Play className="w-4 h-4 fill-current" />
-            RUN SIMULATION
-          </button>
-        </div>
-      </div>
+          </section>
+        );
+      })()}
 
       {/* Floating Toast Notification */}
       <AnimatePresence>

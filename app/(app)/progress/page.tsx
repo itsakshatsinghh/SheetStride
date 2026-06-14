@@ -100,15 +100,25 @@ export default function ProgressPage() {
         if (countMedium !== null) setTotalMedium(countMedium);
         if (countHard !== null) setTotalHard(countHard);
 
-        // Fetch user progress
-        const { data: userProgress, error } = await supabase
+        // Fetch user progress IDs, then query details
+        const { data: userProgress, error: progressError } = await supabase
           .from("user_progress")
-          .select("questions (ID, Title, Difficulty, Topics)")
+          .select("question_id")
           .eq("user_id", userId);
 
-        if (error) throw error;
+        if (progressError) throw progressError;
         
-        const solved = userProgress?.map((row: any) => row.questions).filter(Boolean) || [];
+        const solvedIds = userProgress?.map((row: any) => row.question_id).filter(Boolean) || [];
+        let solved: SolvedQuestion[] = [];
+
+        if (solvedIds.length > 0) {
+          const { data: qData, error: qError } = await supabase
+            .from("questions")
+            .select("ID, Title, Difficulty, Topics")
+            .in("ID", solvedIds);
+          if (qError) throw qError;
+          solved = qData || [];
+        }
         setSolvedList(solved);
 
         // Read streak from timestamps
