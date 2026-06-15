@@ -114,27 +114,48 @@ export default function SettingsPage() {
     try {
       setIsUpdating(true);
       
-      const { data: progressData, error } = await supabase
+      const { data: userProgress, error } = await supabase
         .from("user_progress")
         .select(`
           question_id,
           completed,
-          completed-at,
-          questions (
-            Title,
-            Difficulty,
-            Topics
-          )
+          "completed-at"
         `)
         .eq("user_id", user.id);
 
       if (error) throw error;
 
+      let progressData: any[] = [];
+      if (userProgress && userProgress.length > 0) {
+        const questionIds = userProgress.map((row: any) => row.question_id);
+        const { data: questionsData, error: questionsError } = await supabase
+          .from("questions")
+          .select("ID, Title, Difficulty, Topics")
+          .in("ID", questionIds);
+
+        if (questionsError) throw questionsError;
+
+        const questionsMap = new Map(questionsData?.map((q: any) => [q.ID, q]));
+        progressData = userProgress.map((row: any) => {
+          const q = questionsMap.get(row.question_id);
+          return {
+            question_id: row.question_id,
+            completed: row.completed,
+            "completed-at": row["completed-at"],
+            questions: q ? {
+              Title: q.Title,
+              Difficulty: q.Difficulty,
+              Topics: q.Topics
+            } : null
+          };
+        });
+      }
+
       const backupData = {
         exportedAt: new Date().toISOString(),
         userId: user.id,
         userEmail: user.email,
-        progress: progressData || [],
+        progress: progressData,
         settings: {
           compactLayout
         }

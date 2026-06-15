@@ -89,37 +89,52 @@ export default function DashboardPage() {
         .select("*", { count: "exact", head: true });
       if (countAll !== null) setTotalQuestions(countAll);
 
-      // 2. Fetch user's solved questions with metadata using server-side join query
+      // 2. Fetch user's solved questions from user_progress
       const { data: userProgress, error: progressError } = await supabase
         .from("user_progress")
         .select(`
           question_id,
-          "completed-at",
-          questions (
-            ID,
-            Title,
-            Difficulty,
-            Topics
-          )
+          "completed-at"
         `)
         .eq("user_id", userId)
         .order("completed-at", { ascending: true });
 
       if (progressError) throw progressError;
 
-      const solved: SolvedQuestion[] = userProgress
-        ?.map((row: any) => row.questions)
-        .filter(Boolean) as SolvedQuestion[] || [];
+      let solved: SolvedQuestion[] = [];
+      if (userProgress && userProgress.length > 0) {
+        const questionIds = userProgress.map((row: any) => row.question_id);
+        const { data: questionsData, error: questionsError } = await supabase
+          .from("questions")
+          .select("ID, Title, Difficulty, Topics")
+          .in("ID", questionIds);
+
+        if (questionsError) throw questionsError;
+
+        const questionsMap = new Map(questionsData?.map((q: any) => [q.ID, q]));
+        solved = userProgress
+          .map((row: any) => {
+            const q = questionsMap.get(row.question_id);
+            if (!q) return null;
+            return {
+              ID: q.ID,
+              Title: q.Title,
+              Difficulty: q.Difficulty,
+              Topics: q.Topics
+            };
+          })
+          .filter(Boolean) as SolvedQuestion[];
+      }
       
       setSolvedList(solved);
 
-      // 3. Compute streaks using database RPC function
+      // 3. Compute streaks using database RPC function with correct parameter name target_user_id
       const { data: streakData, error: streakError } = await supabase
-        .rpc("calculate_user_streaks", { u_id: userId });
+        .rpc("calculate_user_streaks", { target_user_id: userId });
 
       if (!streakError && streakData && streakData.length > 0) {
-        setCurrentStreak(streakData[0].current_streak);
-        setLongestStreak(streakData[0].longest_streak);
+        setCurrentStreak(streakData[0].res_current_streak || 0);
+        setLongestStreak(streakData[0].res_max_streak || 0);
       } else {
         // Fallbacks in case RPC fails or returns empty
         setCurrentStreak(0);
