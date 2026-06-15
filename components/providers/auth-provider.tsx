@@ -16,6 +16,36 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getMockDevSession(): Session {
+  const mockUser: User = {
+    id: "00000000-0000-0000-0000-000000000000",
+    email: "developer@sheetstride.com",
+    created_at: new Date().toISOString(),
+    app_metadata: {},
+    user_metadata: {},
+    aud: "authenticated",
+    role: "authenticated"
+  };
+  return {
+    access_token: "mock-token",
+    token_type: "bearer",
+    expires_in: 3600,
+    refresh_token: "mock-refresh",
+    user: mockUser
+  };
+}
+
+function syncSessionCookies(session: Session | null) {
+  if (typeof document === "undefined") return;
+  if (session) {
+    document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; SameSite=Lax; Secure`;
+    document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=604800; SameSite=Lax; Secure`;
+  } else {
+    document.cookie = `sb-access-token=; path=/; max-age=0; SameSite=Lax; Secure`;
+    document.cookie = `sb-refresh-token=; path=/; max-age=0; SameSite=Lax; Secure`;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -25,58 +55,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session && process.env.NODE_ENV === "development") {
-        const mockUser: User = {
-          id: "00000000-0000-0000-0000-000000000000",
-          email: "developer@sheetstride.com",
-          created_at: new Date().toISOString(),
-          app_metadata: {},
-          user_metadata: {},
-          aud: "authenticated",
-          role: "authenticated"
-        };
-        const mockSession: Session = {
-          access_token: "mock-token",
-          token_type: "bearer",
-          expires_in: 3600,
-          refresh_token: "mock-refresh",
-          user: mockUser
-        };
+        const mockSession = getMockDevSession();
         setSession(mockSession);
-        setUser(mockUser);
+        setUser(mockSession.user);
+        syncSessionCookies(mockSession);
         setLoading(false);
         return;
       }
       setSession(session);
       setUser(session?.user ?? null);
+      syncSessionCookies(session);
       setLoading(false);
     });
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session && process.env.NODE_ENV === "development") {
-        const mockUser: User = {
-          id: "00000000-0000-0000-0000-000000000000",
-          email: "developer@sheetstride.com",
-          created_at: new Date().toISOString(),
-          app_metadata: {},
-          user_metadata: {},
-          aud: "authenticated",
-          role: "authenticated"
-        };
-        const mockSession: Session = {
-          access_token: "mock-token",
-          token_type: "bearer",
-          expires_in: 3600,
-          refresh_token: "mock-refresh",
-          user: mockUser
-        };
+        const mockSession = getMockDevSession();
         setSession(mockSession);
-        setUser(mockUser);
+        setUser(mockSession.user);
+        syncSessionCookies(mockSession);
         setLoading(false);
         return;
       }
       setSession(session);
       setUser(session?.user ?? null);
+      syncSessionCookies(session);
       setLoading(false);
     });
 

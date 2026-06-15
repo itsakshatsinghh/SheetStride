@@ -12,68 +12,93 @@ import { supabase } from "@/lib/supabase";
 export default function SettingsPage() {
   const { user, logout } = useAuth();
 
-  // Appearance states
-  const [darkTheme, setDarkTheme] = useState(true);
-  const [pixelMode, setPixelMode] = useState(false);
+  // Spacing / Spacing configuration state
   const [compactLayout, setCompactLayout] = useState(true);
 
-  // Notification states
-  const [dailyDigest, setDailyDigest] = useState(true);
-  const [weeklyProgress, setWeeklyProgress] = useState(false);
-  const [pushAlerts, setPushAlerts] = useState(true);
-
-  // Privacy states
-  const [publicProfile, setPublicProfile] = useState(false);
-  const [showProgress, setShowProgress] = useState(true);
-
-  // Account details
+  // Form profile states
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
+  const [preferredLanguage, setPreferredLanguage] = useState("C++");
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateMsg, setUpdateMsg] = useState("");
 
   // Load initial settings
   useEffect(() => {
-    if (user) {
-      setDisplayName(user.user_metadata?.full_name || user.user_metadata?.display_name || user.email?.split("@")[0] || "User");
-      setEmail(user.email || "");
+    if (!user) return;
+    const currentUser = user;
+
+    async function loadProfile() {
+      try {
+        setIsUpdating(true);
+        setEmail(currentUser.email || "");
+
+        // 1. Try querying profiles table first
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name, preferred_language")
+          .eq("id", currentUser.id)
+          .maybeSingle();
+
+        if (profile) {
+          setDisplayName(profile.display_name || "");
+          setPreferredLanguage(profile.preferred_language || "C++");
+        } else {
+          // Fallback to auth metadata
+          setDisplayName(currentUser.user_metadata?.full_name || currentUser.user_metadata?.display_name || currentUser.email?.split("@")[0] || "User");
+          setPreferredLanguage(currentUser.user_metadata?.preferred_language || "C++");
+        }
+      } catch (err) {
+        console.warn("Profiles query failed, falling back to auth metadata:", err);
+        setDisplayName(currentUser.user_metadata?.full_name || currentUser.user_metadata?.display_name || currentUser.email?.split("@")[0] || "User");
+        setPreferredLanguage(currentUser.user_metadata?.preferred_language || "C++");
+      } finally {
+        setIsUpdating(false);
+      }
     }
 
-    // Load appearance settings from localStorage if they exist
-    const localDark = localStorage.getItem("setting_dark_theme");
-    const localPixel = localStorage.getItem("setting_pixel_mode");
-    const localCompact = localStorage.getItem("setting_compact_layout");
+    loadProfile();
 
-    if (localDark !== null) setDarkTheme(localDark === "true");
-    if (localPixel !== null) setPixelMode(localPixel === "true");
+    // Load appearance settings from localStorage if they exist
+    const localCompact = localStorage.getItem("setting_compact_layout");
     if (localCompact !== null) setCompactLayout(localCompact === "true");
   }, [user]);
 
-  // Save settings helpers
-  const handleToggle = (key: string, value: boolean, setter: (v: boolean) => void) => {
-    setter(value);
-    localStorage.setItem(key, String(value));
-    
-    // Add custom class body adjustments for retro styles
-    if (key === "setting_pixel_mode") {
-      if (value) {
-        document.documentElement.classList.add("pixel-retro");
-      } else {
-        document.documentElement.classList.remove("pixel-retro");
-      }
-    }
+  // Save layout state helper
+  const handleToggleCompact = (val: boolean) => {
+    setCompactLayout(val);
+    localStorage.setItem("setting_compact_layout", String(val));
   };
 
+  // Profile update handler
   const handleUpdateIdentity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) return;
     try {
       setIsUpdating(true);
       setUpdateMsg("");
-      const { error } = await supabase.auth.updateUser({
-        data: { full_name: displayName.trim() }
+
+      // 1. Attempt profiles database upsert
+      try {
+        await supabase
+          .from("profiles")
+          .upsert({
+            id: user?.id,
+            display_name: displayName.trim(),
+            preferred_language: preferredLanguage
+          });
+      } catch (err) {
+        console.warn("profiles table update skipped (table may not exist):", err);
+      }
+
+      // 2. Direct Sync into Supabase raw user metadata
+      const { error: authErr } = await supabase.auth.updateUser({
+        data: {
+          full_name: displayName.trim(),
+          preferred_language: preferredLanguage
+        }
       });
-      if (error) throw error;
+
+      if (authErr) throw authErr;
       setUpdateMsg("IDENTITY_UPDATED_SUCCESSFULLY");
       setTimeout(() => setUpdateMsg(""), 3000);
     } catch (err: any) {
@@ -83,17 +108,35 @@ export default function SettingsPage() {
     }
   };
 
-  const handleExportJSON = () => {
+  // Client-side progress logs export builder
+  const handleExportJSON = async () => {
+    if (!user) return;
     try {
+      setIsUpdating(true);
+      
+      const { data: progressData, error } = await supabase
+        .from("user_progress")
+        .select(`
+          question_id,
+          completed,
+          completed-at,
+          questions (
+            Title,
+            Difficulty,
+            Topics
+          )
+        `)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
       const backupData = {
         exportedAt: new Date().toISOString(),
-        userId: user?.id,
-        userEmail: user?.email,
-        localStorageKeys: {
-          solvedQuestionsTimestamps: localStorage.getItem("solved_questions_timestamps"),
-          settingDarkTheme: localStorage.getItem("setting_dark_theme"),
-          settingPixelMode: localStorage.getItem("setting_pixel_mode"),
-          settingCompactLayout: localStorage.getItem("setting_compact_layout"),
+        userId: user.id,
+        userEmail: user.email,
+        progress: progressData || [],
+        settings: {
+          compactLayout
         }
       };
       
@@ -106,34 +149,38 @@ export default function SettingsPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (err) {
-      alert("Failed to export configuration node.");
+    } catch (err: any) {
+      alert(`Failed to export progress data: ${err.message || err}`);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
+  // Erase progress records handler
   const handlePurgeAllData = async () => {
-    const confirmPurge = confirm("WARNING: Proceeding will erase all locally cached parameters and delete your solved question progress records from the database. Are you sure?");
+    if (!user) return;
+    const confirmPurge = confirm("Are you sure you want to reset all your progress?");
     if (!confirmPurge) return;
     
     try {
       setIsUpdating(true);
       
-      // Delete user progress from database
-      if (user) {
-        const { error } = await supabase
-          .from("user_progress")
-          .delete()
-          .eq("user_id", user.id);
-        if (error) console.error("Error purging database logs:", error);
-      }
+      const { error } = await supabase
+        .from("user_progress")
+        .delete()
+        .eq("user_id", user.id);
       
-      // Clear localStorage
-      localStorage.clear();
+      if (error) throw error;
       
-      alert("System purged. Redirecting to initialization deck.");
-      await logout();
+      // Clear solved cache
+      localStorage.removeItem("solved_questions_timestamps");
+      
+      alert("Progress successfully reset.");
+      
+      // Dispatch solve event to update dashboard graphs
+      window.dispatchEvent(new Event("question-solved"));
     } catch (err: any) {
-      alert(`Purge interrupted: ${err.message}`);
+      alert(`Reset progress failed: ${err.message}`);
     } finally {
       setIsUpdating(false);
     }
@@ -194,74 +241,6 @@ export default function SettingsPage() {
         className="grid grid-cols-1 gap-gutter md:grid-cols-2"
       >
         
-        {/* APPEARANCE */}
-        <motion.div variants={revealItem} className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl hover:border-outline-variant/60 transition-colors shadow-md space-y-6 flex flex-col justify-between">
-          <div>
-            <div className="mb-6 border-b border-[#2B2B2B] pb-4">
-              <h2 className="font-headline-md text-headline-md text-primary uppercase flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-xl">palette</span> Appearance
-              </h2>
-            </div>
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-body-lg font-semibold text-on-surface">Dark Theme</p>
-                  <p className="text-[10px] text-outline uppercase tracking-wider">Optimize for low light environments</p>
-                </div>
-                <Switch checked={darkTheme} onCheckedChange={(val) => handleToggle("setting_dark_theme", val, setDarkTheme)} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-body-lg font-semibold text-on-surface">Pixel Mode</p>
-                  <p className="text-[10px] text-outline uppercase tracking-wider">Enable retro typography sharpness</p>
-                </div>
-                <Switch checked={pixelMode} onCheckedChange={(val) => handleToggle("setting_pixel_mode", val, setPixelMode)} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-body-lg font-semibold text-on-surface">Compact Layout</p>
-                  <p className="text-[10px] text-outline uppercase tracking-wider">Maximize screen information density</p>
-                </div>
-                <Switch checked={compactLayout} onCheckedChange={(val) => handleToggle("setting_compact_layout", val, setCompactLayout)} />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* NOTIFICATIONS */}
-        <motion.div variants={revealItem} className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl hover:border-outline-variant/60 transition-colors shadow-md space-y-6 flex flex-col justify-between">
-          <div>
-            <div className="mb-6 border-b border-[#2B2B2B] pb-4">
-              <h2 className="font-headline-md text-headline-md text-secondary uppercase flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary text-xl">notifications</span> Notifications
-              </h2>
-            </div>
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-body-lg font-semibold text-on-surface">Daily Digest</p>
-                  <p className="text-[10px] text-outline uppercase tracking-wider">Every morning solving updates at 08:00</p>
-                </div>
-                <Switch checked={dailyDigest} onCheckedChange={(val) => handleToggle("setting_daily_digest", val, setDailyDigest)} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-body-lg font-semibold text-on-surface">Weekly Progress</p>
-                  <p className="text-[10px] text-outline uppercase tracking-wider">Sunday performance evaluation report</p>
-                </div>
-                <Switch checked={weeklyProgress} onCheckedChange={(val) => handleToggle("setting_weekly_progress", val, setWeeklyProgress)} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-body-lg font-semibold text-on-surface">Push Alerts</p>
-                  <p className="text-[10px] text-outline uppercase tracking-wider">Real-time desktop system alerts</p>
-                </div>
-                <Switch checked={pushAlerts} onCheckedChange={(val) => handleToggle("setting_push_alerts", val, setPushAlerts)} />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
         {/* ACCOUNT IDENTITY */}
         <motion.form variants={revealItem} onSubmit={handleUpdateIdentity} className="h-full">
           <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl hover:border-outline-variant/60 transition-colors shadow-md space-y-6 h-full flex flex-col justify-between">
@@ -290,6 +269,19 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
+                <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">Preferred Language</label>
+                <select 
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all cursor-pointer font-mono" 
+                  value={preferredLanguage}
+                  onChange={(e) => setPreferredLanguage(e.target.value)}
+                >
+                  <option value="C++">C++</option>
+                  <option value="Java">Java</option>
+                  <option value="Python">Python</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
                 <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">Email Address</label>
                 <input 
                   type="email"
@@ -310,90 +302,58 @@ export default function SettingsPage() {
             </button>
           </div>
         </motion.form>
-
-        {/* PRIVACY & SECURITY */}
+        
+        {/* APPEARANCE */}
         <motion.div variants={revealItem} className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl hover:border-outline-variant/60 transition-colors shadow-md space-y-6 flex flex-col justify-between">
           <div>
             <div className="mb-6 border-b border-[#2B2B2B] pb-4">
-              <h2 className="font-headline-md text-headline-md text-error uppercase flex items-center gap-2">
-                <span className="material-symbols-outlined text-error text-xl">security</span> Privacy & Security
+              <h2 className="font-headline-md text-headline-md text-primary uppercase flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-xl">palette</span> Appearance
               </h2>
             </div>
-            <div className="space-y-5 mb-6">
+            <div className="space-y-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-body-lg font-semibold text-on-surface">Public Profile</p>
-                  <p className="text-[10px] text-outline uppercase tracking-wider">Make logs visible to the global leaderboard</p>
+                  <p className="text-body-lg font-semibold text-on-surface">Compact Layout</p>
+                  <p className="text-[10px] text-outline uppercase tracking-wider">Maximize screen information density</p>
                 </div>
-                <Switch checked={publicProfile} onCheckedChange={(val) => handleToggle("setting_public_profile", val, setPublicProfile)} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-body-lg font-semibold text-on-surface">Show Progress</p>
-                  <p className="text-[10px] text-outline uppercase tracking-wider">Broadcast achievements on dashboard feed</p>
-                </div>
-                <Switch checked={showProgress} onCheckedChange={(val) => handleToggle("setting_show_progress", val, setShowProgress)} />
+                <Switch checked={compactLayout} onCheckedChange={handleToggleCompact} />
               </div>
             </div>
           </div>
-          
-          <button 
-            type="button" 
-            className="w-full bg-surface-container border border-outline-variant/30 text-on-surface font-mono-label text-mono-label font-bold py-3 px-4 rounded-lg uppercase tracking-wider hover:bg-surface-variant/20 active:scale-95 transition-all"
-            onClick={() => alert("Multi-Factor authentication core protocols are currently locked. System is stable.")}
-          >
-            Manage Two-Factor Auth
-          </button>
         </motion.div>
 
-        {/* LOCAL DATA STORAGE */}
+        {/* DATA MANAGEMENT */}
         <motion.div variants={revealItem} className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl hover:border-outline-variant/60 transition-colors shadow-md space-y-6 md:col-span-2">
-          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center border-b border-[#2B2B2B] pb-6">
+          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <div className="flex h-14 w-14 items-center justify-center border border-outline-variant/30 bg-[#0E0E0E] rounded-lg">
                 <span className="material-symbols-outlined text-primary text-3xl">database</span>
               </div>
               <div>
-                <h2 className="font-headline-md text-headline-md text-on-surface uppercase font-bold">Local Data Storage</h2>
+                <h2 className="font-headline-md text-headline-md text-on-surface uppercase font-bold">Data Management</h2>
                 <p className="text-body-sm text-outline uppercase text-[10px] tracking-wider mt-1">
-                  Manage your offline cache database node aggregates.
+                  Manage your cloud and local progress nodes.
                 </p>
               </div>
             </div>
             <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-2">
               <button 
                 type="button" 
-                className="bg-surface-container border border-outline-variant/30 text-on-surface px-6 py-2.5 rounded-lg font-mono-label text-mono-label font-semibold uppercase hover:bg-surface-variant/20 transition-all active:scale-95 shadow-md" 
+                className="bg-surface-container border border-outline-variant/30 text-on-surface px-6 py-2.5 rounded-lg font-mono-label text-mono-label font-semibold uppercase hover:bg-surface-variant/20 transition-all active:scale-95 shadow-md cursor-pointer" 
                 onClick={handleExportJSON}
+                disabled={isUpdating}
               >
-                Export JSON
+                {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mx-auto text-primary" /> : "Export JSON"}
               </button>
               <button 
                 type="button" 
-                className="bg-[#93000A]/30 border border-error text-[#FFDAD6] px-6 py-2.5 rounded-lg font-mono-label text-mono-label font-bold uppercase hover:bg-[#93000A] transition-all active:scale-95 shadow-md" 
+                className="bg-[#93000A]/30 border border-error text-[#FFDAD6] px-6 py-2.5 rounded-lg font-mono-label text-mono-label font-bold uppercase hover:bg-[#93000A] transition-all active:scale-95 shadow-md cursor-pointer" 
                 onClick={handlePurgeAllData} 
                 disabled={isUpdating}
               >
-                {isUpdating ? <Loader2 className="h-4 w-4 animate-spin text-danger" /> : "Purge All Data"}
+                {isUpdating ? <Loader2 className="h-4 w-4 animate-spin text-danger mx-auto" /> : "Reset Progress"}
               </button>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-4 select-none">
-            <div className="border border-[#2B2B2B] bg-[#0E0E0E]/50 p-4 rounded">
-              <p className="text-[10px] text-outline uppercase font-mono-label tracking-wider">Local Cache State</p>
-              <p className="mt-2 font-mono-stats text-mono-stats text-primary text-base">CONNECTED</p>
-            </div>
-            <div className="border border-[#2B2B2B] bg-[#0E0E0E]/50 p-4 rounded">
-              <p className="text-[10px] text-outline uppercase font-mono-label tracking-wider">Storage Quota</p>
-              <p className="mt-2 font-mono-stats text-mono-stats text-secondary text-base">5.0 MB MAX</p>
-            </div>
-            <div className="border border-[#2B2B2B] bg-[#0E0E0E]/50 p-4 rounded">
-              <p className="text-[10px] text-outline uppercase font-mono-label tracking-wider">Last Sync Event</p>
-              <p className="mt-2 font-mono-stats text-mono-stats text-tertiary text-base">JUST NOW</p>
-            </div>
-            <div className="border border-[#2B2B2B] bg-[#0E0E0E]/50 p-4 rounded">
-              <p className="text-[10px] text-outline uppercase font-mono-label tracking-wider">Stability Index</p>
-              <p className="mt-2 font-mono-stats text-mono-stats text-on-surface text-base">99.8% STABLE</p>
             </div>
           </div>
         </motion.div>
@@ -403,7 +363,7 @@ export default function SettingsPage() {
       <footer className="border-t border-[#2B2B2B] py-stack-md mt-12 flex flex-col md:flex-row justify-between items-center gap-4 opacity-50 text-xs">
         <div className="flex items-center gap-4">
           <span className="font-display-arcade text-display-arcade text-primary">SHEETSTRIDE</span>
-          <span className="font-mono-label text-mono-label text-outline uppercase">v2.0.0-STABLE</span>
+          <span className="font-mono-label text-mono-label text-outline uppercase">v2.2.0-STABLE</span>
         </div>
         <div className="flex gap-6 font-mono-label text-outline">
           <a href="#" className="hover:text-primary transition-colors">System Status</a>

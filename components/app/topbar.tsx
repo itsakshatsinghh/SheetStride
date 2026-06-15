@@ -4,17 +4,9 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { cn } from "@/lib/utils";
-
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/questions", label: "Questions" },
-  { href: "/progress", label: "Progress" },
-  { href: "/profile", label: "Profile" },
-  { href: "/settings", label: "Settings" }
-] as const;
 
 export function Topbar() {
   const pathname = usePathname();
@@ -41,6 +33,22 @@ export function Topbar() {
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.display_name || user?.email?.split("@")[0] || "OPERATOR";
   const avatarUrl = user?.user_metadata?.avatar_url;
 
+  // Dynamically calculate navigation items based on authentication state
+  const navItems = user
+    ? [
+        { href: "/dashboard", label: "Dashboard" },
+        { href: "/questions", label: "Questions" },
+        { href: "/patterns", label: "Patterns" },
+        { href: "/topics", label: "Topics" },
+        { href: "/progress", label: "Progress" },
+        { href: "/profile", label: "Profile" },
+        { href: "/settings", label: "Settings" }
+      ]
+    : [
+        { href: "/patterns", label: "Patterns" },
+        { href: "/topics", label: "Topics" }
+      ];
+
   return (
     <header className={cn(
       "fixed top-0 left-0 w-full z-50 transition-all duration-300 border-b border-outline-variant/30 bg-[#131313]/80 backdrop-blur-md",
@@ -49,7 +57,7 @@ export function Topbar() {
       <nav className="flex justify-between items-center px-gutter max-w-container-max mx-auto h-full w-full">
         {/* Brand Logo */}
         <div className="flex items-center gap-8">
-          <Link href="/dashboard" className="active:scale-95 transition-all">
+          <Link href={user ? "/dashboard" : "/"} className="active:scale-95 transition-all">
             <span className="font-display-arcade text-display-arcade text-primary uppercase tracking-wider hover:text-primary-strong transition-colors">
               SHEETSTRIDE
             </span>
@@ -57,7 +65,7 @@ export function Topbar() {
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-6">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const active = pathname === item.href;
               return (
                 <Link
@@ -84,29 +92,41 @@ export function Topbar() {
 
         {/* Right Nav Utilities */}
         <div className="flex items-center gap-4">
-          {/* User profile bubble */}
-          <Link href="/profile" className="flex items-center gap-3 active:scale-95 transition-all">
-            {avatarUrl ? (
-              <img
-                alt={displayName}
-                className="h-8 w-8 rounded-full border border-outline-variant object-cover grayscale hover:grayscale-0 transition-all cursor-pointer"
-                src={avatarUrl}
-              />
-            ) : (
-              <div className="h-8 w-8 rounded-full border border-outline-variant bg-surface-container flex items-center justify-center font-display text-primary text-[10px] cursor-pointer">
-                S_
-              </div>
-            )}
-          </Link>
+          {user ? (
+            <>
+              {/* User profile bubble */}
+              <Link href="/profile" className="flex items-center gap-3 active:scale-95 transition-all">
+                {avatarUrl ? (
+                  <img
+                    alt={displayName}
+                    className="h-8 w-8 rounded-full border border-outline-variant object-cover grayscale hover:grayscale-0 transition-all cursor-pointer"
+                    src={avatarUrl}
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full border border-outline-variant bg-surface-container flex items-center justify-center font-display text-primary text-[10px] cursor-pointer">
+                    S_
+                  </div>
+                )}
+              </Link>
 
-          {/* Logout Button */}
-          <button 
-            onClick={handleLogout}
-            className="p-2 hover:bg-danger/10 text-on-surface-variant hover:text-danger rounded-xl transition-all cursor-pointer flex items-center justify-center border border-transparent hover:border-danger/20"
-            title="Logout Session"
-          >
-            <LogOut className="h-5 w-5" strokeWidth={1.8} />
-          </button>
+              {/* Logout Button */}
+              <button 
+                onClick={handleLogout}
+                className="p-2 hover:bg-danger/10 text-on-surface-variant hover:text-danger rounded-xl transition-all cursor-pointer flex items-center justify-center border border-transparent hover:border-danger/20"
+                title="Logout Session"
+              >
+                <LogOut className="h-5 w-5" strokeWidth={1.8} />
+              </button>
+            </>
+          ) : (
+            /* Login CTA for public visitors */
+            <Link
+              href="/login"
+              className="px-4 py-1.5 border border-primary text-primary hover:bg-primary/10 rounded-lg font-mono-label text-xs uppercase tracking-widest transition-all hover:shadow-[0_0_15px_rgba(178,210,255,0.2)]"
+            >
+              LOGIN_OPERATOR
+            </Link>
+          )}
 
           {/* Mobile Menu Toggle */}
           <button
@@ -129,7 +149,7 @@ export function Topbar() {
             className="absolute top-full left-0 w-full bg-[#131313] border-b border-outline-variant/30 flex flex-col md:hidden z-40 overflow-hidden shadow-2xl"
           >
             <div className="flex flex-col py-4 px-6 space-y-3">
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const active = pathname === item.href;
                 return (
                   <Link
@@ -147,16 +167,18 @@ export function Topbar() {
                 );
               })}
               
-              <button 
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleLogout();
-                }}
-                className="py-2 px-4 rounded-lg font-body text-body-lg text-danger hover:bg-danger/10 text-left uppercase flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Logout Session</span>
-              </button>
+              {user && (
+                <button 
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="py-2 px-4 rounded-lg font-body text-body-lg text-danger hover:bg-danger/10 text-left uppercase flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout Session</span>
+                </button>
+              )}
             </div>
           </motion.div>
         )}

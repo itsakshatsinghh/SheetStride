@@ -49,153 +49,74 @@ export default function ProfilePage() {
       try {
         setLoading(true);
 
-        // Fetch counts from Supabase
-        const [
-          { count: countAll },
-          { count: countEasy },
-          { count: countMedium },
-          { count: countHard }
-        ] = await Promise.all([
-          supabase.from("questions").select("*", { count: "exact", head: true }),
-          supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Easy"),
-          supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Medium"),
-          supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Hard")
-        ]);
-
+        // Fetch total counts from Supabase
+        const { count: countAll } = await supabase
+          .from("questions")
+          .select("*", { count: "exact", head: true });
         if (countAll !== null) setTotalQuestions(countAll);
-        if (countEasy !== null) setTotalEasy(countEasy);
-        if (countMedium !== null) setTotalMedium(countMedium);
-        if (countHard !== null) setTotalHard(countHard);
 
-        // Fetch user progress IDs, then query details
+        // Fetch user progress with metadata using server-side join query
         const { data: userProgress, error: progressError } = await supabase
           .from("user_progress")
-          .select("question_id")
-          .eq("user_id", userId);
+          .select(`
+            question_id,
+            "completed-at",
+            questions (
+              ID,
+              Title,
+              Difficulty,
+              Topics
+            )
+          `)
+          .eq("user_id", userId)
+          .order("completed-at", { ascending: false });
 
         if (progressError) throw progressError;
         
-        const solvedIds = userProgress?.map((row: any) => row.question_id).filter(Boolean) || [];
-        let solved: SolvedQuestion[] = [];
-
-        if (solvedIds.length > 0) {
-          const { data: qData, error: qError } = await supabase
-            .from("questions")
-            .select("ID, Title, Difficulty, Topics")
-            .in("ID", solvedIds);
-          if (qError) throw qError;
-          solved = qData || [];
-        }
+        const solved: SolvedQuestion[] = userProgress
+          ?.map((row: any) => row.questions)
+          .filter(Boolean) as SolvedQuestion[] || [];
         setSolvedList(solved);
 
-        // Read timestamps from localStorage
-        const storedTimestamps = localStorage.getItem("solved_questions_timestamps");
+        // Fetch user streaks using database RPC function
+        const { data: streakData, error: streakError } = await supabase
+          .rpc("calculate_user_streaks", { u_id: userId });
+
+        if (!streakError && streakData && streakData.length > 0) {
+          setCurrentStreak(streakData[0].current_streak);
+          setLongestStreak(streakData[0].longest_streak);
+        } else {
+          setCurrentStreak(0);
+          setLongestStreak(0);
+        }
+
+        // Build dynamic activity log table rows from database solves
         const logs: LogEntry[] = [];
         
-        if (storedTimestamps) {
-          try {
-            const timestamps = JSON.parse(storedTimestamps) as { [qId: string]: string };
-            
-            // Build logs dynamically from actual solved questions mapping
-            const entries = Object.entries(timestamps).map(([qId, isoStr]) => {
-              const matchedQuestion = solved.find(q => q.ID === parseInt(qId));
-              return {
-                qId: parseInt(qId),
-                title: matchedQuestion?.Title || `Question #${qId}`,
-                difficulty: matchedQuestion?.Difficulty || "Easy",
-                topics: matchedQuestion?.Topics || "Array",
-                date: new Date(isoStr),
-                isoStr
-              };
-            });
+        userProgress?.forEach((row: any, idx: number) => {
+          const q = row.questions;
+          if (!q) return;
 
-            // Sort newest first
-            entries.sort((a, b) => b.date.getTime() - a.date.getTime());
+          const completedAt = row["completed-at"] || new Date().toISOString();
+          const formattedTime = completedAt.replace("T", " ").slice(0, 19);
+          
+          let relativeText = "RECENTLY";
+          if (idx === 0) relativeText = "2 hours ago";
+          else if (idx === 1) relativeText = "5 hours ago";
+          else if (idx === 2) relativeText = "Yesterday";
+          else relativeText = `${idx} days ago`;
 
-            // Build dynamic activity log table rows
-            entries.forEach((entry, idx) => {
-              const formattedTime = entry.isoStr.replace("T", " ").slice(0, 19);
-              
-              // Compute relative text
-              let relativeText = "RECENTLY";
-              if (idx === 0) relativeText = "2 hours ago";
-              else if (idx === 1) relativeText = "5 hours ago";
-              else if (idx === 2) relativeText = "Yesterday";
-              else relativeText = `${idx} days ago`;
-
-              logs.push({
-                timestamp: formattedTime,
-                event: "SOLVE",
-                description: `Solved: "${entry.title}"`,
-                status: "SUCCESS",
-                tone: entry.difficulty.toLowerCase() === "easy" ? "secondary" : entry.difficulty.toLowerCase() === "medium" ? "tertiary" : "danger",
-                difficulty: entry.difficulty,
-                topics: entry.topics,
-                relativeTime: relativeText
-              });
-            });
-
-            // Compute streaks
-            const dates = entries
-              .map(e => e.isoStr.slice(0, 10))
-              .filter((value, index, self) => self.indexOf(value) === index); // unique dates
-
-            if (dates.length > 0) {
-              let current = 0;
-              let longest = 0;
-              let tempStreak = 0;
-              
-              const todayStr = new Date().toISOString().slice(0, 10);
-              const yesterday = new Date();
-              yesterday.setDate(yesterday.getDate() - 1);
-              const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
-              const hasSolvedRecently = dates[0] === todayStr || dates[0] === yesterdayStr;
-              
-              if (hasSolvedRecently) {
-                current = 1;
-                let lastDate = new Date(dates[0]);
-                for (let i = 1; i < dates.length; i++) {
-                  const checkDate = new Date(dates[i]);
-                  const diffTime = Math.abs(lastDate.getTime() - checkDate.getTime());
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                  if (diffDays === 1) {
-                    current++;
-                    lastDate = checkDate;
-                  } else {
-                    break;
-                  }
-                }
-              }
-
-              // Longest streak
-              tempStreak = 1;
-              longest = 1;
-              for (let i = 1; i < dates.length; i++) {
-                const date1 = new Date(dates[i - 1]);
-                const date2 = new Date(dates[i]);
-                const diffTime = Math.abs(date1.getTime() - date2.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                if (diffDays === 1) {
-                  tempStreak++;
-                } else if (diffDays > 1) {
-                  longest = Math.max(longest, tempStreak);
-                  tempStreak = 1;
-                }
-              }
-              longest = Math.max(longest, tempStreak);
-
-              setCurrentStreak(current);
-              setLongestStreak(longest);
-            }
-          } catch (e) {
-            console.error(e);
-          }
-        } else {
-          setCurrentStreak(5);
-          setLongestStreak(12);
-        }
+          logs.push({
+            timestamp: formattedTime,
+            event: "SOLVE",
+            description: `Solved: "${q.Title}"`,
+            status: "SUCCESS",
+            tone: q.Difficulty.toLowerCase() === "easy" ? "secondary" : q.Difficulty.toLowerCase() === "medium" ? "tertiary" : "danger",
+            difficulty: q.Difficulty,
+            topics: q.Topics,
+            relativeTime: relativeText
+          });
+        });
 
         // Add account milestone logs
         const joinDate = userCreatedAt ? new Date(userCreatedAt) : new Date();

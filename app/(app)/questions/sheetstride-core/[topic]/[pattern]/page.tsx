@@ -11,51 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { cn } from "@/lib/utils";
 
-const TOPIC_SLUGS: { [key: string]: string } = {
-  "two-pointer-patterns": "I. Two Pointer Patterns",
-  "sliding-window-patterns": "II. Sliding Window Patterns",
-  "tree-traversal-patterns": "III. Tree Traversal Patterns (DFS & BFS)",
-  "graph-traversal-patterns": "IV. Graph Traversal Patterns (DFS & BFS)",
-  "dynamic-programming-patterns": "V. Dynamic Programming (DP) Patterns",
-  "heap-patterns": "VI. Heap (Priority Queue) Patterns",
-  "backtracking-patterns": "VII. Backtracking Patterns",
-  "greedy-patterns": "VIII. Greedy Patterns",
-  "binary-search-patterns": "IX. Binary Search Patterns",
-  "stack-patterns": "X. Stack Patterns",
-  "bit-manipulation-patterns": "XI. Bit Manipulation Patterns",
-  "linked-list-patterns": "XII. Linked List Manipulation Patterns",
-  "array-matrix-patterns": "XIII. Array/Matrix Manipulation Patterns",
-  "string-manipulation-patterns": "XIV. String Manipulation Patterns",
-  "design-patterns": "XV. Design Patterns"
-};
-
-const TOPIC_DISPLAY_NAMES: { [key: string]: string } = {
-  "two-pointer-patterns": "Two Pointer Patterns",
-  "sliding-window-patterns": "Sliding Window Patterns",
-  "tree-traversal-patterns": "Tree Traversal Patterns",
-  "graph-traversal-patterns": "Graph Traversal Patterns",
-  "dynamic-programming-patterns": "Dynamic Programming Patterns",
-  "heap-patterns": "Heap Patterns",
-  "backtracking-patterns": "Backtracking Patterns",
-  "greedy-patterns": "Greedy Patterns",
-  "binary-search-patterns": "Binary Search Patterns",
-  "stack-patterns": "Stack Patterns",
-  "bit-manipulation-patterns": "Bit Manipulation Patterns",
-  "linked-list-patterns": "Linked List Patterns",
-  "array-matrix-patterns": "Array / Matrix Patterns",
-  "string-manipulation-patterns": "String Manipulation Patterns",
-  "design-patterns": "Design Patterns"
-};
-
-function slugifyPattern(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s&-]/g, "")
-    .replace(/&/g, "and")
-    .replace(/[\s_-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+import { TOPIC_SLUGS, TOPIC_DISPLAY_NAMES, slugifyPattern } from "@/lib/slugs";
 
 const highlightCpp = (code: string) => {
   if (!code) return "";
@@ -167,38 +123,32 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
         setSolvedIds(ids);
         setSolvedTimestamps(timesMap);
 
-        // 2. Fetch sheet questions mapped under this topic
+        // 2. Fetch sheet questions mapped under this topic from the optimized view
         const { data: qData, error: qError } = await supabase
-          .from("sheet_questions")
-          .select(`
-            Sheet_order,
-            question_id: "question ID",
-            question_name: "question name",
-            Pattern_name: "Pattern name",
-            questions (
-              ID,
-              Title,
-              Difficulty,
-              Link,
-              Topics,
-              "Acceptance Rate (%)"
-            )
-          `)
-          .eq("topic name", dbName);
+          .from("view_sheet_questions")
+          .select("*")
+          .eq("topic_name", dbName);
 
         if (qError) throw qError;
 
         // Group sheet questions by their pattern slug
         const matched = qData?.filter((row: any) => {
-          return slugifyPattern(row.Pattern_name || "") === patternSlug;
+          return slugifyPattern(row.pattern_name || "") === patternSlug;
         });
 
         let resolvedPatternName = "";
         if (matched && matched.length > 0) {
-          resolvedPatternName = matched[0].Pattern_name;
+          resolvedPatternName = matched[0].pattern_name;
           setDbPatternName(resolvedPatternName);
           const mappedQList = matched
-            .map((row: any) => row.questions)
+            .map((row: any) => ({
+              ID: row.question_id,
+              Title: row.title,
+              Difficulty: row.difficulty,
+              Link: row.link,
+              Topics: row.topics,
+              "Acceptance Rate (%)": row.acceptance_rate,
+            }))
             .filter(Boolean) as Question[];
           
           // Sort by ID ascending

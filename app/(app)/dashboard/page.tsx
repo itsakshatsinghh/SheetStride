@@ -84,114 +84,46 @@ export default function DashboardPage() {
       setLoading(true);
       
       // 1. Fetch total counts from database
-      const [
-        { count: countAll },
-        { count: countEasy },
-        { count: countMedium },
-        { count: countHard }
-      ] = await Promise.all([
-        supabase.from("questions").select("*", { count: "exact", head: true }),
-        supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Easy"),
-        supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Medium"),
-        supabase.from("questions").select("*", { count: "exact", head: true }).eq("Difficulty", "Hard")
-      ]);
-
+      const { count: countAll } = await supabase
+        .from("questions")
+        .select("*", { count: "exact", head: true });
       if (countAll !== null) setTotalQuestions(countAll);
-      if (countEasy !== null) setTotalEasy(countEasy);
-      if (countMedium !== null) setTotalMedium(countMedium);
-      if (countHard !== null) setTotalHard(countHard);
 
-      // 2. Fetch user's solved questions IDs, then query their details
+      // 2. Fetch user's solved questions with metadata using server-side join query
       const { data: userProgress, error: progressError } = await supabase
         .from("user_progress")
-        .select("question_id")
-        .eq("user_id", userId);
+        .select(`
+          question_id,
+          "completed-at",
+          questions (
+            ID,
+            Title,
+            Difficulty,
+            Topics
+          )
+        `)
+        .eq("user_id", userId)
+        .order("completed-at", { ascending: true });
 
       if (progressError) throw progressError;
 
-      const solvedIds = userProgress?.map((row: any) => row.question_id).filter(Boolean) || [];
-      let solved: SolvedQuestion[] = [];
-
-      if (solvedIds.length > 0) {
-        const { data: qData, error: qError } = await supabase
-          .from("questions")
-          .select("ID, Title, Difficulty, Topics")
-          .in("ID", solvedIds);
-        if (qError) throw qError;
-        solved = qData || [];
-      }
+      const solved: SolvedQuestion[] = userProgress
+        ?.map((row: any) => row.questions)
+        .filter(Boolean) as SolvedQuestion[] || [];
       
       setSolvedList(solved);
 
-      // 3. Compute streaks from local storage timestamps mapping
-      const storedTimestamps = localStorage.getItem("solved_questions_timestamps");
-      if (storedTimestamps) {
-        try {
-          const timestamps = JSON.parse(storedTimestamps) as { [qId: string]: string };
-          const dates = Object.values(timestamps)
-            .map(isoStr => isoStr.slice(0, 10))
-            .filter((value, index, self) => self.indexOf(value) === index) // unique dates
-            .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // descending order (newest first)
+      // 3. Compute streaks using database RPC function
+      const { data: streakData, error: streakError } = await supabase
+        .rpc("calculate_user_streaks", { u_id: userId });
 
-          if (dates.length > 0) {
-            let current = 0;
-            let longest = 0;
-            let tempStreak = 0;
-            
-            const todayStr = new Date().toISOString().slice(0, 10);
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
-            // Check if user solved today or yesterday to continue current streak
-            const hasSolvedRecently = dates[0] === todayStr || dates[0] === yesterdayStr;
-            
-            if (hasSolvedRecently) {
-              current = 1;
-              let lastDate = new Date(dates[0]);
-              for (let i = 1; i < dates.length; i++) {
-                const checkDate = new Date(dates[i]);
-                const diffTime = Math.abs(lastDate.getTime() - checkDate.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays === 1) {
-                  current++;
-                  lastDate = checkDate;
-                } else {
-                  break;
-                }
-              }
-            }
-
-            // Compute longest streak
-            if (dates.length > 0) {
-              tempStreak = 1;
-              longest = 1;
-              for (let i = 1; i < dates.length; i++) {
-                const date1 = new Date(dates[i - 1]);
-                const date2 = new Date(dates[i]);
-                const diffTime = Math.abs(date1.getTime() - date2.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                if (diffDays === 1) {
-                  tempStreak++;
-                } else if (diffDays > 1) {
-                  longest = Math.max(longest, tempStreak);
-                  tempStreak = 1;
-                }
-              }
-              longest = Math.max(longest, tempStreak);
-            }
-
-            setCurrentStreak(current);
-            setLongestStreak(longest);
-          }
-        } catch (e) {
-          console.error("Failed to parse solved questions timestamps for streak:", e);
-        }
+      if (!streakError && streakData && streakData.length > 0) {
+        setCurrentStreak(streakData[0].current_streak);
+        setLongestStreak(streakData[0].longest_streak);
       } else {
-        // Default fallbacks if no timestamps in local storage yet (use mock seeds)
-        setCurrentStreak(5);
-        setLongestStreak(12);
+        // Fallbacks in case RPC fails or returns empty
+        setCurrentStreak(0);
+        setLongestStreak(0);
       }
 
       // 4. Calculate weakest topic and fetch Daily Mission question

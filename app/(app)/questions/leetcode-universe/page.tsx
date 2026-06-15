@@ -117,9 +117,30 @@ function QuestionsList() {
   // Fetch questions matching filters and page offset
   useEffect(() => {
     async function fetchQuestions() {
+      if (!user) return;
+      const userId = user.id;
+
       try {
         setIsLoading(true);
-        let query = supabase.from("questions").select("*", { count: "exact" });
+        
+        let query;
+        if (selectedStatus === "Solved") {
+          query = supabase
+            .from("questions")
+            .select("*, user_progress!inner(completed)", { count: "exact" })
+            .eq("user_progress.user_id", userId);
+        } else if (selectedStatus === "Unsolved" || selectedStatus === "Todo") {
+          query = supabase
+            .from("questions")
+            .select("*, user_progress(completed)", { count: "exact" })
+            .eq("user_progress.user_id", userId)
+            .is("user_progress", null);
+        } else {
+          query = supabase
+            .from("questions")
+            .select("*, user_progress(completed)", { count: "exact" })
+            .eq("user_progress.user_id", userId);
+        }
 
         // Apply difficulty filter
         if (selectedDifficulty !== "All" && selectedDifficulty !== "Difficulty") {
@@ -131,7 +152,7 @@ function QuestionsList() {
           query = query.ilike("Topics", `%${selectedTopic}%`);
         }
 
-        // Apply search search
+        // Apply search filter
         if (search.trim()) {
           query = query.ilike("Title", `%${search.trim()}%`);
         }
@@ -146,16 +167,7 @@ function QuestionsList() {
 
         if (error) throw error;
 
-        let filteredData = (data as Question[]) || [];
-        
-        // Handle client-side status filter (since status is computed dynamically via user_progress set)
-        if (selectedStatus === "Solved") {
-          filteredData = filteredData.filter(q => solvedIds.has(q.ID));
-        } else if (selectedStatus === "Unsolved" || selectedStatus === "Todo") {
-          filteredData = filteredData.filter(q => !solvedIds.has(q.ID));
-        }
-
-        setQuestions(filteredData);
+        setQuestions((data as Question[]) || []);
         setTotalCount(count || 0);
       } catch (err) {
         console.error("Failed to load questions list:", err);
@@ -164,7 +176,7 @@ function QuestionsList() {
       }
     }
     fetchQuestions();
-  }, [search, selectedTopic, selectedDifficulty, selectedStatus, page, solvedIds]);
+  }, [search, selectedTopic, selectedDifficulty, selectedStatus, page, user, solvedIds]);
 
   // Reset page to 1 when filters change
   useEffect(() => {
