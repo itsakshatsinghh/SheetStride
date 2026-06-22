@@ -38,16 +38,12 @@ export function Topbar() {
     ? [
         { href: "/dashboard", label: "Dashboard" },
         { href: "/questions", label: "Questions" },
-        { href: "/patterns", label: "Patterns" },
-        { href: "/topics", label: "Topics" },
         { href: "/progress", label: "Progress" },
         { href: "/profile", label: "Profile" },
         { href: "/settings", label: "Settings" }
       ]
-    : [
-        { href: "/patterns", label: "Patterns" },
-        { href: "/topics", label: "Topics" }
-      ];
+    : [];
+
 
   return (
     <header className={cn(

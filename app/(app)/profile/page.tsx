@@ -40,6 +40,49 @@ export default function ProfilePage() {
   const [longestStreak, setLongestStreak] = useState(0);
   const [activityLogs, setActivityLogs] = useState<LogEntry[]>([]);
 
+  const [leetcodeUsername, setLeetcodeUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [github, setGithub] = useState("");
+
+  const [leetcodeStats, setLeetcodeStats] = useState<any>(null);
+  const [leetcodeLoading, setLeetcodeLoading] = useState(false);
+  const [leetcodeError, setLeetcodeError] = useState("");
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const fetchLeetcodeStats = async (username: string) => {
+    if (!username) return;
+    try {
+      setLeetcodeLoading(true);
+      setLeetcodeError("");
+      const baseUrl = "https://alfa-leetcode-api.onrender.com";
+      const [resProfile, resSolved, resContest, resSubmissions] = await Promise.all([
+        fetch(`${baseUrl}/${username}`).then(r => r.ok ? r.json() : null),
+        fetch(`${baseUrl}/${username}/solved`).then(r => r.ok ? r.json() : null),
+        fetch(`${baseUrl}/${username}/contest`).then(r => r.ok ? r.json() : null),
+        fetch(`${baseUrl}/${username}/acSubmission?limit=7`).then(r => r.ok ? r.json() : null)
+      ]);
+
+      if (!resSolved) {
+        throw new Error("Could not load LeetCode statistics. Username may be invalid.");
+      }
+
+      setLeetcodeStats({
+        profile: resProfile,
+        solved: resSolved,
+        contest: resContest,
+        submissions: resSubmissions?.submission || []
+      });
+    } catch (err: any) {
+      console.error("Failed to fetch LeetCode stats:", err);
+      setLeetcodeError(err.message || "Failed to load LeetCode statistics.");
+    } finally {
+      setLeetcodeLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     const userId = user.id;
@@ -146,6 +189,52 @@ export default function ProfilePage() {
 
         setActivityLogs(logs);
 
+        // Load profile customization & socials
+        let loadedLeetcode = "";
+        let loadedBio = "";
+        let loadedInstagram = "";
+        let loadedLinkedin = "";
+        let loadedGithub = "";
+
+        try {
+          const { data: dbProfile } = await supabase
+            .from("profiles")
+            .select("leetcode_username, bio, instagram, linkedin, github")
+            .eq("id", userId)
+            .maybeSingle();
+
+          if (dbProfile) {
+            loadedLeetcode = dbProfile.leetcode_username || "";
+            loadedBio = dbProfile.bio || "";
+            loadedInstagram = dbProfile.instagram || "";
+            loadedLinkedin = dbProfile.linkedin || "";
+            loadedGithub = dbProfile.github || "";
+          } else {
+            loadedLeetcode = user?.user_metadata?.leetcode_username || "";
+            loadedBio = user?.user_metadata?.bio || "";
+            loadedInstagram = user?.user_metadata?.instagram || "";
+            loadedLinkedin = user?.user_metadata?.linkedin || "";
+            loadedGithub = user?.user_metadata?.github || "";
+          }
+        } catch (dbErr) {
+          console.warn("DB profile query failed, using user metadata:", dbErr);
+          loadedLeetcode = user?.user_metadata?.leetcode_username || "";
+          loadedBio = user?.user_metadata?.bio || "";
+          loadedInstagram = user?.user_metadata?.instagram || "";
+          loadedLinkedin = user?.user_metadata?.linkedin || "";
+          loadedGithub = user?.user_metadata?.github || "";
+        }
+
+        setLeetcodeUsername(loadedLeetcode);
+        setBio(loadedBio);
+        setInstagram(loadedInstagram);
+        setLinkedin(loadedLinkedin);
+        setGithub(loadedGithub);
+
+        if (loadedLeetcode) {
+          fetchLeetcodeStats(loadedLeetcode);
+        }
+
       } catch (err) {
         console.error("Failed to load profile data:", err);
       } finally {
@@ -206,9 +295,18 @@ export default function ProfilePage() {
     }
   };
 
-  const revealItem = {
-    hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } }
+  const formatDate = (timestampStr: string) => {
+    try {
+      const timestamp = parseInt(timestampStr, 10);
+      if (isNaN(timestamp)) return "";
+      const date = new Date(timestamp * 1000);
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const yy = String(date.getFullYear()).slice(-2);
+      return `${dd}/${mm}/${yy}`;
+    } catch {
+      return "";
+    }
   };
 
   return (
@@ -235,9 +333,64 @@ export default function ProfilePage() {
               Online
             </div>
           </div>
-          <div className="flex-1 text-center md:text-left mt-4 md:mt-0">
-            <div className="flex flex-col md:flex-row md:items-center gap-stack-sm mb-stack-sm">
+          <div className="flex-1 text-center md:text-left mt-4 md:mt-0 space-y-4">
+            <div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface">{displayName}</h1>
+              <p className="text-body-md text-on-surface-variant font-sans mt-2 max-w-xl leading-relaxed">
+                {bio || "Developer session established. Connect your socials and set a bio in settings or click Edit Info."}
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-4 justify-center md:justify-start">
+              <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="px-3 py-1 border border-primary/30 hover:border-primary text-primary bg-primary/5 hover:bg-primary/10 rounded font-mono-label text-[10px] uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-[12px]">edit</span>
+                Edit Info
+              </button>
+
+              <div className="flex items-center gap-3 border-l border-[#2B2B2B] pl-4">
+                {github ? (
+                  <a href={github.startsWith('http') ? github : `https://github.com/${github}`} target="_blank" rel="noopener noreferrer" className="text-outline hover:text-white transition-colors" title="GitHub Profile">
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                  </a>
+                ) : (
+                  <span className="text-outline/25" title="GitHub Not Connected">
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                  </span>
+                )}
+                {linkedin ? (
+                  <a href={linkedin.startsWith('http') ? linkedin : `https://linkedin.com/in/${linkedin}`} target="_blank" rel="noopener noreferrer" className="text-outline hover:text-white transition-colors" title="LinkedIn Profile">
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                    </svg>
+                  </a>
+                ) : (
+                  <span className="text-outline/25" title="LinkedIn Not Connected">
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                    </svg>
+                  </span>
+                )}
+                {instagram ? (
+                  <a href={instagram.startsWith('http') ? instagram : `https://instagram.com/${instagram}`} target="_blank" rel="noopener noreferrer" className="text-outline hover:text-white transition-colors" title="Instagram Profile">
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.79 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                  </a>
+                ) : (
+                  <span className="text-outline/25" title="Instagram Not Connected">
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.79 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -277,18 +430,21 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* Stats & Heatmap Section */}
+      {/* Split Pane: Local Sheet Stats vs. Live LeetCode Stats */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-stack-lg">
-        {/* Cumulative Coding Metrics */}
-        <div className="lg:col-span-5 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg flex flex-col rounded-lg shadow-md justify-between">
-          <div className="flex justify-between items-center mb-stack-md">
-            <h2 className="font-headline-md text-headline-md">Solution Pulse</h2>
-            <span className="material-symbols-outlined text-outline">analytics</span>
+        {/* Left Pane (Local Sheet Tracker Stats) */}
+        <div className="lg:col-span-5 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg flex flex-col rounded-lg shadow-md justify-between min-h-[400px]">
+          <div className="flex justify-between items-center mb-stack-md pb-3 border-b border-[#2B2B2B]">
+            <h2 className="font-headline-md text-headline-md flex items-center gap-2">
+              <span className="material-symbols-outlined text-outline">analytics</span>
+              Sheet Tracker Pulse
+            </h2>
+            <span className="font-mono-label text-[10px] text-primary uppercase">Local Data</span>
           </div>
           <div className="space-y-stack-md flex-1 flex flex-col justify-center">
             <div>
               <div className="flex justify-between font-mono-label text-[12px] mb-2 uppercase">
-                <span className="text-secondary">Easy</span>
+                <span className="text-secondary">Easy Solved</span>
                 <span className="text-on-surface">{easySolved} / {totalEasy}</span>
               </div>
               <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
@@ -297,7 +453,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <div className="flex justify-between font-mono-label text-[12px] mb-2 uppercase">
-                <span className="text-tertiary">Medium</span>
+                <span className="text-tertiary">Medium Solved</span>
                 <span className="text-on-surface">{mediumSolved} / {totalMedium}</span>
               </div>
               <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
@@ -306,7 +462,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <div className="flex justify-between font-mono-label text-[12px] mb-2 uppercase">
-                <span className="text-error">Hard</span>
+                <span className="text-error">Hard Solved</span>
                 <span className="text-on-surface">{hardSolved} / {totalHard}</span>
               </div>
               <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
@@ -330,34 +486,125 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Heatmap / Commit History */}
-        <div className="lg:col-span-7 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg overflow-hidden rounded-lg shadow-md flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-stack-md">
-            <h2 className="font-headline-md text-headline-md">Commit History</h2>
-            <div className="flex gap-2 items-center">
-              <span className="font-mono-label text-[10px] text-outline uppercase">Less</span>
-              <div className="flex gap-1">
-                <div className="w-3 h-3 rounded-sm bg-surface-container-lowest"></div>
-                <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
-                <div className="w-3 h-3 rounded-sm bg-primary/40"></div>
-                <div className="w-3 h-3 rounded-sm bg-primary/70"></div>
-                <div className="w-3 h-3 rounded-sm bg-primary"></div>
+        {/* Right Pane (Live Leetcode Stats) */}
+        <div className="lg:col-span-7 flex flex-col h-full">
+          <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg shadow-md flex flex-col justify-between h-full min-h-[400px]">
+            <div className="flex justify-between items-center mb-stack-md pb-3 border-b border-[#2B2B2B]">
+              <h2 className="font-headline-md text-headline-md flex items-center gap-2">
+                <svg className="w-5 h-5 fill-current text-primary" viewBox="0 0 24 24">
+                  <path d="M13.483 0a1.374 1.374 0 0 0-.961.414l-9.777 9.778a1.375 1.375 0 0 0 0 1.945l1.894 1.894a1.375 1.375 0 0 0 1.945 0L15.38 5.253a1.375 1.375 0 0 0 0-1.945L13.483.414A1.374 1.374 0 0 0 13.483 0zm-8.835 15.65a1.375 1.375 0 0 0-1.945 0L.414 17.94a1.375 1.375 0 0 0 0 1.945l1.894 1.894a1.375 1.375 0 0 0 1.945 0l2.29-2.29a1.375 1.375 0 0 0 0-1.945l-1.895-1.894zm11.956-6.425a1.375 1.375 0 0 0-1.945 0l-7.778 7.778a1.375 1.375 0 0 0 0 1.945l1.894 1.894a1.375 1.375 0 0 0 1.945 0l7.778-7.778a1.375 1.375 0 0 0 0-1.945l-1.894-1.894z"/>
+                </svg>
+                LeetCode Live Stats
+              </h2>
+              {leetcodeUsername && !leetcodeLoading && (
+                <button
+                  onClick={() => fetchLeetcodeStats(leetcodeUsername)}
+                  className="p-1 hover:bg-surface-variant/20 rounded text-outline hover:text-white transition-all cursor-pointer flex items-center justify-center border border-transparent"
+                  title="Force Sync Stats"
+                >
+                  <span className="material-symbols-outlined text-[16px]">sync</span>
+                </button>
+              )}
+            </div>
+
+            {/* Content Logic */}
+            {!leetcodeUsername ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-10 space-y-6">
+                <div className="w-16 h-16 rounded-full bg-surface-container-high/40 flex items-center justify-center border border-outline-variant/30 text-outline">
+                  <span className="material-symbols-outlined text-3xl">link_off</span>
+                </div>
+                <div className="max-w-md space-y-2">
+                  <h3 className="font-headline-md text-[18px] text-on-surface">LeetCode Sync Inactive</h3>
+                  <p className="font-body-sm text-[12px] text-outline leading-relaxed">
+                    Connect your LeetCode username in settings to sync your live problem-solving statistics, contest ratings, and recent accepted submissions.
+                  </p>
+                </div>
+                <a href="/settings" className="px-6 py-2 bg-primary text-on-primary font-mono-label text-mono-label font-bold rounded hover:shadow-[0_0_15px_rgba(178,210,255,0.4)] active:scale-95 transition-all uppercase tracking-wider">
+                  Sync LeetCode Account
+                </a>
               </div>
-              <span className="font-mono-label text-[10px] text-outline uppercase">More</span>
-            </div>
-          </div>
-          <div className="overflow-x-auto custom-scrollbar pb-2">
-            <Heatmap mode="dashboard" />
-          </div>
-          <div className="mt-4 flex flex-wrap gap-stack-lg items-center text-outline select-none pt-4 border-t border-[#2B2B2B]">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
-              <span className="font-mono-label text-[12px]">Last 12 Months: {solvedCount} Submissions</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px] text-secondary">verified</span>
-              <span className="font-mono-label text-[12px]">Max Output: 8 Solved/Day</span>
-            </div>
+            ) : leetcodeLoading ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-12 space-y-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="font-mono-label text-mono-label text-outline text-xs tracking-wider animate-pulse">RETRIEVING_LEETCODE_LIVE_LOGS...</p>
+              </div>
+            ) : leetcodeError ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-10 text-center space-y-4">
+                <div className="text-error font-mono-label text-xs uppercase tracking-widest bg-error/10 border border-error/20 px-3 py-2 rounded">
+                  ERR: {leetcodeError}
+                </div>
+                <button
+                  onClick={() => fetchLeetcodeStats(leetcodeUsername)}
+                  className="px-4 py-2 border border-primary/30 text-primary hover:bg-primary/5 rounded font-mono-label text-[11px] uppercase tracking-wider active:scale-95 transition-all"
+                >
+                  Retry Connection
+                </button>
+              </div>
+            ) : leetcodeStats ? (
+              <div className="flex-1 space-y-6">
+                {/* Stats Summary Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-[#0E0E0E] p-3 rounded-lg border border-[#2B2B2B] text-center">
+                    <span className="text-[10px] text-outline uppercase font-mono-label">Total Solved</span>
+                    <p className="text-2xl font-bold font-mono text-white mt-1">{leetcodeStats.solved.solvedProblem}</p>
+                  </div>
+                  <div className="bg-[#0E0E0E] p-3 rounded-lg border border-[#2B2B2B] text-center">
+                    <span className="text-[10px] text-secondary uppercase font-mono-label">Easy Solved</span>
+                    <p className="text-2xl font-bold font-mono text-secondary mt-1">{leetcodeStats.solved.easySolved}</p>
+                  </div>
+                  <div className="bg-[#0E0E0E] p-3 rounded-lg border border-[#2B2B2B] text-center">
+                    <span className="text-[10px] text-tertiary uppercase font-mono-label">Medium Solved</span>
+                    <p className="text-2xl font-bold font-mono text-tertiary mt-1">{leetcodeStats.solved.mediumSolved}</p>
+                  </div>
+                  <div className="bg-[#0E0E0E] p-3 rounded-lg border border-[#2B2B2B] text-center">
+                    <span className="text-[10px] text-error uppercase font-mono-label">Hard Solved</span>
+                    <p className="text-2xl font-bold font-mono text-error mt-1">{leetcodeStats.solved.hardSolved}</p>
+                  </div>
+                </div>
+
+                {/* Contest & Standing Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-b border-[#2B2B2B] py-4">
+                  <div>
+                    <span className="text-[10px] text-outline uppercase font-mono-label block">Contest Rating</span>
+                    <p className="text-xl font-bold font-mono text-white mt-1">
+                      {leetcodeStats.contest?.contestRating ? Math.round(leetcodeStats.contest.contestRating) : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-outline uppercase font-mono-label block">Global Ranking</span>
+                    <p className="text-xl font-bold font-mono text-white mt-1">
+                      {leetcodeStats.profile?.ranking ? leetcodeStats.profile.ranking.toLocaleString() : "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-outline uppercase font-mono-label block">Top % Group</span>
+                    <p className="text-xl font-bold font-mono text-white mt-1">
+                      {leetcodeStats.contest?.contestTopPercentage ? `Top ${leetcodeStats.contest.contestTopPercentage}%` : "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Last 7 Accepted Solutions */}
+                <div>
+                  <h3 className="text-[10px] uppercase font-mono-label text-outline mb-3 tracking-wider">Recent Submissions (Last 7 Accepted)</h3>
+                  {leetcodeStats.submissions && leetcodeStats.submissions.length > 0 ? (
+                    <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                      {leetcodeStats.submissions.map((sub: any, i: number) => (
+                        <div key={i} className="flex justify-between items-center bg-[#0E0E0E] border border-[#2B2B2B] p-2.5 rounded hover:border-outline-variant/40 transition-colors">
+                          <div className="min-w-0 flex-1 pr-4">
+                            <p className="text-sm font-semibold text-on-surface truncate">{sub.title}</p>
+                            <span className="font-mono text-[10px] text-outline uppercase tracking-wider">{sub.lang}</span>
+                          </div>
+                          <span className="font-mono text-xs text-secondary shrink-0">{formatDate(sub.timestamp)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-outline font-mono uppercase tracking-widest text-center py-4">No recent accepted solutions found.</p>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -475,6 +722,157 @@ export default function ProfilePage() {
           <a href="#" className="hover:text-primary transition-colors">Changelog</a>
         </div>
       </footer>
+      {/* Quick Edit Profile Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1C1C1C] border border-[#2B2B2B] w-full max-w-lg rounded-xl overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-[#2B2B2B] bg-[#131313]">
+              <h2 className="font-headline-md text-headline-md text-primary uppercase font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-xl">edit</span>
+                Update Profile Info
+              </h2>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-outline hover:text-white transition-colors cursor-pointer flex items-center justify-center border border-transparent bg-transparent"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              
+              const getWordCount = (text: string) => {
+                const trimmed = text.trim();
+                if (!trimmed) return 0;
+                return trimmed.split(/\s+/).length;
+              };
+
+              if (getWordCount(bio) > 75) {
+                alert("Bio cannot exceed 75 words.");
+                return;
+              }
+
+              try {
+                // Save to profiles database
+                try {
+                  await supabase
+                    .from("profiles")
+                    .upsert({
+                      id: user?.id,
+                      leetcode_username: leetcodeUsername.trim(),
+                      bio: bio.trim(),
+                      instagram: instagram.trim(),
+                      linkedin: linkedin.trim(),
+                      github: github.trim()
+                    });
+                } catch (dbErr) {
+                  console.warn("Profiles database upsert skipped:", dbErr);
+                }
+
+                // Save to auth user metadata
+                const { error: authErr } = await supabase.auth.updateUser({
+                  data: {
+                    leetcode_username: leetcodeUsername.trim(),
+                    bio: bio.trim(),
+                    instagram: instagram.trim(),
+                    linkedin: linkedin.trim(),
+                    github: github.trim()
+                  }
+                });
+
+                if (authErr) throw authErr;
+
+                // Sync leetcode stats if username changed
+                if (leetcodeUsername.trim()) {
+                  fetchLeetcodeStats(leetcodeUsername.trim());
+                } else {
+                  setLeetcodeStats(null);
+                }
+
+                setIsEditModalOpen(false);
+              } catch (err: any) {
+                alert(`Failed to save: ${err.message}`);
+              }
+            }} className="p-6 space-y-4 flex-1">
+              <div className="space-y-2">
+                <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">LeetCode Username</label>
+                <input 
+                  type="text"
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:border-primary transition-all font-mono" 
+                  value={leetcodeUsername}
+                  onChange={(e) => setLeetcodeUsername(e.target.value)}
+                  placeholder="e.g. alfaarghya"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">Short Bio (Max 75 Words)</label>
+                  <span className="text-[10px] font-mono-label text-outline tracking-wider">
+                    {bio.trim() ? bio.trim().split(/\s+/).length : 0}/75 Words
+                  </span>
+                </div>
+                <textarea 
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:border-primary transition-all h-20 resize-none font-sans" 
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell us about yourself..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">GitHub Profile/Username</label>
+                <input 
+                  type="text"
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:border-primary transition-all" 
+                  value={github}
+                  onChange={(e) => setGithub(e.target.value)}
+                  placeholder="e.g. githubusername"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">LinkedIn Profile/Username</label>
+                <input 
+                  type="text"
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:border-primary transition-all" 
+                  value={linkedin}
+                  onChange={(e) => setLinkedin(e.target.value)}
+                  placeholder="e.g. linkedinusername"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">Instagram Profile/Username</label>
+                <input 
+                  type="text"
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:border-primary transition-all" 
+                  value={instagram}
+                  onChange={(e) => setInstagram(e.target.value)}
+                  placeholder="e.g. instagramusername"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 bg-surface-container border border-outline-variant/30 text-on-surface py-2.5 rounded-lg font-mono-label text-[12px] uppercase hover:bg-surface-variant/20 transition-all cursor-pointer text-center"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 bg-primary text-on-primary py-2.5 rounded-lg font-mono-label text-[12px] font-bold uppercase tracking-wider hover:shadow-[0_0_15px_rgba(178,210,255,0.4)] active:scale-95 transition-all cursor-pointer text-center"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

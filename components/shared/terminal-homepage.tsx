@@ -12,15 +12,24 @@ import {
   Search,
   ChevronDown
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/auth-provider";
 import { TerminalShader } from "./terminal-shader";
 import { cn } from "@/lib/utils";
 
 export function TerminalHomepage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const terminalRef = useRef<HTMLDivElement>(null);
   const revealRef = useRef<HTMLDivElement>(null);
   const [isRevealed, setIsRevealed] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/dashboard");
+    }
+  }, [user, loading, router]);
+
 
   // Parallax Tilt Effect
   useEffect(() => {
@@ -59,6 +68,18 @@ export function TerminalHomepage() {
       }
     };
   }, []);
+
+  if (loading || user) {
+    return (
+      <div className="min-h-screen bg-[#131313] flex items-center justify-center">
+        <div className="w-full max-w-md px-6 text-center space-y-6 flex flex-col items-center">
+          <div className="inline-block border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-mono-label uppercase text-primary tracking-widest animate-pulse">
+            REDIRECTING_TO_WORKSPACE
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const ctaLink = user ? "/dashboard" : "/login";
   const ctaLabel = user ? "Go to Dashboard" : "Initialize Session";

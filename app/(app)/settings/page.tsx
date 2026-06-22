@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -19,6 +20,11 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [preferredLanguage, setPreferredLanguage] = useState("C++");
+  const [leetcodeUsername, setLeetcodeUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [github, setGithub] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateMsg, setUpdateMsg] = useState("");
 
@@ -35,22 +41,37 @@ export default function SettingsPage() {
         // 1. Try querying profiles table first
         const { data: profile } = await supabase
           .from("profiles")
-          .select("display_name, preferred_language")
+          .select("display_name, preferred_language, leetcode_username, bio, instagram, linkedin, github")
           .eq("id", currentUser.id)
           .maybeSingle();
 
         if (profile) {
           setDisplayName(profile.display_name || "");
           setPreferredLanguage(profile.preferred_language || "C++");
+          setLeetcodeUsername(profile.leetcode_username || "");
+          setBio(profile.bio || "");
+          setInstagram(profile.instagram || "");
+          setLinkedin(profile.linkedin || "");
+          setGithub(profile.github || "");
         } else {
           // Fallback to auth metadata
           setDisplayName(currentUser.user_metadata?.full_name || currentUser.user_metadata?.display_name || currentUser.email?.split("@")[0] || "User");
           setPreferredLanguage(currentUser.user_metadata?.preferred_language || "C++");
+          setLeetcodeUsername(currentUser.user_metadata?.leetcode_username || "");
+          setBio(currentUser.user_metadata?.bio || "");
+          setInstagram(currentUser.user_metadata?.instagram || "");
+          setLinkedin(currentUser.user_metadata?.linkedin || "");
+          setGithub(currentUser.user_metadata?.github || "");
         }
       } catch (err) {
         console.warn("Profiles query failed, falling back to auth metadata:", err);
         setDisplayName(currentUser.user_metadata?.full_name || currentUser.user_metadata?.display_name || currentUser.email?.split("@")[0] || "User");
         setPreferredLanguage(currentUser.user_metadata?.preferred_language || "C++");
+        setLeetcodeUsername(currentUser.user_metadata?.leetcode_username || "");
+        setBio(currentUser.user_metadata?.bio || "");
+        setInstagram(currentUser.user_metadata?.instagram || "");
+        setLinkedin(currentUser.user_metadata?.linkedin || "");
+        setGithub(currentUser.user_metadata?.github || "");
       } finally {
         setIsUpdating(false);
       }
@@ -69,10 +90,22 @@ export default function SettingsPage() {
     localStorage.setItem("setting_compact_layout", String(val));
   };
 
+  const getWordCount = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return 0;
+    return trimmed.split(/\s+/).length;
+  };
+
   // Profile update handler
   const handleUpdateIdentity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) return;
+
+    if (getWordCount(bio) > 75) {
+      setUpdateMsg("ERR: Bio cannot exceed 75 words.");
+      return;
+    }
+
     try {
       setIsUpdating(true);
       setUpdateMsg("");
@@ -84,7 +117,12 @@ export default function SettingsPage() {
           .upsert({
             id: user?.id,
             display_name: displayName.trim(),
-            preferred_language: preferredLanguage
+            preferred_language: preferredLanguage,
+            leetcode_username: leetcodeUsername.trim(),
+            bio: bio.trim(),
+            instagram: instagram.trim(),
+            linkedin: linkedin.trim(),
+            github: github.trim()
           });
       } catch (err) {
         console.warn("profiles table update skipped (table may not exist):", err);
@@ -94,7 +132,12 @@ export default function SettingsPage() {
       const { error: authErr } = await supabase.auth.updateUser({
         data: {
           full_name: displayName.trim(),
-          preferred_language: preferredLanguage
+          preferred_language: preferredLanguage,
+          leetcode_username: leetcodeUsername.trim(),
+          bio: bio.trim(),
+          instagram: instagram.trim(),
+          linkedin: linkedin.trim(),
+          github: github.trim()
         }
       });
 
@@ -310,6 +353,72 @@ export default function SettingsPage() {
                   value={email} 
                   disabled 
                   readOnly
+                />
+              </div>
+
+              <div className="border-t border-[#2B2B2B] my-4 pt-4">
+                <h3 className="text-body-lg font-bold text-primary uppercase tracking-wide text-xs mb-3">Integrations & Socials</h3>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">LeetCode Username</label>
+                <input 
+                  type="text"
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
+                  placeholder="e.g. alfaarghya"
+                  value={leetcodeUsername} 
+                  onChange={(e) => setLeetcodeUsername(e.target.value)} 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">Short Bio</label>
+                  <span className={cn(
+                    "text-[10px] font-mono-label tracking-wider",
+                    getWordCount(bio) > 75 ? "text-error" : "text-outline"
+                  )}>
+                    {getWordCount(bio)}/75 Words
+                  </span>
+                </div>
+                <textarea 
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all h-20 resize-none" 
+                  placeholder="Tell us about yourself (max 75 words)..."
+                  value={bio} 
+                  onChange={(e) => setBio(e.target.value)} 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">GitHub Profile/Username</label>
+                <input 
+                  type="text"
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
+                  placeholder="e.g. githubusername"
+                  value={github} 
+                  onChange={(e) => setGithub(e.target.value)} 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">LinkedIn Profile/Username</label>
+                <input 
+                  type="text"
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
+                  placeholder="e.g. linkedinusername"
+                  value={linkedin} 
+                  onChange={(e) => setLinkedin(e.target.value)} 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">Instagram Profile/Username</label>
+                <input 
+                  type="text"
+                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
+                  placeholder="e.g. instagramusername"
+                  value={instagram} 
+                  onChange={(e) => setInstagram(e.target.value)} 
                 />
               </div>
             </div>
