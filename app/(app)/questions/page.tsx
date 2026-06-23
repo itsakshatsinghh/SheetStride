@@ -19,6 +19,9 @@ export default function MissionLibraryPage() {
   const [totalCore, setTotalCore] = useState(437);
   const [solvedCore, setSolvedCore] = useState(0);
 
+  const [totalCompanies, setTotalCompanies] = useState(463);
+  const [totalCompanyQuestions, setTotalCompanyQuestions] = useState(7715);
+
   useEffect(() => {
     if (!user) return;
     const userId = user.id;
@@ -54,6 +57,17 @@ export default function MissionLibraryPage() {
           setTotalCore(coreQuestions.length);
           const solvedCoreCount = coreQuestions.filter((q: any) => solvedIds.has(q["question ID"])).length;
           setSolvedCore(solvedCoreCount);
+        }
+
+        // 4. Fetch Company Sheets summary stats
+        const { data: companySummary, error: summaryError } = await supabase
+          .from("view_company_summary")
+          .select("question_count");
+
+        if (!summaryError && companySummary) {
+          setTotalCompanies(companySummary.length);
+          const totalSum = companySummary.reduce((sum: number, row: any) => sum + (row.question_count || 0), 0);
+          setTotalCompanyQuestions(totalSum);
         }
 
       } catch (err) {
@@ -197,6 +211,43 @@ export default function MissionLibraryPage() {
           <Link href="/questions/leetcode-universe">
             <button className="w-full py-3 border border-outline-variant text-on-surface font-mono-label text-sm font-bold uppercase hover:bg-surface-variant/20 hover:border-primary transition-all active:scale-95 rounded-lg">
               Enter Database
+            </button>
+          </Link>
+        </motion.div>
+
+        {/* COMPANY SHEETS - Premium Discovery */}
+        <motion.div 
+          variants={cardReveal}
+          className="group relative bg-[#131313] border border-[#f97316]/35 p-6 transition-all duration-300 flex flex-col justify-between rounded-xl hover:translate-y-[-4px] hover:scale-[1.01] hover:border-[#f97316] hover:shadow-[0_10px_30px_-5px_rgba(249,115,22,0.3)]"
+        >
+          <div className="absolute top-0 right-0 p-4">
+            <span className="px-2 py-0.5 bg-[#f97316]/10 border border-[#f97316]/30 text-[#f97316] font-mono-label text-[9px] font-bold uppercase tracking-widest rounded-sm">
+              PREMIUM PREP
+            </span>
+          </div>
+          
+          <div>
+            <h2 className="font-display-arcade text-lg text-[#f97316] mb-4 mt-2">COMPANY SHEETS</h2>
+            <p className="font-body-md text-on-surface-variant mb-6 leading-relaxed">
+              FAANG • HFT • SaaS • Startup Interview Prep. Master coding patterns asked in top product organizations.
+            </p>
+            
+            <div className="space-y-4 mb-8 border-t border-outline-variant/15 pt-4">
+              <div className="flex justify-between items-end">
+                <span className="font-mono-label text-mono-label text-outline/65 uppercase">Total Companies</span>
+                <span className="font-mono-stats text-mono-stats text-on-surface">{totalCompanies}</span>
+              </div>
+              <div className="flex justify-between items-end">
+                <span className="font-mono-label text-mono-label text-outline/65 uppercase">Total Questions</span>
+                <span className="font-mono-stats text-mono-stats text-on-surface">{totalCompanyQuestions}</span>
+              </div>
+            </div>
+          </div>
+          
+          <Link href="/questions/company-sheets">
+            <button className="w-full py-3 bg-[#f97316]/10 border border-[#f97316]/35 hover:border-[#f97316] text-[#f97316] hover:bg-[#f97316]/20 font-mono-label text-sm font-bold uppercase transition-all active:scale-95 rounded-lg flex items-center justify-center gap-2">
+              Explore Sheets
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
           </Link>
         </motion.div>
