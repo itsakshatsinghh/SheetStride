@@ -68,7 +68,7 @@ export default function NotFound() {
 
             <div className="flex flex-col sm:flex-row gap-stack-md pt-stack-md justify-center w-full max-w-md mx-auto">
               <Link href="/dashboard" className="w-full">
-                <button className="w-full px-8 py-3 bg-primary text-[#001c37] font-mono-label font-bold uppercase tracking-wider rounded-lg transition-all hover:shadow-[0_0_20px_rgba(178,210,255,0.4)] active:scale-95 duration-200">
+                <button className="w-full px-8 py-3 bg-primary text-[#000000] font-mono-label font-bold uppercase tracking-wider rounded-lg transition-all hover:shadow-[0_0_20px_rgba(255,212,0,0.4)] active:scale-95 duration-200">
                   Reboot System
                 </button>
               </Link>
@@ -85,7 +85,7 @@ export default function NotFound() {
         {/* Critical Failure Diagnostics Overlay Modal */}
         {showError && (
           <section className="fixed inset-0 z-[100] flex items-center justify-center p-gutter bg-background/85 backdrop-blur-sm">
-            <div className="w-full max-w-xl bg-[#1C1C1C] border border-error/40 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="w-full max-w-xl bg-[#111111] border border-error/40 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
               <div className="bg-error/10 border-b border-error/30 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-error">
                   <span className="material-symbols-outlined text-[20px]">report</span>
@@ -102,7 +102,7 @@ export default function NotFound() {
                 </button>
               </div>
               <div className="p-6 space-y-stack-md">
-                <div className="bg-[#080808] p-4 border border-outline-variant/35 rounded font-mono-label text-mono-label overflow-x-auto text-on-surface-variant leading-relaxed text-xs">
+                <div className="bg-[#0A0A0A] p-4 border border-outline-variant/35 rounded font-mono-label text-mono-label overflow-x-auto text-on-surface-variant leading-relaxed text-xs">
                   <p className="text-error font-bold mb-2">[CRITICAL_KERNEL_ERROR]</p>
                   <p>&gt; Timestamp: <span className="text-on-surface">{new Date().toISOString()}</span></p>
                   <p>&gt; Module: <span className="text-on-surface">DATA_ORCHESTRATOR_V3</span></p>
@@ -114,7 +114,7 @@ export default function NotFound() {
                 <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
                   Our servers encountered an unexpected exception while processing your DSA progress. Engineers have been notified.
                 </p>
-                <div className="flex justify-end gap-stack-sm pt-4 border-t border-[#2B2B2B]">
+                <div className="flex justify-end gap-stack-sm pt-4 border-t border-[#2D2D2D]">
                   <button 
                     className="px-6 py-2 border border-outline-variant text-on-surface-variant font-mono-label text-xs uppercase rounded hover:bg-surface-variant/20 transition-all active:scale-95" 
                     onClick={() => {

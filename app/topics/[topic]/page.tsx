@@ -113,7 +113,7 @@ export default async function TopicDetailPage({ params }: TopicPageProps) {
             return (
               <div
                 key={pattern.pattern_name}
-                className="group relative bg-[#131313] border border-outline-variant/30 hover:border-primary p-5 transition-all duration-300 rounded-xl hover:-translate-y-1 flex flex-col justify-between hover:shadow-[0_8px_25px_-10px_rgba(178,210,255,0.15)]"
+                className="group relative bg-[#111111] border border-outline-variant/30 hover:border-primary p-5 transition-all duration-300 rounded-xl hover:-translate-y-1 flex flex-col justify-between hover:shadow-[0_8px_25px_-10px_rgba(255,212,0,0.15)]"
               >
                 <div>
                   <div className="flex justify-between items-start gap-2 mb-3">
@@ -156,7 +156,7 @@ export default async function TopicDetailPage({ params }: TopicPageProps) {
                       {keywords.map((word, index) => (
                         <span
                           key={index}
-                          className="text-[10px] font-mono bg-[#1c1c1c] border border-outline-variant/20 px-2 py-0.5 rounded text-outline/90"
+                          className="text-[10px] font-mono bg-[#181818] border border-outline-variant/20 px-2 py-0.5 rounded text-outline/90"
                         >
                           {word}
                         </span>

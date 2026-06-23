@@ -315,7 +315,7 @@ export default function ProfilePage() {
       {/* Profile Header Section */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-stack-lg">
         {/* Developer Identity Card */}
-        <div className="lg:col-span-8 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg flex flex-col md:flex-row items-center md:items-start gap-gutter relative overflow-hidden rounded-lg shadow-lg">
+        <div className="lg:col-span-8 bg-[#111111] border border-[#2D2D2D] p-stack-lg flex flex-col md:flex-row items-center md:items-start gap-gutter relative overflow-hidden rounded-lg shadow-lg">
           <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
             <span className="material-symbols-outlined text-[120px]" style={{ fontVariationSettings: "'FILL' 1" }}>terminal</span>
           </div>
@@ -350,7 +350,7 @@ export default function ProfilePage() {
                 Edit Info
               </button>
 
-              <div className="flex items-center gap-3 border-l border-[#2B2B2B] pl-4">
+              <div className="flex items-center gap-3 border-l border-[#2D2D2D] pl-4">
                 {github ? (
                   <a href={github.startsWith('http') ? github : `https://github.com/${github}`} target="_blank" rel="noopener noreferrer" className="text-outline hover:text-white transition-colors" title="GitHub Profile">
                     <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
@@ -397,7 +397,7 @@ export default function ProfilePage() {
 
         {/* Fast Stats Sidebar */}
         <div className="lg:col-span-4 grid grid-cols-2 gap-stack-md">
-          <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
+          <div className="bg-[#111111] border border-[#2D2D2D] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
             <span className="font-mono-label text-mono-label text-outline uppercase text-[11px]">Global Rank</span>
             <div className="flex flex-col">
               <span className="font-mono-stats text-mono-stats text-primary text-2xl">#{userGlobalRank}</span>
@@ -406,21 +406,21 @@ export default function ProfilePage() {
               </span>
             </div>
           </div>
-          <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
+          <div className="bg-[#111111] border border-[#2D2D2D] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
             <span className="font-mono-label text-mono-label text-outline uppercase text-[11px]">Sprint Streak</span>
             <div className="flex flex-col">
               <span className="font-mono-stats text-mono-stats text-tertiary text-2xl">{currentStreak} Days</span>
               <span className="text-[10px] text-on-surface-variant mt-1">Record Best: {longestStreak}</span>
             </div>
           </div>
-          <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
+          <div className="bg-[#111111] border border-[#2D2D2D] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
             <span className="font-mono-label text-mono-label text-outline uppercase text-[11px]">Time Invested</span>
             <div className="flex flex-col">
               <span className="font-mono-stats text-mono-stats text-on-surface text-2xl">{(solvedCount * 1.5).toFixed(0)} Hr</span>
               <span className="text-[10px] text-on-surface-variant mt-1">avg 3h/day</span>
             </div>
           </div>
-          <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
+          <div className="bg-[#111111] border border-[#2D2D2D] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
             <span className="font-mono-label text-mono-label text-outline uppercase text-[11px]">Accuracy</span>
             <div className="flex flex-col">
               <span className="font-mono-stats text-mono-stats text-secondary text-2xl">{accuracyPercent}%</span>
@@ -433,8 +433,8 @@ export default function ProfilePage() {
       {/* Split Pane: Local Sheet Stats vs. Live LeetCode Stats */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-stack-lg">
         {/* Left Pane (Local Sheet Tracker Stats) */}
-        <div className="lg:col-span-5 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg flex flex-col rounded-lg shadow-md justify-between min-h-[400px]">
-          <div className="flex justify-between items-center mb-stack-md pb-3 border-b border-[#2B2B2B]">
+        <div className="lg:col-span-5 bg-[#111111] border border-[#2D2D2D] p-stack-lg flex flex-col rounded-lg shadow-md justify-between min-h-[400px]">
+          <div className="flex justify-between items-center mb-stack-md pb-3 border-b border-[#2D2D2D]">
             <h2 className="font-headline-md text-headline-md flex items-center gap-2">
               <span className="material-symbols-outlined text-outline">analytics</span>
               Sheet Tracker Pulse
@@ -470,7 +470,7 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-          <div className="mt-stack-lg pt-stack-md border-t border-[#2B2B2B] flex justify-around text-center select-none">
+          <div className="mt-stack-lg pt-stack-md border-t border-[#2D2D2D] flex justify-around text-center select-none">
             <div>
               <p className="font-mono-stats text-primary text-xl font-bold">{solvedCount}</p>
               <p className="font-mono-label text-[10px] text-outline uppercase">Total Solved</p>
@@ -488,8 +488,8 @@ export default function ProfilePage() {
 
         {/* Right Pane (Live Leetcode Stats) */}
         <div className="lg:col-span-7 flex flex-col h-full">
-          <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg shadow-md flex flex-col justify-between h-full min-h-[400px]">
-            <div className="flex justify-between items-center mb-stack-md pb-3 border-b border-[#2B2B2B]">
+          <div className="bg-[#111111] border border-[#2D2D2D] p-stack-lg rounded-lg shadow-md flex flex-col justify-between h-full min-h-[400px]">
+            <div className="flex justify-between items-center mb-stack-md pb-3 border-b border-[#2D2D2D]">
               <h2 className="font-headline-md text-headline-md flex items-center gap-2">
                 <svg className="w-5 h-5 fill-current text-primary" viewBox="0 0 24 24">
                   <path d="M13.483 0a1.374 1.374 0 0 0-.961.414l-9.777 9.778a1.375 1.375 0 0 0 0 1.945l1.894 1.894a1.375 1.375 0 0 0 1.945 0L15.38 5.253a1.375 1.375 0 0 0 0-1.945L13.483.414A1.374 1.374 0 0 0 13.483 0zm-8.835 15.65a1.375 1.375 0 0 0-1.945 0L.414 17.94a1.375 1.375 0 0 0 0 1.945l1.894 1.894a1.375 1.375 0 0 0 1.945 0l2.29-2.29a1.375 1.375 0 0 0 0-1.945l-1.895-1.894zm11.956-6.425a1.375 1.375 0 0 0-1.945 0l-7.778 7.778a1.375 1.375 0 0 0 0 1.945l1.894 1.894a1.375 1.375 0 0 0 1.945 0l7.778-7.778a1.375 1.375 0 0 0 0-1.945l-1.894-1.894z"/>
@@ -519,7 +519,7 @@ export default function ProfilePage() {
                     Connect your LeetCode username in settings to sync your live problem-solving statistics, contest ratings, and recent accepted submissions.
                   </p>
                 </div>
-                <a href="/settings" className="px-6 py-2 bg-primary text-on-primary font-mono-label text-mono-label font-bold rounded hover:shadow-[0_0_15px_rgba(178,210,255,0.4)] active:scale-95 transition-all uppercase tracking-wider">
+                <a href="/settings" className="px-6 py-2 bg-primary text-on-primary font-mono-label text-mono-label font-bold rounded hover:shadow-[0_0_15px_rgba(255,212,0,0.4)] active:scale-95 transition-all uppercase tracking-wider">
                   Sync LeetCode Account
                 </a>
               </div>
@@ -544,26 +544,26 @@ export default function ProfilePage() {
               <div className="flex-1 space-y-6">
                 {/* Stats Summary Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="bg-[#0E0E0E] p-3 rounded-lg border border-[#2B2B2B] text-center">
+                  <div className="bg-[#090909] p-3 rounded-lg border border-[#2D2D2D] text-center">
                     <span className="text-[10px] text-outline uppercase font-mono-label">Total Solved</span>
                     <p className="text-2xl font-bold font-mono text-white mt-1">{leetcodeStats.solved.solvedProblem}</p>
                   </div>
-                  <div className="bg-[#0E0E0E] p-3 rounded-lg border border-[#2B2B2B] text-center">
+                  <div className="bg-[#090909] p-3 rounded-lg border border-[#2D2D2D] text-center">
                     <span className="text-[10px] text-secondary uppercase font-mono-label">Easy Solved</span>
                     <p className="text-2xl font-bold font-mono text-secondary mt-1">{leetcodeStats.solved.easySolved}</p>
                   </div>
-                  <div className="bg-[#0E0E0E] p-3 rounded-lg border border-[#2B2B2B] text-center">
+                  <div className="bg-[#090909] p-3 rounded-lg border border-[#2D2D2D] text-center">
                     <span className="text-[10px] text-tertiary uppercase font-mono-label">Medium Solved</span>
                     <p className="text-2xl font-bold font-mono text-tertiary mt-1">{leetcodeStats.solved.mediumSolved}</p>
                   </div>
-                  <div className="bg-[#0E0E0E] p-3 rounded-lg border border-[#2B2B2B] text-center">
+                  <div className="bg-[#090909] p-3 rounded-lg border border-[#2D2D2D] text-center">
                     <span className="text-[10px] text-error uppercase font-mono-label">Hard Solved</span>
                     <p className="text-2xl font-bold font-mono text-error mt-1">{leetcodeStats.solved.hardSolved}</p>
                   </div>
                 </div>
 
                 {/* Contest & Standing Metrics */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-b border-[#2B2B2B] py-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-b border-[#2D2D2D] py-4">
                   <div>
                     <span className="text-[10px] text-outline uppercase font-mono-label block">Contest Rating</span>
                     <p className="text-xl font-bold font-mono text-white mt-1">
@@ -590,7 +590,7 @@ export default function ProfilePage() {
                   {leetcodeStats.submissions && leetcodeStats.submissions.length > 0 ? (
                     <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
                       {leetcodeStats.submissions.map((sub: any, i: number) => (
-                        <div key={i} className="flex justify-between items-center bg-[#0E0E0E] border border-[#2B2B2B] p-2.5 rounded hover:border-outline-variant/40 transition-colors">
+                        <div key={i} className="flex justify-between items-center bg-[#090909] border border-[#2D2D2D] p-2.5 rounded hover:border-outline-variant/40 transition-colors">
                           <div className="min-w-0 flex-1 pr-4">
                             <p className="text-sm font-semibold text-on-surface truncate">{sub.title}</p>
                             <span className="font-mono text-[10px] text-outline uppercase tracking-wider">{sub.lang}</span>
@@ -620,8 +620,8 @@ export default function ProfilePage() {
             <div 
               key={idx} 
               className={cn(
-                "bg-[#1C1C1C] border p-stack-md text-center flex flex-col items-center group rounded-lg transition-all",
-                badge.active ? "border-[#2B2B2B] hover:border-primary" : "border-outline-variant/20 opacity-40 grayscale"
+                "bg-[#111111] border p-stack-md text-center flex flex-col items-center group rounded-lg transition-all",
+                badge.active ? "border-[#2D2D2D] hover:border-primary" : "border-outline-variant/20 opacity-40 grayscale"
               )}
             >
               <div className={cn(
@@ -645,7 +645,7 @@ export default function ProfilePage() {
           <span className="material-symbols-outlined text-primary">history</span>
           Deployment Timeline
         </h2>
-        <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg relative rounded-lg shadow-md">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-stack-lg relative rounded-lg shadow-md">
           {/* Vertical Line */}
           <div className="absolute left-[39px] top-stack-lg bottom-stack-lg w-px bg-outline-variant/30 hidden md:block"></div>
           
@@ -711,7 +711,7 @@ export default function ProfilePage() {
       </section>
 
       {/* Footer metadata */}
-      <footer className="border-t border-[#2B2B2B] py-stack-md mt-12 flex flex-col md:flex-row justify-between items-center gap-4 opacity-50 text-xs">
+      <footer className="border-t border-[#2D2D2D] py-stack-md mt-12 flex flex-col md:flex-row justify-between items-center gap-4 opacity-50 text-xs">
         <div className="flex items-center gap-4">
           <span className="font-display-arcade text-display-arcade text-primary">SHEETSTRIDE</span>
           <span className="font-mono-label text-mono-label text-outline uppercase">v2.0.0-STABLE</span>
@@ -725,8 +725,8 @@ export default function ProfilePage() {
       {/* Quick Edit Profile Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1C1C1C] border border-[#2B2B2B] w-full max-w-lg rounded-xl overflow-hidden shadow-2xl flex flex-col text-left">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-[#2B2B2B] bg-[#131313]">
+          <div className="bg-[#111111] border border-[#2D2D2D] w-full max-w-lg rounded-xl overflow-hidden shadow-2xl flex flex-col text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-[#2D2D2D] bg-[#090909]">
               <h2 className="font-headline-md text-headline-md text-primary uppercase font-bold flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-xl">edit</span>
                 Update Profile Info
@@ -864,7 +864,7 @@ export default function ProfilePage() {
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 bg-primary text-on-primary py-2.5 rounded-lg font-mono-label text-[12px] font-bold uppercase tracking-wider hover:shadow-[0_0_15px_rgba(178,210,255,0.4)] active:scale-95 transition-all cursor-pointer text-center"
+                  className="flex-1 bg-primary text-on-primary py-2.5 rounded-lg font-mono-label text-[12px] font-bold uppercase tracking-wider hover:shadow-[0_0_15px_rgba(255,212,0,0.4)] active:scale-95 transition-all cursor-pointer text-center"
                 >
                   Save Changes
                 </button>

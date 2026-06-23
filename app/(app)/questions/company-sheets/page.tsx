@@ -95,9 +95,8 @@ export default function CompanySheetsPage() {
         </p>
       </header>
 
-      {/* Stats Widgets */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 select-none">
-        <div className="bg-[#131313] border border-[#2B2B2B] p-5 rounded-xl flex items-center gap-4">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-5 rounded-xl flex items-center gap-4">
           <div className="h-12 w-12 bg-[#f97316]/10 border border-[#f97316]/20 rounded-xl flex items-center justify-center shrink-0">
             <Building2 className="h-5 w-5 text-[#f97316]" />
           </div>
@@ -111,7 +110,7 @@ export default function CompanySheetsPage() {
           </div>
         </div>
 
-        <div className="bg-[#131313] border border-[#2B2B2B] p-5 rounded-xl flex items-center gap-4">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-5 rounded-xl flex items-center gap-4">
           <div className="h-12 w-12 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center shrink-0">
             <Layers className="h-5 w-5 text-primary" />
           </div>
@@ -127,7 +126,7 @@ export default function CompanySheetsPage() {
       </div>
 
       {/* Toolbar Controls */}
-      <div className="bg-surface-container-low border border-[#2B2B2B] rounded-xl p-4 mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between">
+      <div className="bg-surface-container-low border border-[#2D2D2D] rounded-xl p-4 mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between">
         {/* Search Experience */}
         <div className="relative w-full lg:w-96 group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline w-4 h-4 group-focus-within:text-[#f97316] transition-colors" />
@@ -155,7 +154,7 @@ export default function CompanySheetsPage() {
           </div>
         </div>
       ) : filteredCompanies.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 bg-[#131313] border border-[#2B2B2B] rounded-xl">
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 bg-[#111111] border border-[#2D2D2D] rounded-xl">
           <FolderOpen className="w-12 h-12 text-outline-variant/60" />
           <p className="font-mono-label text-mono-label text-outline uppercase tracking-widest">No matching company sheets found</p>
         </div>
@@ -169,7 +168,7 @@ export default function CompanySheetsPage() {
           {filteredCompanies.map((c) => (
             <motion.div key={c.company_id} variants={cardReveal}>
               <Link href={`/questions/company-sheets/${c.company_slug}`}>
-                <div className="group relative bg-[#131313] border border-outline-variant/20 p-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:border-[#f97316] hover:shadow-[0_8px_25px_-5px_rgba(249,115,22,0.22)] flex flex-col justify-between h-36 cursor-pointer">
+                <div className="group relative bg-[#111111] border border-outline-variant/20 p-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:border-[#f97316] hover:shadow-[0_8px_25px_-5px_rgba(249,115,22,0.22)] flex flex-col justify-between h-36 cursor-pointer">
                   {/* Decorative edge scanline */}
                   <div className="absolute top-0 left-0 w-[2px] h-0 bg-[#f97316] transition-all duration-300 group-hover:h-full rounded-l-xl" />
                   

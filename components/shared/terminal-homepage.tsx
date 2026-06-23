@@ -71,7 +71,7 @@ export function TerminalHomepage() {
 
   if (loading || user) {
     return (
-      <div className="min-h-screen bg-[#131313] flex items-center justify-center">
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
         <div className="w-full max-w-md px-6 text-center space-y-6 flex flex-col items-center">
           <div className="inline-block border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-mono-label uppercase text-primary tracking-widest animate-pulse">
             REDIRECTING_TO_WORKSPACE
@@ -90,13 +90,13 @@ export function TerminalHomepage() {
       <header className="fixed top-0 left-0 w-full z-50 px-8 h-16 flex items-center justify-between pointer-events-none">
         <div className="pointer-events-auto">
           <Link href="/">
-            <h1 className="font-press-start text-xl md:text-2xl text-[#2e5bff] tracking-tighter drop-shadow-[0_0_8px_rgba(46,91,255,0.6)] select-none">
+            <h1 className="font-press-start text-xl md:text-2xl text-[#FFD400] tracking-tighter drop-shadow-[0_0_8px_rgba(255,212,0,0.6)] select-none">
               SHEETSTRIDE
             </h1>
           </Link>
         </div>
         <div className="pointer-events-auto flex gap-4 items-center bg-brand-charcoal/40 backdrop-blur-sm px-4 py-2 border border-white/5 rounded-full">
-          <span className="font-vt323 text-lg text-[#2e5bff]/70 tracking-widest">
+          <span className="font-vt323 text-lg text-[#FFD400]/70 tracking-widest">
             SYS_STATUS: OPTIMAL
           </span>
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
@@ -119,13 +119,13 @@ export function TerminalHomepage() {
                 MASTER THE
                 <br />
                 ALGORITHM
-                <span className="inline-block w-4 h-9 lg:w-5 lg:h-11 bg-[#2e5bff] ml-2 cursor-blink shadow-[0_0_10px_rgba(46,91,255,0.8)] align-middle" />
+                <span className="inline-block w-4 h-9 lg:w-5 lg:h-11 bg-[#FFD400] ml-2 cursor-blink shadow-[0_0_10px_rgba(255,212,0,0.8)] align-middle" />
               </h2>
 
               <p className="font-sans text-brand-on-surface-variant text-base md:text-lg mb-10 leading-relaxed max-w-md">
                 The premium DSA tracker engineered for high-performance engineers.
                 <br />
-                <span className="text-[#2e5bff] font-bold mt-2 inline-block">
+                <span className="text-[#FFD400] font-bold mt-2 inline-block">
                   Track. Solve. Excel.
                 </span>
               </p>
@@ -133,7 +133,7 @@ export function TerminalHomepage() {
               {/* Action area */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-16">
                 <Link href={ctaLink}>
-                  <button className="relative group overflow-hidden bg-[#2e5bff] text-white font-sans font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-md transition-all duration-300 hover:scale-105 active:scale-95 inner-glow-top shadow-[0_4px_20px_rgba(46,91,255,0.4)]">
+                  <button className="relative group overflow-hidden bg-[#FFD400] text-black font-sans font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-md transition-all duration-300 hover:scale-105 active:scale-95 inner-glow-top shadow-[0_0_20px_rgba(255,212,0,0.25)] hover:bg-[#FFE14D] active:bg-[#FFB800]">
                     <span className="relative z-10 flex items-center gap-2">
                       {ctaLabel} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </span>
@@ -149,7 +149,7 @@ export function TerminalHomepage() {
 
               {/* Scroll Hint */}
               <div className="flex items-center gap-3 animate-bounce opacity-40 select-none">
-                <ChevronDown className="w-5 h-5 text-[#2e5bff]" />
+                <ChevronDown className="w-5 h-5 text-[#FFD400]" />
                 <span className="font-vt323 text-base uppercase tracking-widest">
                   Scroll to explore
                 </span>
@@ -191,7 +191,7 @@ export function TerminalHomepage() {
                 <div className="flex flex-1 overflow-hidden font-body text-sm">
                   {/* Left Icon Sidebar */}
                   <div className="w-12 border-r border-white/5 bg-brand-surface-low/30 flex flex-col items-center py-4 gap-5 text-white/40 select-none">
-                    <FileCode className="w-5 h-5 text-[#2e5bff] cursor-pointer hover:text-white transition-colors" />
+                    <FileCode className="w-5 h-5 text-[#FFD400] cursor-pointer hover:text-white transition-colors" />
                     <GitFork className="w-5 h-5 cursor-pointer hover:text-white transition-colors" />
                     <History className="w-5 h-5 cursor-pointer hover:text-white transition-colors" />
                     <TerminalIcon className="w-5 h-5 cursor-pointer hover:text-white transition-colors" />
@@ -273,7 +273,7 @@ export function TerminalHomepage() {
           
           {/* Ambient large watermark text */}
           <div className="absolute inset-0 flex items-center justify-center opacity-5 select-none pointer-events-none">
-            <span className="font-press-start text-[20vw] text-[#2e5bff] tracking-tighter">
+            <span className="font-press-start text-[20vw] text-[#FFD400] tracking-tighter">
               STRIDE
             </span>
           </div>
@@ -284,8 +284,8 @@ export function TerminalHomepage() {
               isRevealed && "visible"
             )}
           >
-            <div className="inline-block px-4 py-1.5 border border-[#2e5bff]/30 bg-[#2e5bff]/10 rounded-full mb-8">
-              <span className="font-vt323 text-[#2e5bff] text-lg uppercase tracking-widest">
+            <div className="inline-block px-4 py-1.5 border border-[#FFD400]/30 bg-[#FFD400]/10 rounded-full mb-8">
+              <span className="font-vt323 text-[#FFD400] text-lg uppercase tracking-widest">
                 Ready to deploy your knowledge?
               </span>
             </div>
@@ -306,9 +306,9 @@ export function TerminalHomepage() {
             <div className="flex flex-col items-center mb-16">
               <Link href={ctaLink} className="group relative inline-flex items-center justify-center">
                 {/* Shadow glow layer */}
-                <div className="absolute inset-0 bg-[#2e5bff] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-[#FFD400] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-300" />
                 {/* The Button */}
-                <div className="relative bg-[#2e5bff] text-white border border-[#2e5bff]/50 font-sans font-bold text-base md:text-lg px-12 py-6 rounded-md hover:scale-105 transition-transform duration-200 active:scale-95 flex flex-col items-center gap-2">
+                <div className="relative bg-[#FFD400] text-black border border-[#FFD400]/50 font-sans font-bold text-base md:text-lg px-12 py-6 rounded-md hover:scale-105 transition-transform duration-200 active:scale-95 flex flex-col items-center gap-2 hover:bg-[#FFE14D] active:bg-[#FFB800] shadow-[0_0_20px_rgba(255,212,0,0.25)]">
                   <span className="uppercase tracking-widest">{ctaLabel}</span>
                   <span className="font-vt323 text-xs tracking-wider text-white/60">
                     SECURE_AUTH_LAYER_V4
@@ -326,7 +326,7 @@ export function TerminalHomepage() {
                 </div>
               </div>
               <div className="text-center">
-                <div className="font-vt323 text-4xl text-[#2e5bff]">12ms</div>
+                <div className="font-vt323 text-4xl text-[#FFD400]">12ms</div>
                 <div className="font-vt323 text-xs text-brand-on-surface-variant/80 uppercase tracking-widest mt-2">
                   Sync Latency
                 </div>

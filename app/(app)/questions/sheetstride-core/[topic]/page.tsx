@@ -198,7 +198,7 @@ export default function PatternExplorerPage({ params }: { params: Promise<{ topi
   if (loading) {
     return (
       <AppShell>
-        <div className="flex h-[70vh] items-center justify-center bg-[#131313] text-primary">
+        <div className="flex h-[70vh] items-center justify-center bg-[#090909] text-primary">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin" />
             <p className="font-mono-label text-mono-label tracking-[0.2em]">INITIALIZING_PATTERNS...</p>
@@ -287,7 +287,7 @@ export default function PatternExplorerPage({ params }: { params: Promise<{ topi
           <motion.div
             key={pat.slug}
             variants={cardReveal}
-            className="glass-card bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl flex flex-col justify-between hover:translate-y-[-4px] hover:border-primary hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] transition-all duration-300"
+            className="glass-card bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col justify-between hover:translate-y-[-4px] hover:border-primary hover:shadow-[0_10px_30px_-10px_rgba(255,212,0,0.12)] transition-all duration-300"
           >
             <div>
               <div className="flex justify-between items-start mb-4">
@@ -339,7 +339,7 @@ export default function PatternExplorerPage({ params }: { params: Promise<{ topi
               <button className={`w-full py-3 rounded-lg font-mono-label text-mono-label uppercase font-bold flex items-center justify-center gap-2 transition-all duration-300 ${
                 pat.isCompleted 
                   ? "bg-secondary/10 text-secondary border border-secondary/30 hover:bg-secondary/20" 
-                  : "bg-primary text-on-primary hover:shadow-[0_0_15px_rgba(178,210,255,0.4)]"
+                  : "bg-primary text-on-primary hover:shadow-[0_0_15px_rgba(255,212,0,0.4)]"
               }`}>
                 {pat.isCompleted ? "Review Patterns" : "View Questions"} 
                 <ArrowRight className="w-4 h-4" />

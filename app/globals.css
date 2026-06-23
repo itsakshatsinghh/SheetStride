@@ -19,8 +19,8 @@ body {
 
 body {
   margin: 0;
-  background: #131313;
-  color: #E5E2E1;
+  background: #050505;
+  color: #F5F5F0;
   font-family: "Space Grotesk", sans-serif;
   overflow-x: hidden;
 }
@@ -37,26 +37,26 @@ select {
 }
 
 ::selection {
-  background: #7cb8ff;
-  color: #001c37;
+  background: #FFD400;
+  color: #000000;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #131313;
+  background: #090909;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2B2B2B;
-  border-radius: 10px;
+  background: #FFD400;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #414750;
+  background: #FFE14D;
 }
 
 @layer components {
@@ -69,14 +69,14 @@ select {
   }
 
   .terminal-grid {
-    background-image: radial-gradient(rgba(43, 43, 43, 0.4) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(255, 212, 0, 0.08) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
   .code-grid {
     background-image:
-      linear-gradient(to right, #111 1px, transparent 1px),
-      linear-gradient(to bottom, #111 1px, transparent 1px);
+      linear-gradient(to right, #0E0E0E 1px, transparent 1px),
+      linear-gradient(to bottom, #0E0E0E 1px, transparent 1px);
     background-size: 40px 40px;
   }
 
@@ -86,30 +86,51 @@ select {
   }
 
   .sharp-input {
-    @apply border border-border bg-[#080808] px-3 py-2 text-text outline-none transition-colors placeholder:text-muted focus:border-primary-strong;
+    background-color: #0A0A0A;
+    border: 1px solid #2D2D2D;
+    @apply px-3 py-2 text-text outline-none transition-all placeholder:text-disabled;
+  }
+  .sharp-input:focus {
+    border-color: #FFD400;
+    box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.15);
   }
 
   .sharp-button {
-    @apply inline-flex items-center justify-center border border-border bg-surface px-4 py-2 text-body-md transition-colors hover:border-primary-strong hover:bg-surface-high;
+    background-color: #111111;
+    border: 1px solid #2D2D2D;
+    color: #F5F5F0;
+    @apply inline-flex items-center justify-center px-4 py-2 text-body-md transition-colors;
+  }
+  .sharp-button:hover {
+    background-color: #181818;
   }
 
   .sharp-button-primary {
-    @apply inline-flex items-center justify-center bg-primary-strong px-4 py-2 text-body-md text-[#00315d] transition-opacity hover:opacity-90;
+    background-color: #FFD400;
+    color: #000000;
+    @apply inline-flex items-center justify-center px-4 py-2 text-body-md font-bold transition-all;
+  }
+  .sharp-button-primary:hover {
+    background-color: #FFE14D;
+    box-shadow: 0 0 20px rgba(255, 212, 0, 0.25);
+  }
+  .sharp-button-primary:active {
+    background-color: #FFB800;
   }
 
   /* Glassmorphism card styles */
   .glass-card {
-    background: rgba(28, 28, 28, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid #2B2B2B;
+    background: rgba(17, 17, 17, 0.72);
+    backdrop-filter: blur(12px);
+    border: 1px solid #2D2D2D;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .glass-card:hover {
-    background: rgba(34, 34, 34, 0.9);
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-    border-color: #414750;
+    background: rgba(24, 24, 24, 0.92);
+    transform: translateY(-2px);
+    border-color: #FFD400;
+    box-shadow: 0 0 24px rgba(255, 212, 0, 0.12);
   }
 }
 
@@ -165,7 +186,7 @@ select {
 }
 
 .glitch-hover:hover {
-  text-shadow: 2px 0 #4de082, -2px 0 #7cb8ff;
+  text-shadow: 2px 0 #4de082, -2px 0 #FFD400;
 }
 
 @keyframes glitch {
@@ -180,7 +201,7 @@ select {
 
 /* Skeleton loader shimmer */
 .skeleton {
-  background: linear-gradient(90deg, #1c1c1c 25%, #2b2b2b 50%, #1c1c1c 75%);
+  background: linear-gradient(90deg, #111111 25%, #181818 50%, #111111 75%);
   background-size: 200% 100%;
   animation: loading-shimmer 1.5s infinite;
 }
@@ -193,12 +214,12 @@ select {
 /* Original animation definitions */
 @keyframes firePulse {
   0%, 100% {
-    box-shadow: 0 0 4px rgba(74, 225, 118, 0.15), inset 0 0 4px rgba(74, 225, 118, 0.05);
-    border-color: rgba(74, 225, 118, 0.3);
+    box-shadow: 0 0 4px rgba(77, 224, 130, 0.25), inset 0 0 4px rgba(77, 224, 130, 0.15);
+    border-color: rgba(77, 224, 130, 0.35);
   }
   50% {
-    box-shadow: 0 0 16px rgba(74, 225, 118, 0.5), inset 0 0 8px rgba(74, 225, 118, 0.2);
-    border-color: rgba(74, 225, 118, 0.85);
+    box-shadow: 0 0 16px rgba(77, 224, 130, 0.85), inset 0 0 8px rgba(77, 224, 130, 0.45);
+    border-color: rgba(77, 224, 130, 0.85);
   }
 }
 
@@ -209,12 +230,12 @@ select {
 
 @keyframes alertPulse {
   0%, 100% {
-    box-shadow: 0 0 4px rgba(124, 184, 255, 0.15);
-    border-color: rgba(124, 184, 255, 0.3);
+    box-shadow: 0 0 4px rgba(255, 212, 0, 0.25);
+    border-color: rgba(255, 212, 0, 0.35);
   }
   50% {
-    box-shadow: 0 0 16px rgba(124, 184, 255, 0.45);
-    border-color: rgba(124, 184, 255, 0.8);
+    box-shadow: 0 0 16px rgba(255, 212, 0, 0.85);
+    border-color: rgba(255, 212, 0, 0.85);
   }
 }
 
@@ -235,7 +256,7 @@ select {
 }
 .hover-glow-card:hover {
   @apply border-primary-strong/50;
-  box-shadow: 0 0 15px rgba(124, 184, 255, 0.15);
+  box-shadow: 0 0 15px rgba(255, 212, 0, 0.15);
 }
 
 @keyframes cursorBlink {
@@ -259,19 +280,19 @@ select {
 }
 
 .terminal-glass {
-  background: rgba(17, 19, 23, 0.85);
+  background: rgba(17, 17, 17, 0.85);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(45, 51, 63, 0.5);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
 .inner-glow-top {
-  box-shadow: inset 0 1px 0 0 rgba(184, 195, 255, 0.2);
+  box-shadow: inset 0 1px 0 0 rgba(255, 212, 0, 0.2);
 }
 
 .typewriter {
   overflow: hidden;
-  border-right: .15em solid #7cb8ff;
+  border-right: .15em solid #FFD400;
   white-space: nowrap;
   margin: 0 auto;
   letter-spacing: .15em;
@@ -285,7 +306,7 @@ select {
 
 @keyframes blink-caret {
   from, to { border-color: transparent }
-  50% { border-color: #7cb8ff }
+  50% { border-color: #FFD400 }
 }
 
 @keyframes scan {

@@ -350,7 +350,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="lg:col-span-8 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
+          className="lg:col-span-8 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg relative overflow-hidden group transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
         >
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
             <span className="material-symbols-outlined text-[120px]" style={{ fontVariationSettings: "'FILL' 1" }}>terminal</span>
@@ -392,12 +392,12 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-headline-md text-headline-md">Top 1% Global Rank</h3>
-                  <div className="w-full bg-surface-container-lowest h-1.5 mt-2 rounded-full overflow-hidden relative">
+                  <div className="w-full bg-[#181818] h-1.5 mt-2 rounded-full overflow-hidden relative">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${progressPercent}%` }}
                       transition={{ duration: 1.2, ease: "easeOut" }}
-                      className="h-full bg-gradient-to-r from-primary to-secondary"
+                      className="h-full bg-primary"
                     />
                   </div>
                 </div>
@@ -417,21 +417,21 @@ export default function DashboardPage() {
             <motion.div 
               key={stat.label}
               variants={revealItem}
-              whileHover={{ y: -2, scale: 1.01, borderColor: "rgba(178,210,255,0.4)" }}
-              className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-md rounded-lg flex items-center justify-between group transition-all"
+              whileHover={{ y: -2, scale: 1.01, borderColor: "#FFD400", boxShadow: "0 0 24px rgba(255,212,0,0.12)" }}
+              className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-md rounded-lg flex items-center justify-between group transition-all"
             >
               <div>
-                <p className="font-mono-label text-mono-label text-outline uppercase">{stat.label}</p>
+                <p className="font-mono-label text-mono-label text-muted uppercase">{stat.label}</p>
                 <h2 className={cn(
                   "font-mono-stats text-mono-stats",
-                  stat.tone === "secondary" ? "text-secondary" : stat.tone === "tertiary" ? "text-tertiary" : "text-on-surface"
+                  stat.tone === "secondary" ? "text-secondary" : stat.tone === "tertiary" ? "text-tertiary" : "text-[#FFD400]"
                 )}>
                   <CountUp end={stat.value} suffix={stat.suffix} />
                 </h2>
               </div>
               <span className={cn(
                 "material-symbols-outlined text-4xl opacity-50 transition-opacity group-hover:opacity-80",
-                stat.tone === "secondary" ? "text-secondary" : stat.tone === "tertiary" ? "text-tertiary" : "text-primary"
+                stat.tone === "secondary" ? "text-secondary" : stat.tone === "tertiary" ? "text-tertiary" : "text-[#FFD400]"
               )}>
                 {i === 0 ? "data_exploration" : i === 1 ? "local_fire_department" : "workspace_premium"}
               </span>
@@ -445,7 +445,7 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15, duration: 0.4 }}
-        className="bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
+        className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
       >
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
@@ -478,7 +478,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.4 }}
-          className="lg:col-span-1 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg mission-pulse flex flex-col justify-between"
+          className="lg:col-span-1 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg mission-pulse flex flex-col justify-between transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
         >
           <div>
             <div className="flex justify-between items-start mb-6">
@@ -516,7 +516,7 @@ export default function DashboardPage() {
                   </a>
                   <button 
                     onClick={handleToggleDailyMission}
-                    className="w-full flex items-center justify-center gap-2 text-on-surface-variant text-body-sm border border-[#2B2B2B] p-3 rounded-lg hover:bg-surface-variant/10 cursor-pointer transition-all uppercase"
+                    className="w-full flex items-center justify-center gap-2 text-on-surface-variant text-body-sm border border-[#2D2D2D] p-3 rounded-lg hover:bg-surface-variant/10 cursor-pointer transition-all uppercase"
                   >
                     <span className="material-symbols-outlined text-[20px]">check_circle</span>
                     MARK AS RESOLVED
@@ -540,7 +540,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.4 }}
-          className="lg:col-span-1 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:translate-y-[-4px] transition-all"
+          className="lg:col-span-1 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
         >
           <h2 className="font-headline-md text-headline-md mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">schema</span>
@@ -559,7 +559,7 @@ export default function DashboardPage() {
                       <span className="text-on-surface group-hover/topic:text-primary transition-colors">{topic.name}</span>
                       <span className="text-secondary">{topic.value}%</span>
                     </div>
-                    <div className="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-[#181818] h-1.5 rounded-full overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${topic.value}%` }}
@@ -579,7 +579,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35, duration: 0.4 }}
-          className="lg:col-span-1 bg-[#1C1C1C] border border-[#2B2B2B] p-stack-lg rounded-lg shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
+          className="lg:col-span-1 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
         >
           <h2 className="font-headline-md text-headline-md mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">history</span>
@@ -611,7 +611,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Footer metadata */}
-      <footer className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[#2B2B2B] py-8 opacity-50 md:flex-row">
+      <footer className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[#2D2D2D] py-8 opacity-50 md:flex-row">
         <p className="font-mono-label text-xs">TERMINAL SESSION ID: SS-v2.0.0-{user?.id?.slice(0, 8).toUpperCase()}</p>
         <div className="flex gap-6 font-mono-label text-xs">
           <a href="#" className="hover:text-primary transition-colors">DOCS</a>

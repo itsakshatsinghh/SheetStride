@@ -103,7 +103,7 @@ export default function MissionLibraryPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex h-[70vh] items-center justify-center bg-[#131313] text-primary">
+        <div className="flex h-[70vh] items-center justify-center bg-[#090909] text-primary">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin" />
             <p className="font-mono-label text-mono-label tracking-[0.2em]">BOOTING_QUESTIONS_MODULE...</p>
@@ -138,7 +138,7 @@ export default function MissionLibraryPage() {
         {/* SHEETSTRIDE CORE - Flagship */}
         <motion.div 
           variants={cardReveal}
-          className="group relative bg-surface-container border border-primary p-6 transition-all duration-300 flex flex-col justify-between overflow-hidden lg:col-span-2 rounded-xl hover:translate-y-[-4px] hover:shadow-[0_10px_30px_-10px_rgba(178,210,255,0.2)]"
+          className="group relative bg-surface-container border border-primary p-6 transition-all duration-300 flex flex-col justify-between overflow-hidden lg:col-span-2 rounded-xl hover:translate-y-[-4px] hover:shadow-[0_10px_30px_-10px_rgba(255,212,0,0.2)]"
         >
           <div className="absolute top-0 right-0 p-4">
             <span className="px-3 py-1 bg-primary text-on-primary font-mono-label text-xs font-bold uppercase tracking-widest rounded-sm">FLAGSHIP ROADMAP</span>
@@ -190,7 +190,7 @@ export default function MissionLibraryPage() {
         {/* LEETCODE UNIVERSE */}
         <motion.div 
           variants={cardReveal}
-          className="group bg-surface-container border border-outline-variant p-6 transition-all duration-300 flex flex-col justify-between rounded-xl hover:translate-y-[-4px] hover:border-primary hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
+          className="group bg-surface-container border border-outline-variant p-6 transition-all duration-300 flex flex-col justify-between rounded-xl hover:translate-y-[-4px] hover:border-primary hover:shadow-[0_10px_30px_-10px_rgba(255,212,0,0.12)]"
         >
           <div>
             <h2 className="font-display-arcade text-lg text-on-surface mb-4 mt-2">LEETCODE UNIVERSE</h2>
@@ -218,10 +218,10 @@ export default function MissionLibraryPage() {
         {/* COMPANY SHEETS - Premium Discovery */}
         <motion.div 
           variants={cardReveal}
-          className="group relative bg-[#131313] border border-[#f97316]/35 p-6 transition-all duration-300 flex flex-col justify-between rounded-xl hover:translate-y-[-4px] hover:scale-[1.01] hover:border-[#f97316] hover:shadow-[0_10px_30px_-5px_rgba(249,115,22,0.3)]"
+          className="group relative bg-[#111111] border border-[#f97316]/35 p-6 transition-all duration-300 flex flex-col justify-between rounded-xl hover:translate-y-[-4px] hover:scale-[1.01] hover:border-[#f97316] hover:shadow-[0_10px_30px_-5px_rgba(249,115,22,0.3)]"
         >
           <div className="absolute top-0 right-0 p-4">
-            <span className="px-2 py-0.5 bg-[#f97316]/10 border border-[#f97316]/30 text-[#f97316] font-mono-label text-[9px] font-bold uppercase tracking-widest rounded-sm">
+            <span className="px-2 py-0.5 bg-[#f97316]/10 border border-[#f97316]/30 text-[#f97316] font-mono-label text-[9px] font-bold uppercase tracking-widest tracking-widest rounded-sm">
               PREMIUM PREP
             </span>
           </div>

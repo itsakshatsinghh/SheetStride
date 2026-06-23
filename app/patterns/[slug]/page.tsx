@@ -152,7 +152,7 @@ export default async function PatternDetailPage({ params }: PageProps) {
       <header className="mb-10">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           {pattern.topic_name && (
-            <span className="px-2.5 py-0.5 bg-[#1b1b1b] border border-primary-strong/30 text-primary font-mono-label text-[10px] tracking-wider uppercase rounded">
+            <span className="px-2.5 py-0.5 bg-[#111111] border border-primary-strong/30 text-primary font-mono-label text-[10px] tracking-wider uppercase rounded">
               {pattern.topic_name.split(".")[1]?.trim() || pattern.topic_name}
             </span>
           )}
@@ -178,7 +178,7 @@ export default async function PatternDetailPage({ params }: PageProps) {
         <div className="lg:col-span-2 space-y-8">
           
           {/* Core Concept Overview */}
-          <section className="bg-[#131313] border border-outline-variant/30 p-6 rounded-xl relative overflow-hidden">
+          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-3 flex items-center gap-1.5 opacity-30 text-[10px] font-mono">
               <Layers className="h-3.5 w-3.5" />
               <span>CORE_BLUEPRINT</span>
@@ -194,7 +194,7 @@ export default async function PatternDetailPage({ params }: PageProps) {
                 <span className="block font-mono text-[10px] text-outline/50 uppercase tracking-widest mb-2">RECOGNITION_SIGNALS</span>
                 <div className="flex flex-wrap gap-2">
                   {keywords.map((word, i) => (
-                    <span key={i} className="text-xs font-mono bg-[#1c1c1c] border border-outline-variant/20 px-3 py-1 rounded text-outline-variant">
+                    <span key={i} className="text-xs font-mono bg-[#090909] border border-outline-variant/20 px-3 py-1 rounded text-outline-variant">
                       {word}
                     </span>
                   ))}
@@ -204,19 +204,19 @@ export default async function PatternDetailPage({ params }: PageProps) {
           </section>
 
           {/* Practice Questions (Client-Hydrated Toggle Overlay) */}
-          <section className="bg-[#131313] border border-outline-variant/30 p-6 rounded-xl">
+          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl">
             <h2 className="font-mono text-outline uppercase tracking-widest text-[12px] mb-4">PRACTICE_QUESTIONS</h2>
             <PatternQuestionsClient initialQuestions={questions || []} patternName={pattern.pattern_name} />
           </section>
 
           {/* C++ Code Template */}
           {pattern.cpp_template && (
-            <section className="bg-[#131313] border border-outline-variant/30 rounded-xl overflow-hidden">
-              <div className="bg-[#1b1b1b] border-b border-outline-variant/20 px-6 py-3 flex justify-between items-center">
+            <section className="bg-[#111111] border border-outline-variant/30 rounded-xl overflow-hidden">
+              <div className="bg-[#090909] border-b border-outline-variant/20 px-6 py-3 flex justify-between items-center">
                 <span className="font-mono text-outline uppercase tracking-widest text-[11px]">C++ CODE TEMPLATE</span>
                 <span className="font-mono text-[10px] text-primary-strong">CPP_STDLIB</span>
               </div>
-              <div className="p-6 overflow-x-auto bg-[#0d0d0d]">
+              <div className="p-6 overflow-x-auto bg-[#090909]">
                 <pre className="font-mono text-xs text-text/90 leading-relaxed whitespace-pre">
                   <code>{pattern.cpp_template}</code>
                 </pre>
@@ -229,7 +229,7 @@ export default async function PatternDetailPage({ params }: PageProps) {
         <div className="space-y-8">
           
           {/* Complexity analysis card */}
-          <section className="bg-[#131313] border border-outline-variant/30 p-6 rounded-xl space-y-5">
+          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl space-y-5">
             <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">COMPLEXITY_BUDGET</h2>
             
             <div className="flex items-center gap-4 border-b border-outline-variant/15 pb-4">
@@ -255,7 +255,7 @@ export default async function PatternDetailPage({ params }: PageProps) {
 
           {/* Related patterns sidebar */}
           {relatedPatterns.length > 0 && (
-            <section className="bg-[#131313] border border-outline-variant/30 p-6 rounded-xl space-y-4">
+            <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl space-y-4">
               <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">RELATED_PATTERNS</h2>
               <div className="space-y-4">
                 {relatedPatterns.map((rel) => {
@@ -263,7 +263,7 @@ export default async function PatternDetailPage({ params }: PageProps) {
                   return (
                     <div 
                       key={rel.pattern_name}
-                      className="group border border-outline-variant/20 hover:border-primary/50 p-4 rounded-lg bg-[#181818]/60 transition-all hover:bg-[#181818]"
+                      className="group border border-outline-variant/20 hover:border-primary/50 p-4 rounded-lg bg-[#090909]/60 transition-all hover:bg-[#090909]"
                     >
                       <h3 className="font-display font-bold text-[13px] text-text mb-1 group-hover:text-primary transition-colors">
                         <Link href={`/patterns/${relSlug}`}>{rel.pattern_name}</Link>

@@ -320,7 +320,7 @@ export default function ProgressPage() {
           </button>
           <button 
             onClick={() => window.location.reload()} 
-            className="bg-primary text-on-primary px-4 py-2 rounded-lg font-mono-label text-mono-label flex items-center gap-2 hover:shadow-[0_0_15px_rgba(178,210,255,0.4)] transition-all active:scale-95 font-bold"
+            className="bg-primary text-on-primary px-4 py-2 rounded-lg font-mono-label text-mono-label flex items-center gap-2 hover:shadow-[0_0_15px_rgba(255,212,0,0.4)] transition-all active:scale-95 font-bold"
           >
             <span className="material-symbols-outlined text-sm">refresh</span> Rebuild_Metrics
           </button>
@@ -335,7 +335,7 @@ export default function ProgressPage() {
         className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8"
       >
         {/* Heatmap / Contribution Grid (Full Width Span) */}
-        <motion.div variants={revealItem} className="md:col-span-12 bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl relative overflow-hidden group hover:translate-y-[-4px] transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
+        <motion.div variants={revealItem} className="md:col-span-12 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl relative overflow-hidden group transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]">
           <div className="flex justify-between items-center mb-6">
             <h2 className="font-mono-label text-mono-label uppercase text-outline flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary">grid_view</span> Activity_Heatmap_FY2026
@@ -355,7 +355,7 @@ export default function ProgressPage() {
         </motion.div>
 
         {/* Weekly Throughput Card */}
-        <motion.div variants={revealItem} className="md:col-span-8 bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl hover:translate-y-[-4px] transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
+        <motion.div variants={revealItem} className="md:col-span-8 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]">
           <h2 className="font-mono-label text-mono-label uppercase text-outline mb-8 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">analytics</span> Weekly_Throughput
           </h2>
@@ -366,7 +366,7 @@ export default function ProgressPage() {
                   className={cn(
                     "w-full rounded-t-lg transition-all duration-500",
                     bar.day === "Thu" 
-                      ? "bg-primary shadow-[0_0_20px_rgba(178,210,255,0.2)]" 
+                      ? "bg-primary shadow-[0_0_20px_rgba(255,212,0,0.2)]" 
                       : "bg-primary/20 hover:bg-primary"
                   )} 
                   style={{ height: bar.height }}
@@ -380,14 +380,14 @@ export default function ProgressPage() {
         </motion.div>
 
         {/* Topic Mastery Donut */}
-        <motion.div variants={revealItem} className="md:col-span-4 bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl flex flex-col hover:translate-y-[-4px] transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
+        <motion.div variants={revealItem} className="md:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]">
           <h2 className="font-mono-label text-mono-label uppercase text-outline mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-tertiary">star</span> Topic_Mastery
           </h2>
           <div className="flex-1 flex items-center justify-center relative py-4">
             {/* SVG Donut Chart */}
             <svg className="w-40 h-40 transform -rotate-90">
-              <circle cx="80" cy="80" fill="transparent" r="70" stroke="#2B2B2B" strokeWidth="12"></circle>
+              <circle cx="80" cy="80" fill="transparent" r="70" stroke="#2D2D2D" strokeWidth="12"></circle>
               <circle 
                 cx="80" 
                 cy="80" 
@@ -421,7 +421,7 @@ export default function ProgressPage() {
         </motion.div>
 
         {/* Insight Card 1 */}
-        <motion.div variants={revealItem} className="md:col-span-4 bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl border-l-4 border-l-secondary hover:translate-y-[-4px] transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
+        <motion.div variants={revealItem} className="md:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl border-l-4 border-l-secondary transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="font-mono-label text-xs text-outline uppercase mb-1">Peak Activity Day</p>
@@ -435,7 +435,7 @@ export default function ProgressPage() {
         </motion.div>
 
         {/* Insight Card 2 */}
-        <motion.div variants={revealItem} className="md:col-span-4 bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl border-l-4 border-l-error hover:translate-y-[-4px] transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
+        <motion.div variants={revealItem} className="md:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl border-l-4 border-l-error transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="font-mono-label text-xs text-outline uppercase mb-1">Weakest Topic</p>
@@ -449,7 +449,7 @@ export default function ProgressPage() {
         </motion.div>
 
         {/* Insight Card 3 (Streak Tracker with Pac-Man loading track) */}
-        <motion.div variants={revealItem} className="md:col-span-4 bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl overflow-hidden relative hover:translate-y-[-4px] transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
+        <motion.div variants={revealItem} className="md:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl overflow-hidden relative transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]">
           <div className="relative z-10">
             <p className="font-mono-label text-xs text-outline uppercase mb-1">Current XP Streak</p>
             <div className="flex items-baseline gap-2 mb-4">
@@ -472,7 +472,7 @@ export default function ProgressPage() {
         </motion.div>
 
         {/* Difficulty Breakdown (Full width of grid inside bento columns) */}
-        <motion.div variants={revealItem} className="md:col-span-12 bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl hover:translate-y-[-4px] transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
+        <motion.div variants={revealItem} className="md:col-span-12 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]">
           <h2 className="font-mono-label text-mono-label uppercase text-outline mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-outline">bar_chart</span> Difficulty_Distribution
           </h2>
@@ -482,7 +482,7 @@ export default function ProgressPage() {
                 <span className="text-secondary">Easy_Nodes</span>
                 <span className="text-on-surface">{easySolved}/{totalEasy}</span>
               </div>
-              <div className="h-2 bg-surface-container rounded-full overflow-hidden">
+              <div className="h-2 bg-[#181818] rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }} 
                   animate={{ width: `${easyPercent}%` }} 
@@ -495,7 +495,7 @@ export default function ProgressPage() {
                 <span className="text-primary">Medium_Nodes</span>
                 <span className="text-on-surface">{mediumSolved}/{totalMedium}</span>
               </div>
-              <div className="h-2 bg-surface-container rounded-full overflow-hidden">
+              <div className="h-2 bg-[#181818] rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }} 
                   animate={{ width: `${mediumPercent}%` }} 
@@ -508,7 +508,7 @@ export default function ProgressPage() {
                 <span className="text-error">Hard_Nodes</span>
                 <span className="text-on-surface">{hardSolved}/{totalHard}</span>
               </div>
-              <div className="h-2 bg-surface-container rounded-full overflow-hidden">
+              <div className="h-2 bg-[#181818] rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }} 
                   animate={{ width: `${hardPercent}%` }} 
@@ -521,8 +521,8 @@ export default function ProgressPage() {
       </motion.div>
 
       {/* Topic Distribution Table section */}
-      <section className="bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2B2B2B] bg-[#1C1C1C]/50 select-none">
+      <section className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] rounded-xl overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2D2D2D] bg-[#111111]/50 select-none">
           <span className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">schema</span> Topic Distribution
           </span>
@@ -530,7 +530,7 @@ export default function ProgressPage() {
         </div>
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-[#2B2B2B] bg-[#1C1C1C]/50 select-none">
+            <tr className="border-b border-[#2D2D2D] bg-[#111111]/50 select-none">
               <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Module</th>
               <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Progress</th>
               <th className="px-6 py-4 text-right font-mono-label text-mono-label text-outline uppercase">Solved</th>
@@ -538,14 +538,14 @@ export default function ProgressPage() {
           </thead>
           <tbody>
             {topicDistribution.map((row) => (
-              <tr key={row.label} className="border-b border-[#2B2B2B]/40 hover:bg-surface-variant/10 transition-colors">
+              <tr key={row.label} className="border-b border-[#2D2D2D]/40 hover:bg-surface-variant/10 transition-colors">
                 <td className="px-6 py-4 text-body-lg font-bold">
                   <Link href={`/questions?topic=${encodeURIComponent(row.label)}`} className="text-on-surface hover:text-primary transition-colors block">
                     {row.label.toUpperCase()}
                   </Link>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="h-2 bg-surface-container rounded-full overflow-hidden max-w-md">
+                  <div className="h-2 bg-[#181818] rounded-full overflow-hidden max-w-md">
                     <div className="h-full bg-primary" style={{ width: `${row.progress}%` }} />
                   </div>
                 </td>
@@ -557,7 +557,7 @@ export default function ProgressPage() {
       </section>
 
       {/* Footer info footnote */}
-      <footer className="border-t border-[#2B2B2B] py-stack-md mt-12 flex flex-col md:flex-row justify-between items-center gap-4 opacity-50 text-xs">
+      <footer className="border-t border-[#2D2D2D] py-stack-md mt-12 flex flex-col md:flex-row justify-between items-center gap-4 opacity-50 text-xs">
         <div className="flex items-center gap-4">
           <span className="font-display-arcade text-display-arcade text-primary">SHEETSTRIDE</span>
           <span className="font-mono-label text-mono-label text-outline uppercase">v2.0.0-STABLE</span>

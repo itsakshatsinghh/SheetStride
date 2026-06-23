@@ -79,7 +79,7 @@ export function LoginScreen() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-[#080808] text-on-background flex items-center justify-center terminal-grid overflow-hidden">
+    <div className="relative min-h-screen bg-[#050505] text-on-background flex items-center justify-center terminal-grid overflow-hidden">
       {/* Decorative scanline */}
       <div className="scanline" />
 
@@ -102,7 +102,7 @@ export function LoginScreen() {
 
       {/* Main Authentication Container */}
       <main className="z-20 w-full max-w-[440px] px-margin-mobile md:px-0">
-        <div className="glass-card p-stack-lg rounded-xl flex flex-col items-center space-y-stack-lg border-primary/20 bg-[#1C1C1C]/90 backdrop-blur-md">
+        <div className="glass-card p-stack-lg rounded-xl flex flex-col items-center space-y-stack-lg border-primary/20 bg-[#111111]/90 backdrop-blur-md">
           
           {/* Brand Header */}
           <div className="text-center space-y-stack-sm w-full">
@@ -129,7 +129,7 @@ export function LoginScreen() {
             <button 
               onClick={handleGithub}
               disabled={status === "loading"}
-              className="w-full bg-primary hover:bg-primary-strong text-background py-3.5 rounded-lg font-headline-md flex items-center justify-center space-x-3 group overflow-hidden relative transition-all duration-300 hover:shadow-[0_0_20px_rgba(124,184,255,0.4)] disabled:opacity-50 font-bold"
+              className="w-full bg-primary hover:bg-primary-strong text-background py-3.5 rounded-lg font-headline-md flex items-center justify-center space-x-3 group overflow-hidden relative transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,212,0,0.4)] disabled:opacity-50 font-bold"
             >
               <span className="font-headline-md uppercase tracking-wider">CONTINUE WITH GITHUB</span>
               <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">

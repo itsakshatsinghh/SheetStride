@@ -51,12 +51,11 @@ export default async function TopicsIndexPage() {
           const count = counts[dbName] || 0;
           const romanPrefix = dbName.match(/^([IVXLCDM]+)\./)?.[1] || "•";
           const cleanName = TOPIC_DISPLAY_NAMES[slug] || dbName.replace(/^[A-Z]+\.\s+/, "");
-
           return (
             <Link 
               key={slug} 
               href={`/topics/${slug}`}
-              className="group block relative bg-[#131313] border border-outline-variant/30 hover:border-primary p-6 transition-all duration-300 rounded-xl hover:-translate-y-1 hover:shadow-[0_8px_25px_-10px_rgba(178,210,255,0.15)]"
+              className="group block relative bg-[#111111] border border-outline-variant/30 hover:border-primary p-6 transition-all duration-300 rounded-xl hover:-translate-y-1 hover:shadow-[0_8px_25px_-10px_rgba(255,212,0,0.15)]"
             >
               <div className="flex justify-between items-start gap-4 mb-4">
                 <span className="font-mono text-outline/40 text-[18px] group-hover:text-primary transition-colors font-bold">

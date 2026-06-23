@@ -226,7 +226,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
   if (loading) {
     return (
       <AppShell>
-        <div className="flex h-[70vh] items-center justify-center bg-[#131313] text-[#f97316]">
+        <div className="flex h-[70vh] items-center justify-center bg-[#090909] text-[#f97316]">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin" />
             <p className="font-mono-label text-mono-label tracking-[0.2em] text-[#f97316]">DECRYPTING_INTERVIEW_SHEETS...</p>
@@ -276,19 +276,19 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
 
       {/* Statistics HUD */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 select-none">
-        <div className="bg-[#131313] border border-[#2B2B2B] p-6 rounded-xl flex flex-col gap-1 shadow-md">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 shadow-md">
           <span className="font-mono-label text-mono-label text-outline/60 uppercase">Total Questions</span>
           <span className="font-mono-stats text-mono-stats text-on-surface">{totalCount}</span>
         </div>
-        <div className="bg-[#131313] border border-[#2B2B2B] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-secondary shadow-md">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-secondary shadow-md">
           <span className="font-mono-label text-mono-label text-outline/60 uppercase">Solved</span>
           <span className="font-mono-stats text-mono-stats text-secondary">{solvedCount}</span>
         </div>
-        <div className="bg-[#131313] border border-[#2B2B2B] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-[#f97316]/50 shadow-md">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-[#f97316]/50 shadow-md">
           <span className="font-mono-label text-mono-label text-outline/60 uppercase">Completion Rate</span>
           <span className="font-mono-stats text-mono-stats text-[#f97316]">{percent}%</span>
         </div>
-        <div className="bg-[#131313] border border-[#2B2B2B] p-6 rounded-xl flex flex-col gap-1 shadow-md">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 shadow-md">
           <span className="font-mono-label text-mono-label text-outline/60 uppercase">Active Mode</span>
           <span className="font-mono-stats text-mono-stats text-primary flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" /> TARGETED
@@ -297,7 +297,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
       </div>
 
       {/* Toolbar Controls */}
-      <div className="bg-[#131313]/90 border border-[#2B2B2B] rounded-xl p-4 mb-6 flex flex-col lg:flex-row gap-4 items-center justify-between">
+      <div className="bg-[#111111]/90 border border-[#2D2D2D] rounded-xl p-4 mb-6 flex flex-col lg:flex-row gap-4 items-center justify-between">
         {/* Search */}
         <div className="relative w-full lg:w-96 group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline w-4 h-4 group-focus-within:text-[#f97316] transition-colors" />
@@ -326,11 +326,11 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
       </div>
 
       {/* Questions Table */}
-      <div className="bg-[#131313] border border-[#2B2B2B] rounded-xl overflow-hidden shadow-2xl relative">
+      <div className="bg-[#111111] border border-[#2D2D2D] rounded-xl overflow-hidden shadow-2xl relative">
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#1C1C1C]/40 border-b border-[#2B2B2B] select-none text-[10px] uppercase font-mono-label text-outline/65">
+              <tr className="bg-[#090909]/40 border-b border-[#2D2D2D] select-none text-[10px] uppercase font-mono-label text-outline/65">
                 <th className="px-6 py-4">#</th>
                 <th className="px-6 py-4">Title</th>
                 <th className="px-6 py-4">Primary Topic</th>
@@ -341,7 +341,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
                 <th className="px-6 py-4 text-right">Track</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2B2B2B]/40">
+            <tbody className="divide-y divide-[#2D2D2D]/40">
               {filteredQuestions.length === 0 ? (
                 <tr>
                   <td colSpan={user ? 8 : 7} className="text-center py-16 text-outline/60 font-mono-label text-sm uppercase">
@@ -387,7 +387,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
 
                         {/* Topic tag */}
                         <td className="px-6 py-4.5">
-                          <span className="font-body-sm text-[11px] text-on-surface-variant bg-surface-container-high/40 px-2 py-0.5 rounded border border-[#2B2B2B] block w-fit truncate max-w-[120px]" title={row.topics}>
+                          <span className="font-body-sm text-[11px] text-on-surface-variant bg-surface-container-high/40 px-2 py-0.5 rounded border border-[#2D2D2D] block w-fit truncate max-w-[120px]" title={row.topics}>
                             {row.topics?.split(",")[0] || "Unknown"}
                           </span>
                         </td>
@@ -407,7 +407,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
                         {/* Frequency Rating */}
                         <td className="px-6 py-4.5 select-none">
                           <div className="flex items-center gap-2">
-                            <div className="w-16 h-1.5 bg-[#2B2B2B] rounded-full overflow-hidden shrink-0">
+                            <div className="w-16 h-1.5 bg-[#2D2D2D] rounded-full overflow-hidden shrink-0">
                               <div
                                 className="h-full bg-[#f97316]"
                                 style={{ width: `${Math.min(row.frequency, 100)}%` }}
@@ -479,7 +479,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-8 right-8 bg-[#1C1C1C] border border-[#2B2B2B] border-l-4 border-l-secondary p-4 rounded-xl flex items-center gap-4 shadow-2xl z-50 min-w-[320px] max-w-[400px]"
+            className="fixed bottom-8 right-8 bg-[#111111] border border-[#2D2D2D] border-l-4 border-l-secondary p-4 rounded-xl flex items-center gap-4 shadow-2xl z-50 min-w-[320px] max-w-[400px]"
           >
             <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0 select-none">
               <CheckCircle2 className="h-4 w-4" />
@@ -490,7 +490,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
             </div>
             <button
               onClick={() => setShowToast(false)}
-              className="p-1 hover:bg-[#2B2B2B]/30 rounded text-outline hover:text-text cursor-pointer"
+              className="p-1 hover:bg-[#2D2D2D]/30 rounded text-outline hover:text-text cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>

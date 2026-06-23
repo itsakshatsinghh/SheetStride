@@ -261,7 +261,7 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
   if (loading) {
     return (
       <AppShell>
-        <div className="flex h-[70vh] items-center justify-center bg-[#131313] text-primary">
+        <div className="flex h-[70vh] items-center justify-center bg-[#090909] text-primary">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin" />
             <p className="font-mono-label text-mono-label tracking-[0.2em]">BOOTING_SOLUTIONS_MATRIX...</p>
@@ -355,19 +355,19 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
 
       {/* Pattern Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 select-none">
-        <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl flex flex-col gap-1 shadow-md">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 shadow-md">
           <span className="font-mono-label text-mono-label text-outline uppercase">Total Exercises</span>
           <span className="font-mono-stats text-mono-stats text-on-surface">{totalCount < 10 ? `0${totalCount}` : totalCount}</span>
         </div>
-        <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-secondary shadow-md">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-secondary shadow-md">
           <span className="font-mono-label text-mono-label text-outline uppercase">Completed</span>
           <span className="font-mono-stats text-mono-stats text-secondary">{solvedCount < 10 ? `0${solvedCount}` : solvedCount}</span>
         </div>
-        <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl flex flex-col gap-1 shadow-md">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 shadow-md">
           <span className="font-mono-label text-mono-label text-outline uppercase">Completion Rate</span>
           <span className="font-mono-stats text-mono-stats text-on-surface">{percent}%</span>
         </div>
-        <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-tertiary shadow-md">
+        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-tertiary shadow-md">
           <span className="font-mono-label text-mono-label text-outline uppercase">Next Milestone</span>
           <span className="font-mono-stats text-mono-stats text-tertiary truncate block max-w-full" title={nextMilestone}>
             {nextMilestone}
@@ -376,11 +376,11 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
       </div>
 
       {/* Question Table Grid container */}
-      <div className="bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl overflow-hidden shadow-2xl relative">
+      <div className="bg-[#111111] border border-[#2D2D2D] rounded-xl overflow-hidden shadow-2xl relative">
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#1C1C1C]/50 border-b border-[#2B2B2B] select-none">
+              <tr className="bg-[#090909]/50 border-b border-[#2D2D2D] select-none">
                 <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">#</th>
                 <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Title</th>
                 <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Difficulty</th>
@@ -390,14 +390,14 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
                 <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2B2B2B]/40">
+            <tbody className="divide-y divide-[#2D2D2D]/40">
               <AnimatePresence mode="popLayout">
                 {questions.map((row) => {
                   const solved = solvedIds.has(row.ID);
                   return (
                     <motion.tr 
                       key={row.ID}
-                      whileHover={{ background: "rgba(178, 210, 255, 0.02)" }}
+                      whileHover={{ background: "rgba(255, 212, 0, 0.02)" }}
                       className={cn(
                         "transition-all duration-200",
                         solved && "bg-secondary/[0.01]"
@@ -496,12 +496,12 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
             </div>
             <div className="flex flex-col gap-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-14 bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl" />
+                <div key={i} className="h-14 bg-[#111111] border border-[#2D2D2D] rounded-xl" />
               ))}
             </div>
           </div>
           {/* Right Panel Skeleton */}
-          <div className="lg:col-span-7 bg-[#1C1C1C]/80 border border-[#2B2B2B] rounded-xl p-8 h-[400px] flex flex-col justify-between">
+          <div className="lg:col-span-7 bg-[#111111]/80 border border-[#2D2D2D] rounded-xl p-8 h-[400px] flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-8">
                 <div className="h-6 w-32 bg-[#2B2B2B] rounded" />
@@ -517,7 +517,7 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
           </div>
         </section>
       ) : !patternMetadata ? (
-        <section className="mt-12 bg-[#1C1C1C] border border-dashed border-error/30 rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-4">
+        <section className="mt-12 bg-[#111111] border border-dashed border-error/30 rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-4">
           <AlertCircle className="w-10 h-10 text-error animate-pulse" />
           <h3 className="font-headline-md text-error">Pattern handbook data unavailable.</h3>
           <p className="text-outline text-body-sm max-w-md">
@@ -548,7 +548,7 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
 
         if (availableTabs.length === 0) {
           return (
-            <section className="mt-12 bg-[#1C1C1C] border border-dashed border-error/30 rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-4">
+            <section className="mt-12 bg-[#111111] border border-dashed border-error/30 rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-4">
               <AlertCircle className="w-10 h-10 text-error" />
               <h3 className="font-headline-md text-error">Pattern handbook data unavailable.</h3>
               <p className="text-outline text-body-sm max-w-md">
@@ -581,8 +581,8 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
                       className={cn(
                         "p-4 rounded-xl text-left flex items-center gap-4 transition-all duration-300",
                         isActive
-                          ? "bg-[#b2d2ff]/5 border border-[#2B2B2B] border-l-4 border-l-primary shadow-[0_0_15px_rgba(178,210,255,0.1)]"
-                          : "bg-[#1C1C1C] border border-[#2B2B2B] hover:bg-surface-container-high/40 group"
+                          ? "bg-[#ffd400]/5 border border-[#2D2D2D] border-l-4 border-l-primary shadow-[0_0_15px_rgba(255,212,0,0.12)]"
+                          : "bg-[#111111] border border-[#2D2D2D] hover:bg-surface-container-high/40 group"
                       )}
                     >
                       <Icon
@@ -606,7 +606,7 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
             </div>
 
             {/* Right Panel: Content Viewer (70%) */}
-            <div className="lg:col-span-7 bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-8 relative overflow-hidden select-none min-h-[380px] flex flex-col justify-between">
+            <div className="lg:col-span-7 bg-[#111111] border border-[#2D2D2D] rounded-xl p-8 relative overflow-hidden select-none min-h-[380px] flex flex-col justify-between">
               {currentTabId === "core_idea" && (
                 <div className="flex-1 flex flex-col">
                   <div className="flex justify-between items-center mb-8">
@@ -639,7 +639,7 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
                       {keywords.map((keyword, i) => (
                         <span
                           key={i}
-                          className="px-4 py-2 bg-[#0E0E0E] border border-[#2B2B2B] hover:border-primary hover:text-primary text-on-surface font-body-sm rounded-xl transition-all duration-200 cursor-default select-none shadow-md"
+                          className="px-4 py-2 bg-[#090909] border border-[#2D2D2D] hover:border-primary hover:text-primary text-on-surface font-body-sm rounded-xl transition-all duration-200 cursor-default select-none shadow-md"
                         >
                           {keyword}
                         </span>
@@ -673,12 +673,12 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
                         </div>
                       </div>
                     </div>
-                    <div className="w-full md:w-64 h-40 bg-[#0E0E0E] rounded-xl border border-[#2B2B2B] flex flex-col items-center justify-center relative overflow-hidden shrink-0">
+                    <div className="w-full md:w-64 h-40 bg-[#090909] rounded-xl border border-[#2D2D2D] flex flex-col items-center justify-center relative overflow-hidden shrink-0">
                       <div className="relative z-10 text-center">
                         <span className="font-mono-stats text-4xl text-secondary tracking-tighter">{patternMetadata.tc}</span>
                         <div className="mt-1 font-mono-label text-[11px] text-secondary uppercase tracking-widest opacity-80">Time Complexity</div>
                       </div>
-                      <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2B2B2B]">
+                      <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2D2D2D]">
                         <div className="h-full bg-secondary w-[75%]"></div>
                       </div>
                     </div>
@@ -694,9 +694,9 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
                       Module {currentTabIndex + 1 < 10 ? `0${currentTabIndex + 1}` : currentTabIndex + 1} / {availableTabs.length < 10 ? `0${availableTabs.length}` : availableTabs.length}
                     </span>
                   </div>
-                  <div className="flex flex-col items-center justify-center p-8 bg-[#0E0E0E]/50 border border-[#2B2B2B] rounded-xl flex-1">
+                  <div className="flex flex-col items-center justify-center p-8 bg-[#090909]/50 border border-[#2D2D2D] rounded-xl flex-1">
                     <span className="font-mono-label text-mono-label text-on-surface-variant mb-4 tracking-widest uppercase opacity-60">Typical Space Complexity</span>
-                    <div className="font-mono-stats text-[72px] leading-none text-primary mb-4" style={{ textShadow: "0 0 20px rgba(124, 184, 255, 0.4)" }}>{patternMetadata.sc}</div>
+                    <div className="font-mono-stats text-[72px] leading-none text-primary mb-4" style={{ textShadow: "0 0 20px rgba(255, 212, 0, 0.4)" }}>{patternMetadata.sc}</div>
                     <div className="h-1.5 w-32 bg-primary/20 rounded-full overflow-hidden mb-6">
                       <div className="h-full w-1/3 bg-primary"></div>
                     </div>
@@ -788,7 +788,7 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-8 right-8 bg-[#1C1C1C] border border-[#2B2B2B] border-l-4 border-l-secondary p-4 rounded-xl flex items-center gap-4 shadow-2xl z-50 min-w-[320px] max-w-[400px]"
+            className="fixed bottom-8 right-8 bg-[#111111] border border-[#2D2D2D] border-l-4 border-l-secondary p-4 rounded-xl flex items-center gap-4 shadow-2xl z-50 min-w-[320px] max-w-[400px]"
           >
             <div className="w-9 h-9 rounded-full bg-secondary/15 flex items-center justify-center text-secondary shrink-0 select-none">
               <span className="material-symbols-outlined text-sm">military_tech</span>

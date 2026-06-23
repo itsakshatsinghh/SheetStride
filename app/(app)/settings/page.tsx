@@ -307,9 +307,9 @@ export default function SettingsPage() {
         
         {/* ACCOUNT IDENTITY */}
         <motion.form variants={revealItem} onSubmit={handleUpdateIdentity} className="h-full">
-          <div className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl hover:border-outline-variant/60 transition-colors shadow-md space-y-6 h-full flex flex-col justify-between">
+          <div className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl hover:border-outline-variant/60 transition-all duration-300 shadow-md space-y-6 h-full flex flex-col justify-between">
             <div className="space-y-4">
-              <div className="border-b border-[#2B2B2B] pb-4">
+              <div className="border-b border-[#2D2D2D] pb-4">
                 <h2 className="font-headline-md text-headline-md text-tertiary uppercase font-bold flex items-center gap-2">
                   <span className="material-symbols-outlined text-tertiary text-xl">person</span> Account Identity
                 </h2>
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                 <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">Display Name</label>
                 <input 
                   type="text"
-                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
+                  className="w-full bg-[#0A0A0A] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
                   value={displayName} 
                   onChange={(e) => setDisplayName(e.target.value)} 
                   required
@@ -335,7 +335,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">Preferred Language</label>
                 <select 
-                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all cursor-pointer font-mono" 
+                  className="w-full bg-[#0A0A0A] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all cursor-pointer font-mono" 
                   value={preferredLanguage}
                   onChange={(e) => setPreferredLanguage(e.target.value)}
                 >
@@ -349,14 +349,14 @@ export default function SettingsPage() {
                 <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">Email Address</label>
                 <input 
                   type="email"
-                  className="w-full bg-[#080808]/40 text-outline border border-[#2B2B2B] rounded-lg px-3 py-2 text-body-sm font-body-sm cursor-not-allowed select-none" 
+                  className="w-full bg-[#0A0A0A]/40 text-outline border border-[#2D2D2D] rounded-lg px-3 py-2 text-body-sm font-body-sm cursor-not-allowed select-none" 
                   value={email} 
                   disabled 
                   readOnly
                 />
               </div>
 
-              <div className="border-t border-[#2B2B2B] my-4 pt-4">
+              <div className="border-t border-[#2D2D2D] my-4 pt-4">
                 <h3 className="text-body-lg font-bold text-primary uppercase tracking-wide text-xs mb-3">Integrations & Socials</h3>
               </div>
 
@@ -364,7 +364,7 @@ export default function SettingsPage() {
                 <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">LeetCode Username</label>
                 <input 
                   type="text"
-                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
+                  className="w-full bg-[#0A0A0A] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
                   placeholder="e.g. alfaarghya"
                   value={leetcodeUsername} 
                   onChange={(e) => setLeetcodeUsername(e.target.value)} 
@@ -382,7 +382,7 @@ export default function SettingsPage() {
                   </span>
                 </div>
                 <textarea 
-                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all h-20 resize-none" 
+                  className="w-full bg-[#0A0A0A] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all h-20 resize-none" 
                   placeholder="Tell us about yourself (max 75 words)..."
                   value={bio} 
                   onChange={(e) => setBio(e.target.value)} 
@@ -393,7 +393,7 @@ export default function SettingsPage() {
                 <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">GitHub Profile/Username</label>
                 <input 
                   type="text"
-                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
+                  className="w-full bg-[#0A0A0A] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
                   placeholder="e.g. githubusername"
                   value={github} 
                   onChange={(e) => setGithub(e.target.value)} 
@@ -404,7 +404,7 @@ export default function SettingsPage() {
                 <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">LinkedIn Profile/Username</label>
                 <input 
                   type="text"
-                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
+                  className="w-full bg-[#0A0A0A] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
                   placeholder="e.g. linkedinusername"
                   value={linkedin} 
                   onChange={(e) => setLinkedin(e.target.value)} 
@@ -415,7 +415,7 @@ export default function SettingsPage() {
                 <label className="block text-mono-label text-outline uppercase tracking-wider text-[11px]">Instagram Profile/Username</label>
                 <input 
                   type="text"
-                  className="w-full bg-[#080808] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
+                  className="w-full bg-[#0A0A0A] text-on-surface border border-outline-variant/50 rounded-lg px-3 py-2 text-body-sm font-body-sm focus:outline-none focus:border-primary transition-all" 
                   placeholder="e.g. instagramusername"
                   value={instagram} 
                   onChange={(e) => setInstagram(e.target.value)} 
@@ -425,7 +425,7 @@ export default function SettingsPage() {
             
             <button 
               type="submit" 
-              className="w-full bg-primary text-on-primary font-mono-label text-mono-label font-bold py-3 px-4 rounded-lg uppercase tracking-wider hover:shadow-[0_0_15px_rgba(178,210,255,0.4)] active:scale-95 transition-all mt-4" 
+              className="w-full bg-primary text-on-primary font-mono-label text-mono-label font-bold py-3 px-4 rounded-lg uppercase tracking-wider hover:shadow-[0_0_15px_rgba(255,212,0,0.4)] active:scale-95 transition-all mt-4" 
               disabled={isUpdating}
             >
               {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mx-auto text-background" /> : "Update Identity"}
@@ -434,9 +434,9 @@ export default function SettingsPage() {
         </motion.form>
         
         {/* APPEARANCE */}
-        <motion.div variants={revealItem} className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl hover:border-outline-variant/60 transition-colors shadow-md space-y-6 flex flex-col justify-between">
+        <motion.div variants={revealItem} className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl hover:border-outline-variant/60 transition-all duration-300 shadow-md space-y-6 flex flex-col justify-between hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]">
           <div>
-            <div className="mb-6 border-b border-[#2B2B2B] pb-4">
+            <div className="mb-6 border-b border-[#2D2D2D] pb-4">
               <h2 className="font-headline-md text-headline-md text-primary uppercase flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-xl">palette</span> Appearance
               </h2>
@@ -454,10 +454,10 @@ export default function SettingsPage() {
         </motion.div>
 
         {/* DATA MANAGEMENT */}
-        <motion.div variants={revealItem} className="bg-[#1C1C1C] border border-[#2B2B2B] p-6 rounded-xl hover:border-outline-variant/60 transition-colors shadow-md space-y-6 md:col-span-2">
+        <motion.div variants={revealItem} className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl hover:border-outline-variant/60 transition-all duration-300 shadow-md space-y-6 md:col-span-2 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="flex h-14 w-14 items-center justify-center border border-outline-variant/30 bg-[#0E0E0E] rounded-lg">
+              <div className="flex h-14 w-14 items-center justify-center border border-outline-variant/30 bg-[#090909] rounded-lg">
                 <span className="material-symbols-outlined text-primary text-3xl">database</span>
               </div>
               <div>
@@ -490,7 +490,7 @@ export default function SettingsPage() {
       </motion.section>
 
       {/* Footer metadata */}
-      <footer className="border-t border-[#2B2B2B] py-stack-md mt-12 flex flex-col md:flex-row justify-between items-center gap-4 opacity-50 text-xs">
+      <footer className="border-t border-[#2D2D2D] py-stack-md mt-12 flex flex-col md:flex-row justify-between items-center gap-4 opacity-50 text-xs">
         <div className="flex items-center gap-4">
           <span className="font-display-arcade text-display-arcade text-primary">SHEETSTRIDE</span>
           <span className="font-mono-label text-mono-label text-outline uppercase">v2.2.0-STABLE</span>

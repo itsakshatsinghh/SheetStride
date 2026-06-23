@@ -214,7 +214,7 @@ export default function SheetstrideCorePage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex h-[70vh] items-center justify-center bg-[#131313] text-primary">
+        <div className="flex h-[70vh] items-center justify-center bg-[#090909] text-primary">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin" />
             <p className="font-mono-label text-mono-label tracking-[0.2em]">INITIALIZING_ROADMAP...</p>
@@ -265,7 +265,7 @@ export default function SheetstrideCorePage() {
           <motion.div
             key={topic.slug}
             variants={cardReveal}
-            className="topic-card bg-surface-container border border-outline-variant/30 rounded-xl p-6 flex flex-col justify-between group hover:translate-y-[-4px] hover:border-primary hover:shadow-[0_10px_30px_-10px_rgba(178,210,255,0.2)] transition-all duration-300"
+            className="topic-card bg-surface-container border border-outline-variant/30 rounded-xl p-6 flex flex-col justify-between group hover:translate-y-[-4px] hover:border-primary hover:shadow-[0_10px_30px_-10px_rgba(255,212,0,0.2)] transition-all duration-300"
           >
             <div>
               <div className="flex justify-between items-start mb-4">

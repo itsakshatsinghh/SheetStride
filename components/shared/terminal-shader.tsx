@@ -90,14 +90,14 @@ const fragmentShaderSource = `
       // Render character shape
       float char = getChar(fpos, charSeed);
       
-      // Sapphire Blue color palette: #2e5bff => RGB(0.18, 0.356, 1.0)
-      vec3 sapphire = vec3(0.18, 0.356, 1.0);
+      // Signal Yellow color palette: #FFD400 => RGB(1.0, 0.831, 0.0)
+      vec3 sapphire = vec3(1.0, 0.831, 0.0);
       
       // Mix core flow stream color
       vec3 finalColor = sapphire * flow * char * 0.95;
       
       // Add brilliant leading edge glow
-      finalColor += vec3(0.65, 0.8, 1.0) * headGlow * char * 1.6;
+      finalColor += vec3(1.0, 0.94, 0.6) * headGlow * char * 1.6;
       
       // Track mouse position coordinate for interactive cursor glow
       vec2 mouseUV = u_mouse / u_resolution;
@@ -219,7 +219,7 @@ export function TerminalShader() {
         mouse.y * (window.devicePixelRatio || 1)
       );
 
-      gl.clearColor(0.043, 0.051, 0.063, 1.0); // Surface lowest base color #0c0e12
+      gl.clearColor(0.02, 0.02, 0.02, 1.0); // Surface lowest base color #050505
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 

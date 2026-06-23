@@ -47,7 +47,7 @@ export function Topbar() {
 
   return (
     <header className={cn(
-      "fixed top-0 left-0 w-full z-50 transition-all duration-300 border-b border-outline-variant/30 bg-[#131313]/80 backdrop-blur-md",
+      "fixed top-0 left-0 w-full z-50 transition-all duration-300 border-b border-border/30 bg-[#050505]/80 backdrop-blur-md",
       scrolled ? "h-14 shadow-[0_4px_30px_rgba(0,0,0,0.5)]" : "h-16 shadow-none"
     )}>
       <nav className="flex justify-between items-center px-gutter max-w-container-max mx-auto h-full w-full">
@@ -68,18 +68,13 @@ export function Topbar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "relative py-1 px-3 text-body-lg font-body transition-colors duration-200 hover:text-text rounded-xl hover:bg-surface-variant/20",
-                    active ? "text-primary font-bold" : "text-on-surface-variant"
+                    "relative py-1.5 px-4 text-body-lg font-body transition-all duration-200 rounded-lg border",
+                    active
+                      ? "bg-[rgba(255,212,0,0.12)] border-[#FFD400] text-[#FFD400] font-bold"
+                      : "border-transparent text-on-surface-variant hover:bg-[#181818] hover:border-[#2D2D2D] hover:text-text"
                   )}
                 >
                   <span className="relative z-10">{item.label}</span>
-                  {active && (
-                    <motion.div
-                      layoutId="activeNavIndicator"
-                      className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary shadow-[0_0_8px_rgba(178,210,255,0.8)]"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                    />
-                  )}
                 </Link>
               );
             })}
@@ -118,7 +113,7 @@ export function Topbar() {
             /* Login CTA for public visitors */
             <Link
               href="/login"
-              className="px-4 py-1.5 border border-primary text-primary hover:bg-primary/10 rounded-lg font-mono-label text-xs uppercase tracking-widest transition-all hover:shadow-[0_0_15px_rgba(178,210,255,0.2)]"
+              className="px-4 py-1.5 border border-primary text-primary hover:bg-primary/10 rounded-lg font-mono-label text-xs uppercase tracking-widest transition-all hover:shadow-[0_0_15px_rgba(255,212,0,0.2)]"
             >
               LOGIN_OPERATOR
             </Link>
@@ -142,7 +137,7 @@ export function Topbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="absolute top-full left-0 w-full bg-[#131313] border-b border-outline-variant/30 flex flex-col md:hidden z-40 overflow-hidden shadow-2xl"
+            className="absolute top-full left-0 w-full bg-[#050505] border-b border-border/30 flex flex-col md:hidden z-40 overflow-hidden shadow-2xl"
           >
             <div className="flex flex-col py-4 px-6 space-y-3">
               {navItems.map((item) => {
@@ -153,12 +148,14 @@ export function Topbar() {
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "py-2 px-4 rounded-lg font-body text-body-lg tracking-wide transition-all uppercase flex items-center justify-between",
-                      active ? "bg-primary/10 text-primary border-l-2 border-primary-strong pl-3" : "text-on-surface-variant hover:bg-surface-variant/10 hover:text-text"
+                      "py-2 px-4 rounded-lg font-body text-body-lg tracking-wide transition-all uppercase flex items-center justify-between border",
+                      active
+                        ? "bg-[rgba(255,212,0,0.12)] border-[#FFD400] text-[#FFD400] font-bold"
+                        : "border-transparent text-on-surface-variant hover:bg-[#181818] hover:border-[#2D2D2D] hover:text-text"
                     )}
                   >
                     <span>{item.label}</span>
-                    {active && <span className="text-[10px]">●</span>}
+                    {active && <span className="text-[10px] text-[#FFD400]">●</span>}
                   </Link>
                 );
               })}
@@ -171,7 +168,7 @@ export function Topbar() {
                   }}
                   className="py-2 px-4 rounded-lg font-body text-body-lg text-danger hover:bg-danger/10 text-left uppercase flex items-center gap-2"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-4 w-4" strokeWidth={1.8} />
                   <span>Logout Session</span>
                 </button>
               )}

@@ -91,7 +91,7 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
   return (
     <div className="space-y-8">
       {/* Filters HUD */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-[#131313]/90 border border-outline-variant/30 p-4 rounded-xl backdrop-blur-md">
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-[#111111]/90 border border-outline-variant/30 p-4 rounded-xl backdrop-blur-md">
         <div className="relative w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant" />
           <input
@@ -99,7 +99,7 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
             placeholder="FILTER_PATTERNS_BY_KEYWORD..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-[#1b1b1b] border border-outline-variant/30 rounded-lg text-body font-mono text-[13px] text-text tracking-wide placeholder:text-outline/40 focus:outline-none focus:border-primary transition-all focus:ring-1 focus:ring-primary/20"
+            className="w-full pl-10 pr-4 py-2 bg-[#0A0A0A] border border-outline-variant/30 rounded-lg text-body font-mono text-[13px] text-text tracking-wide placeholder:text-outline/40 focus:outline-none focus:border-primary transition-all focus:ring-1 focus:ring-primary/20"
           />
         </div>
 
@@ -111,7 +111,7 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
               className={cn(
                 "px-3 py-1 text-mono-label font-mono-label text-xs uppercase tracking-wider border transition-all rounded-md cursor-pointer",
                 selectedDifficulty === diff
-                  ? "bg-primary/10 border-primary text-primary shadow-[0_0_10px_rgba(178,210,255,0.2)]"
+                  ? "bg-primary/10 border-primary text-primary shadow-[0_0_10px_rgba(255,212,0,0.2)]"
                   : "bg-surface-container border-outline-variant/30 text-on-surface-variant hover:text-text hover:border-outline-variant"
               )}
             >
@@ -124,7 +124,7 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
       {/* Grouped Pattern Cards */}
       <div className="space-y-12">
         {sortedTopics.length === 0 ? (
-          <div className="text-center py-16 border border-dashed border-outline-variant/30 rounded-xl bg-[#131313]/30">
+          <div className="text-center py-16 border border-dashed border-outline-variant/30 rounded-xl bg-[#111111]/30">
             <p className="font-mono text-outline uppercase tracking-widest text-[13px]">NO_MATCHING_PATTERNS_FOUND</p>
           </div>
         ) : (
@@ -154,7 +154,7 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
                     <motion.div
                       key={pattern.pattern_name}
                       layout
-                      className="group relative bg-[#131313] border border-outline-variant/30 hover:border-primary p-5 transition-all duration-300 rounded-xl hover:-translate-y-1 flex flex-col justify-between hover:shadow-[0_8px_25px_-10px_rgba(178,210,255,0.15)]"
+                      className="group relative bg-[#111111] border border-outline-variant/30 hover:border-primary p-5 transition-all duration-300 rounded-xl hover:-translate-y-1 flex flex-col justify-between hover:shadow-[0_8px_25px_-10px_rgba(255,212,0,0.15)]"
                     >
                       <div>
                         {/* Title & Difficulty */}
@@ -202,7 +202,7 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
                             {keywords.map((word, index) => (
                               <span
                                 key={index}
-                                className="text-[10px] font-mono bg-[#1c1c1c] border border-outline-variant/20 px-2 py-0.5 rounded text-outline/90"
+                                className="text-[10px] font-mono bg-[#181818] border border-outline-variant/20 px-2 py-0.5 rounded text-outline/90"
                               >
                                 {word}
                               </span>

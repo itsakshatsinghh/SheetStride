@@ -158,7 +158,7 @@ export function PatternQuestionsClient({
       
       {/* Dynamic stats overlay (when logged in) */}
       {user && (
-        <div className="flex justify-between items-center bg-[#1b1b1b] border border-outline-variant/20 px-4 py-3 rounded-lg mb-6 text-xs text-outline/80 font-mono">
+        <div className="flex justify-between items-center bg-[#111111] border border-[#2D2D2D] px-4 py-3 rounded-lg mb-6 text-xs text-outline/80 font-mono">
           <span>PROGRESS: {solvedIds.size} / {initialQuestions.length} SOLVED</span>
           <span className="text-primary-strong">
             {Math.round((solvedIds.size / Math.max(initialQuestions.length, 1)) * 100)}% COMPLETE
@@ -171,7 +171,7 @@ export function PatternQuestionsClient({
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#1b1b1b]/50 border-b border-outline-variant/20 select-none text-[10px] uppercase font-mono-label text-outline/65">
+              <tr className="bg-[#090909]/50 border-b border-outline-variant/20 select-none text-[10px] uppercase font-mono-label text-outline/65">
                 <th className="px-5 py-3.5">#</th>
                 <th className="px-5 py-3.5">Title</th>
                 <th className="px-5 py-3.5">Difficulty</th>
@@ -302,7 +302,7 @@ export function PatternQuestionsClient({
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-8 right-8 bg-[#1C1C1C] border border-outline-variant/30 border-l-4 border-l-secondary p-4 rounded-xl flex items-center gap-4 shadow-2xl z-50 min-w-[320px] max-w-[400px]"
+            className="fixed bottom-8 right-8 bg-[#111111] border border-[#2D2D2D] border-l-4 border-l-secondary p-4 rounded-xl flex items-center gap-4 shadow-2xl z-50 min-w-[320px] max-w-[400px]"
           >
             <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0 select-none">
               <CheckCircle2 className="h-4 w-4" />

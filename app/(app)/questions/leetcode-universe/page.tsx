@@ -45,7 +45,7 @@ interface Question {
 export default function LeetcodeUniversePage() {
   return (
     <Suspense fallback={
-      <div className="flex h-96 items-center justify-center bg-[#131313] text-primary">
+      <div className="flex h-96 items-center justify-center bg-[#090909] text-primary">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin" />
           <p className="font-mono-label text-mono-label tracking-[0.2em]">BOOTING_DATABASE_MODULE...</p>
@@ -287,7 +287,7 @@ function QuestionsList() {
         </div>
         
         <div className="flex gap-4 select-none">
-          <div className="bg-surface-container p-4 border border-[#2B2B2B] rounded-xl flex flex-col min-w-[120px]">
+          <div className="bg-surface-container p-4 border border-[#2D2D2D] rounded-xl flex flex-col min-w-[120px]">
             <span className="font-mono-label text-mono-label text-outline uppercase mb-1">Solved</span>
             <span className="font-mono-stats text-mono-stats text-secondary">{globalSolvedCount}/{totalCount || 3647}</span>
           </div>
@@ -295,7 +295,7 @@ function QuestionsList() {
       </div>
 
       {/* Toolbar controls and inputs */}
-      <div className="bg-surface-container-low border border-[#2B2B2B] rounded-xl p-4 mb-6 flex flex-col lg:flex-row gap-4 items-center">
+      <div className="bg-surface-container-low border border-[#2D2D2D] rounded-xl p-4 mb-6 flex flex-col lg:flex-row gap-4 items-center">
         <div className="relative w-full lg:w-96 group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline w-4 h-4 group-focus-within:text-primary transition-colors" />
           <input 
@@ -354,10 +354,10 @@ function QuestionsList() {
       </div>
 
       {/* Tabular Question List Grid */}
-      <div className="bg-surface-container-lowest border border-[#2B2B2B]/40 rounded-xl overflow-hidden shadow-2xl">
+      <div className="bg-surface-container-lowest border border-[#2D2D2D]/60 rounded-xl overflow-hidden shadow-2xl">
         
         {/* Table header row */}
-        <div className="grid grid-cols-[48px_1fr_140px_120px_120px_64px] gap-4 px-6 py-4 border-b border-[#2B2B2B] bg-[#1C1C1C]/50 select-none">
+        <div className="grid grid-cols-[48px_1fr_140px_120px_120px_64px] gap-4 px-6 py-4 border-b border-[#2D2D2D] bg-[#090909]/50 select-none">
           <div className="font-mono-label text-mono-label text-outline uppercase">Stat</div>
           <div className="font-mono-label text-mono-label text-outline uppercase">Title</div>
           <div className="font-mono-label text-mono-label text-outline uppercase">Topic</div>
@@ -384,9 +384,9 @@ function QuestionsList() {
                 return (
                   <motion.div 
                     key={row.ID}
-                    whileHover={{ x: 3, background: "linear-gradient(90deg, rgba(178, 210, 255, 0.04) 0%, transparent 100%)" }}
+                    whileHover={{ x: 3, background: "linear-gradient(90deg, rgba(255, 212, 0, 0.04) 0%, transparent 100%)" }}
                     className={cn(
-                      "grid grid-cols-[48px_1fr_140px_120px_120px_64px] gap-4 px-6 py-4 border-b border-outline-variant/10 items-center transition-all",
+                       "grid grid-cols-[48px_1fr_140px_120px_120px_64px] gap-4 px-6 py-4 border-b border-outline-variant/10 items-center transition-all",
                       solved && "bg-secondary/[0.02]"
                     )}
                   >
@@ -421,7 +421,7 @@ function QuestionsList() {
 
                     {/* Primary Topic Tag */}
                     <div>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant bg-surface-container-high/40 px-2.5 py-1 rounded border border-[#2B2B2B] block w-fit truncate max-w-[120px]">
+                      <span className="font-body-sm text-body-sm text-on-surface-variant bg-surface-container-high/40 px-2.5 py-1 rounded border border-[#2D2D2D] block w-fit truncate max-w-[120px]">
                         {row.Topics?.split(",")[0] || "Unknown"}
                       </span>
                     </div>
@@ -463,7 +463,7 @@ function QuestionsList() {
 
         {/* Tabular pagination row */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 bg-[#1C1C1C]/50 border-t border-[#2B2B2B] flex justify-between items-center select-none">
+          <div className="px-6 py-4 bg-[#090909]/50 border-t border-[#2D2D2D] flex justify-between items-center select-none">
             <span className="font-mono-label text-mono-label text-outline">
               Page {page} of {totalPages} (Matching: {totalCount})
             </span>
