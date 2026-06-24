@@ -140,15 +140,33 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
         if (matched && matched.length > 0) {
           resolvedPatternName = matched[0].pattern_name;
           setDbPatternName(resolvedPatternName);
+          
+          // Fetch additional metadata (Title and Topics) from the master questions table
+          const qIds = matched.map((row: any) => row.question_id);
+          const { data: questionsMeta, error: metaQError } = await supabase
+            .from("questions")
+            .select("ID, Title, Topics")
+            .in("ID", qIds);
+            
+          const metaMap = new Map();
+          if (!metaQError && questionsMeta) {
+            questionsMeta.forEach((q: any) => {
+              metaMap.set(q.ID, q);
+            });
+          }
+
           const mappedQList = matched
-            .map((row: any) => ({
-              ID: row.question_id,
-              Title: row.title,
-              Difficulty: row.difficulty,
-              Link: row.link,
-              Topics: row.topics,
-              "Acceptance Rate (%)": row.acceptance_rate,
-            }))
+            .map((row: any) => {
+              const meta = metaMap.get(row.question_id);
+              return {
+                ID: row.question_id,
+                Title: meta?.Title || row.question_name || row.title || "",
+                Difficulty: row.difficulty,
+                Link: row.link,
+                Topics: meta?.Topics || row.topics || "",
+                "Acceptance Rate (%)": row.acceptance_rate,
+              };
+            })
             .filter(Boolean) as Question[];
           
           // Sort by ID ascending
@@ -383,6 +401,7 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
               <tr className="bg-[#090909]/50 border-b border-[#2D2D2D] select-none">
                 <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">#</th>
                 <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Title</th>
+                <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Topic</th>
                 <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Difficulty</th>
                 <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Status</th>
                 <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Solved Date</th>
@@ -421,6 +440,13 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
                         >
                           {row.Title}
                         </a>
+                      </td>
+
+                      {/* Topic tag */}
+                      <td className="px-6 py-5">
+                        <span className="font-body-sm text-[11px] text-on-surface-variant bg-surface-container-high/40 px-2 py-0.5 rounded border border-[#2D2D2D] block w-fit truncate max-w-[120px]" title={row.Topics}>
+                          {row.Topics?.split(",")[0] || "Unknown"}
+                        </span>
                       </td>
 
                       {/* Difficulty */}
