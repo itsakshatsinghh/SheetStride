@@ -8,7 +8,7 @@ import { AppShell } from "@/components/app/shell";
 import { Heatmap } from "@/components/shared/heatmap";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
+import { cn, fetchWithCache } from "@/lib/utils";
 
 // requestAnimationFrame count-up hook for GPU-friendly 60fps animations
 function CountUp({ end, duration = 1.0, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
@@ -82,59 +82,69 @@ export default function ProgressPage() {
       try {
         setLoading(true);
 
-        // Fetch total counts from Supabase
-        const { count: countAll } = await supabase
-          .from("questions")
-          .select("*", { count: "exact", head: true });
-        if (countAll !== null) setTotalQuestions(countAll);
-
-        // Fetch user progress from user_progress
-        const { data: userProgress, error: progressError } = await supabase
-          .from("user_progress")
-          .select(`
-            question_id,
-            "completed-at"
-          `)
-          .eq("user_id", userId)
-          .order("completed-at", { ascending: true });
-
-        if (progressError) throw progressError;
-        
-        let solved: SolvedQuestion[] = [];
-        if (userProgress && userProgress.length > 0) {
-          const questionIds = userProgress.map((row: any) => row.question_id);
-          const { data: questionsData, error: questionsError } = await supabase
+        const cacheKey = `progress_data_cache_${userId}`;
+        const data = await fetchWithCache(cacheKey, async () => {
+          // Fetch total counts from Supabase
+          const { count: countAll } = await supabase
             .from("questions")
-            .select("ID, Title, Difficulty, Topics")
-            .in("ID", questionIds);
+            .select("*", { count: "exact", head: true });
 
-          if (questionsError) throw questionsError;
+          // Fetch user progress from user_progress
+          const { data: userProgress, error: progressError } = await supabase
+            .from("user_progress")
+            .select(`
+              question_id,
+              "completed-at"
+            `)
+            .eq("user_id", userId)
+            .order("completed-at", { ascending: true });
 
-          const questionsMap = new Map(questionsData?.map((q: any) => [q.ID, q]));
-          solved = userProgress
-            .map((row: any) => {
-              const q = questionsMap.get(row.question_id);
-              if (!q) return null;
-              return {
-                ID: q.ID,
-                Title: q.Title,
-                Difficulty: q.Difficulty,
-                Topics: q.Topics
-              };
-            })
-            .filter(Boolean) as SolvedQuestion[];
-        }
-        setSolvedList(solved);
+          if (progressError) throw progressError;
+          
+          let solved: SolvedQuestion[] = [];
+          if (userProgress && userProgress.length > 0) {
+            const questionIds = userProgress.map((row: any) => row.question_id);
+            const { data: questionsData, error: questionsError } = await supabase
+              .from("questions")
+              .select("ID, Title, Difficulty, Topics")
+              .in("ID", questionIds);
 
-        // Fetch user streaks using database RPC function with correct parameter target_user_id
-        const { data: streakData, error: streakError } = await supabase
-          .rpc("calculate_user_streaks", { target_user_id: userId });
+            if (questionsError) throw questionsError;
 
-        if (!streakError && streakData && streakData.length > 0) {
-          setCurrentStreak(streakData[0].res_current_streak || 0);
-        } else {
-          setCurrentStreak(0);
-        }
+            const questionsMap = new Map(questionsData?.map((q: any) => [q.ID, q]));
+            solved = userProgress
+              .map((row: any) => {
+                const q = questionsMap.get(row.question_id);
+                if (!q) return null;
+                return {
+                  ID: q.ID,
+                  Title: q.Title,
+                  Difficulty: q.Difficulty,
+                  Topics: q.Topics
+                };
+              })
+              .filter(Boolean) as SolvedQuestion[];
+          }
+
+          // Fetch user streaks using database RPC function with correct parameter target_user_id
+          const { data: streakData, error: streakError } = await supabase
+            .rpc("calculate_user_streaks", { target_user_id: userId });
+
+          let currentStreakVal = 0;
+          if (!streakError && streakData && streakData.length > 0) {
+            currentStreakVal = streakData[0].res_current_streak || 0;
+          }
+
+          return {
+            totalQuestions: countAll !== null ? countAll : 3647,
+            solved,
+            currentStreak: currentStreakVal
+          };
+        });
+
+        setTotalQuestions(data.totalQuestions);
+        setSolvedList(data.solved);
+        setCurrentStreak(data.currentStreak);
 
       } catch (err) {
         console.error("Failed to load progress data:", err);

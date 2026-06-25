@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
+import { fetchWithCache } from "@/lib/utils";
 
 export default function MissionLibraryPage() {
   const { user } = useAuth();
@@ -30,45 +31,52 @@ export default function MissionLibraryPage() {
       try {
         setLoading(true);
 
-        // 1. Fetch total LeetCode questions count
-        const { count: leetcodeCount } = await supabase
-          .from("questions")
-          .select("*", { count: "exact", head: true });
-        if (leetcodeCount !== null) setTotalLeetcode(leetcodeCount);
+        const cacheKey = `questions_hub_stats_${userId}`;
+        const data = await fetchWithCache(cacheKey, async () => {
+          // 1. Fetch total LeetCode questions count
+          const { count: leetcodeCount } = await supabase
+            .from("questions")
+            .select("*", { count: "exact", head: true });
 
-        // 2. Fetch user's solved questions
-        const { data: userSolves, error: solvesError } = await supabase
-          .from("user_progress")
-          .select("question_id")
-          .eq("user_id", userId);
-        
-        if (solvesError) throw solvesError;
-        const solvedIds = new Set(userSolves?.map((row: any) => row.question_id) || []);
-        setSolvedLeetcode(solvedIds.size);
+          // 2. Fetch user's solved questions
+          const { data: userSolves, error: solvesError } = await supabase
+            .from("user_progress")
+            .select("question_id")
+            .eq("user_id", userId);
+          
+          if (solvesError) throw solvesError;
+          const solvedIds = new Set(userSolves?.map((row: any) => row.question_id) || []);
 
-        // 3. Fetch SheetStride Core questions mapping
-        const { data: coreQuestions, error: coreError } = await supabase
-          .from("sheet_questions")
-          .select("*");
+          // 3. Fetch SheetStride Core questions mapping
+          const { data: coreQuestions, error: coreError } = await supabase
+            .from("sheet_questions")
+            .select("*");
 
-        if (coreError) throw coreError;
-        
-        if (coreQuestions) {
-          setTotalCore(coreQuestions.length);
-          const solvedCoreCount = coreQuestions.filter((q: any) => solvedIds.has(q["question ID"])).length;
-          setSolvedCore(solvedCoreCount);
-        }
+          if (coreError) throw coreError;
 
-        // 4. Fetch Company Sheets summary stats
-        const { data: companySummary, error: summaryError } = await supabase
-          .from("view_company_summary")
-          .select("question_count");
+          // 4. Fetch Company Sheets summary stats
+          const { data: companySummary, error: summaryError } = await supabase
+            .from("view_company_summary")
+            .select("question_count");
 
-        if (!summaryError && companySummary) {
-          setTotalCompanies(companySummary.length);
-          const totalSum = companySummary.reduce((sum: number, row: any) => sum + (row.question_count || 0), 0);
-          setTotalCompanyQuestions(totalSum);
-        }
+          if (summaryError) throw summaryError;
+
+          return {
+            leetcodeCount: leetcodeCount !== null ? leetcodeCount : 3647,
+            solvedLeetcodeCount: solvedIds.size,
+            totalCore: coreQuestions ? coreQuestions.length : 437,
+            solvedCoreCount: coreQuestions ? coreQuestions.filter((q: any) => solvedIds.has(q["question ID"])).length : 0,
+            totalCompanies: companySummary ? companySummary.length : 463,
+            totalCompanyQuestions: companySummary ? companySummary.reduce((sum: number, row: any) => sum + (row.question_count || 0), 0) : 7715
+          };
+        });
+
+        setTotalLeetcode(data.leetcodeCount);
+        setSolvedLeetcode(data.solvedLeetcodeCount);
+        setTotalCore(data.totalCore);
+        setSolvedCore(data.solvedCoreCount);
+        setTotalCompanies(data.totalCompanies);
+        setTotalCompanyQuestions(data.totalCompanyQuestions);
 
       } catch (err) {
         console.error("Failed to load Mission Library stats:", err);

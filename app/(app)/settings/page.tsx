@@ -176,6 +176,13 @@ export default function SettingsPage() {
       });
 
       if (authErr) throw authErr;
+
+      if (user?.id) {
+        localStorage.removeItem(`profile_data_cache_${user.id}`);
+        localStorage.removeItem(`leetcode_live_stats_cache_${leetcodeUsername.trim()}`);
+      }
+      window.dispatchEvent(new Event("question-solved"));
+
       setUpdateMsg("IDENTITY_UPDATED_SUCCESSFULLY");
       setTimeout(() => setUpdateMsg(""), 3000);
     } catch (err: any) {

@@ -7,7 +7,7 @@ import { AppShell } from "@/components/app/shell";
 import { Heatmap } from "@/components/shared/heatmap";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
-import { cn, sanitizeSocialInput } from "@/lib/utils";
+import { cn, sanitizeSocialInput, fetchWithCache } from "@/lib/utils";
 
 interface SolvedQuestion {
   ID: number;
@@ -52,29 +52,44 @@ export default function ProfilePage() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const fetchLeetcodeStats = async (username: string) => {
+  const fetchLeetcodeStats = async (username: string, forceRefresh = false) => {
     if (!username) return;
     try {
       setLeetcodeLoading(true);
       setLeetcodeError("");
-      const baseUrl = "https://alfa-leetcode-api.onrender.com";
-      const [resProfile, resSolved, resContest, resSubmissions] = await Promise.all([
-        fetch(`${baseUrl}/${username}`).then(r => r.ok ? r.json() : null),
-        fetch(`${baseUrl}/${username}/solved`).then(r => r.ok ? r.json() : null),
-        fetch(`${baseUrl}/${username}/contest`).then(r => r.ok ? r.json() : null),
-        fetch(`${baseUrl}/${username}/acSubmission?limit=7`).then(r => r.ok ? r.json() : null)
-      ]);
-
-      if (!resSolved) {
-        throw new Error("Could not load LeetCode statistics. Username may be invalid.");
+      const cacheKey = `leetcode_live_stats_cache_${username}`;
+      if (forceRefresh) {
+        localStorage.removeItem(cacheKey);
       }
+      
+      const data = await fetchWithCache(cacheKey, async () => {
+        const baseUrl = "https://alfa-leetcode-api.onrender.com";
+        const [resProfile, resContest, resSubmissions] = await Promise.all([
+          fetch(`${baseUrl}/${username}/profile`).then(r => r.ok ? r.json() : null),
+          fetch(`${baseUrl}/${username}/contest`).then(r => r.ok ? r.json() : null),
+          fetch(`${baseUrl}/${username}/acSubmission?limit=7`).then(r => r.ok ? r.json() : null)
+        ]);
 
-      setLeetcodeStats({
-        profile: resProfile,
-        solved: resSolved,
-        contest: resContest,
-        submissions: resSubmissions?.submission || []
-      });
+        if (!resProfile || resProfile.errors) {
+          throw new Error("Could not load LeetCode statistics. Username may be invalid.");
+        }
+
+        return {
+          profile: {
+            ranking: resProfile.ranking
+          },
+          solved: {
+            solvedProblem: resProfile.totalSolved,
+            easySolved: resProfile.easySolved,
+            mediumSolved: resProfile.mediumSolved,
+            hardSolved: resProfile.hardSolved
+          },
+          contest: resContest,
+          submissions: resSubmissions?.submission || []
+        };
+      }, 900000); // 15 mins cache
+
+      setLeetcodeStats(data);
     } catch (err: any) {
       console.error("Failed to fetch LeetCode stats:", err);
       setLeetcodeError(err.message || "Failed to load LeetCode statistics.");
@@ -92,67 +107,126 @@ export default function ProfilePage() {
       try {
         setLoading(true);
 
-        // Fetch total counts from Supabase
-        const { count: countAll } = await supabase
-          .from("questions")
-          .select("*", { count: "exact", head: true });
-        if (countAll !== null) setTotalQuestions(countAll);
-
-        // Fetch user progress from user_progress
-        const { data: userProgress, error: progressError } = await supabase
-          .from("user_progress")
-          .select(`
-            question_id,
-            "completed-at"
-          `)
-          .eq("user_id", userId)
-          .order("completed-at", { ascending: false });
-
-        if (progressError) throw progressError;
-        
-        let solved: SolvedQuestion[] = [];
-        if (userProgress && userProgress.length > 0) {
-          const questionIds = userProgress.map((row: any) => row.question_id);
-          const { data: questionsData, error: questionsError } = await supabase
+        const cacheKey = `profile_data_cache_${userId}`;
+        const data = await fetchWithCache(cacheKey, async () => {
+          // Fetch total counts from Supabase
+          const { count: countAll } = await supabase
             .from("questions")
-            .select("ID, Title, Difficulty, Topics")
-            .in("ID", questionIds);
+            .select("*", { count: "exact", head: true });
 
-          if (questionsError) throw questionsError;
+          // Fetch user progress from user_progress
+          const { data: userProgress, error: progressError } = await supabase
+            .from("user_progress")
+            .select(`
+              question_id,
+              "completed-at"
+            `)
+            .eq("user_id", userId)
+            .order("completed-at", { ascending: false });
 
-          const questionsMap = new Map(questionsData?.map((q: any) => [q.ID, q]));
-          solved = userProgress
-            .map((row: any) => {
-              const q = questionsMap.get(row.question_id);
-              if (!q) return null;
-              return {
-                ID: q.ID,
-                Title: q.Title,
-                Difficulty: q.Difficulty,
-                Topics: q.Topics
-              };
-            })
-            .filter(Boolean) as SolvedQuestion[];
-        }
-        setSolvedList(solved);
+          if (progressError) throw progressError;
+          
+          let solved: SolvedQuestion[] = [];
+          if (userProgress && userProgress.length > 0) {
+            const questionIds = userProgress.map((row: any) => row.question_id);
+            const { data: questionsData, error: questionsError } = await supabase
+              .from("questions")
+              .select("ID, Title, Difficulty, Topics")
+              .in("ID", questionIds);
 
-        // Fetch user streaks using database RPC function with correct parameter target_user_id
-        const { data: streakData, error: streakError } = await supabase
-          .rpc("calculate_user_streaks", { target_user_id: userId });
+            if (questionsError) throw questionsError;
 
-        if (!streakError && streakData && streakData.length > 0) {
-          setCurrentStreak(streakData[0].res_current_streak || 0);
-          setLongestStreak(streakData[0].res_max_streak || 0);
-        } else {
-          setCurrentStreak(0);
-          setLongestStreak(0);
-        }
+            const questionsMap = new Map(questionsData?.map((q: any) => [q.ID, q]));
+            solved = userProgress
+              .map((row: any) => {
+                const q = questionsMap.get(row.question_id);
+                if (!q) return null;
+                return {
+                  ID: q.ID,
+                  Title: q.Title,
+                  Difficulty: q.Difficulty,
+                  Topics: q.Topics
+                };
+              })
+              .filter(Boolean) as SolvedQuestion[];
+          }
+
+          // Fetch user streaks using database RPC function with correct parameter target_user_id
+          const { data: streakData, error: streakError } = await supabase
+            .rpc("calculate_user_streaks", { target_user_id: userId });
+
+          let currentStreakVal = 0;
+          let longestStreakVal = 0;
+          if (!streakError && streakData && streakData.length > 0) {
+            currentStreakVal = streakData[0].res_current_streak || 0;
+            longestStreakVal = streakData[0].res_max_streak || 0;
+          }
+
+          // Load profile customization & socials
+          let loadedLeetcode = "";
+          let loadedBio = "";
+          let loadedInstagram = "";
+          let loadedLinkedin = "";
+          let loadedGithub = "";
+
+          try {
+            const { data: dbProfile } = await supabase
+              .from("profiles")
+              .select("leetcode_username, bio, instagram, linkedin, github")
+              .eq("id", userId)
+              .maybeSingle();
+
+            if (dbProfile) {
+              loadedLeetcode = dbProfile.leetcode_username || "";
+              loadedBio = dbProfile.bio || "";
+              loadedInstagram = dbProfile.instagram || "";
+              loadedLinkedin = dbProfile.linkedin || "";
+              loadedGithub = dbProfile.github || "";
+            } else {
+              loadedLeetcode = user?.user_metadata?.leetcode_username || "";
+              loadedBio = user?.user_metadata?.bio || "";
+              loadedInstagram = user?.user_metadata?.instagram || "";
+              loadedLinkedin = user?.user_metadata?.linkedin || "";
+              loadedGithub = user?.user_metadata?.github || "";
+            }
+          } catch (dbErr) {
+            console.warn("DB profile query failed, using user metadata:", dbErr);
+            loadedLeetcode = user?.user_metadata?.leetcode_username || "";
+            loadedBio = user?.user_metadata?.bio || "";
+            loadedInstagram = user?.user_metadata?.instagram || "";
+            loadedLinkedin = user?.user_metadata?.linkedin || "";
+            loadedGithub = user?.user_metadata?.github || "";
+          }
+
+          return {
+            totalQuestions: countAll !== null ? countAll : 3647,
+            solved,
+            userProgress: userProgress || [],
+            currentStreak: currentStreakVal,
+            longestStreak: longestStreakVal,
+            loadedLeetcode,
+            loadedBio,
+            loadedInstagram,
+            loadedLinkedin,
+            loadedGithub
+          };
+        });
+
+        setTotalQuestions(data.totalQuestions);
+        setSolvedList(data.solved);
+        setCurrentStreak(data.currentStreak);
+        setLongestStreak(data.longestStreak);
+        setLeetcodeUsername(data.loadedLeetcode);
+        setBio(data.loadedBio);
+        setInstagram(data.loadedInstagram);
+        setLinkedin(data.loadedLinkedin);
+        setGithub(data.loadedGithub);
 
         // Build dynamic activity log table rows from database solves
         const logs: LogEntry[] = [];
         
-        userProgress?.forEach((row: any, idx: number) => {
-          const q = row.questions;
+        data.userProgress.forEach((row: any, idx: number) => {
+          const q = data.solved.find((s: SolvedQuestion) => s.ID === row.question_id);
           if (!q) return;
 
           const completedAt = row["completed-at"] || new Date().toISOString();
@@ -189,50 +263,8 @@ export default function ProfilePage() {
 
         setActivityLogs(logs);
 
-        // Load profile customization & socials
-        let loadedLeetcode = "";
-        let loadedBio = "";
-        let loadedInstagram = "";
-        let loadedLinkedin = "";
-        let loadedGithub = "";
-
-        try {
-          const { data: dbProfile } = await supabase
-            .from("profiles")
-            .select("leetcode_username, bio, instagram, linkedin, github")
-            .eq("id", userId)
-            .maybeSingle();
-
-          if (dbProfile) {
-            loadedLeetcode = dbProfile.leetcode_username || "";
-            loadedBio = dbProfile.bio || "";
-            loadedInstagram = dbProfile.instagram || "";
-            loadedLinkedin = dbProfile.linkedin || "";
-            loadedGithub = dbProfile.github || "";
-          } else {
-            loadedLeetcode = user?.user_metadata?.leetcode_username || "";
-            loadedBio = user?.user_metadata?.bio || "";
-            loadedInstagram = user?.user_metadata?.instagram || "";
-            loadedLinkedin = user?.user_metadata?.linkedin || "";
-            loadedGithub = user?.user_metadata?.github || "";
-          }
-        } catch (dbErr) {
-          console.warn("DB profile query failed, using user metadata:", dbErr);
-          loadedLeetcode = user?.user_metadata?.leetcode_username || "";
-          loadedBio = user?.user_metadata?.bio || "";
-          loadedInstagram = user?.user_metadata?.instagram || "";
-          loadedLinkedin = user?.user_metadata?.linkedin || "";
-          loadedGithub = user?.user_metadata?.github || "";
-        }
-
-        setLeetcodeUsername(loadedLeetcode);
-        setBio(loadedBio);
-        setInstagram(loadedInstagram);
-        setLinkedin(loadedLinkedin);
-        setGithub(loadedGithub);
-
-        if (loadedLeetcode) {
-          fetchLeetcodeStats(loadedLeetcode);
+        if (data.loadedLeetcode) {
+          fetchLeetcodeStats(data.loadedLeetcode);
         }
 
       } catch (err) {
@@ -498,7 +530,7 @@ export default function ProfilePage() {
               </h2>
               {leetcodeUsername && !leetcodeLoading && (
                 <button
-                  onClick={() => fetchLeetcodeStats(leetcodeUsername)}
+                  onClick={() => fetchLeetcodeStats(leetcodeUsername, true)}
                   className="p-1 hover:bg-surface-variant/20 rounded text-outline hover:text-white transition-all cursor-pointer flex items-center justify-center border border-transparent"
                   title="Force Sync Stats"
                 >
@@ -814,9 +846,15 @@ export default function ProfilePage() {
 
                 if (authErr) throw authErr;
 
+                if (user?.id) {
+                  localStorage.removeItem(`profile_data_cache_${user.id}`);
+                  localStorage.removeItem(`leetcode_live_stats_cache_${leetcodeUsername.trim()}`);
+                }
+                window.dispatchEvent(new Event("question-solved"));
+
                 // Sync leetcode stats if username changed
                 if (leetcodeUsername.trim()) {
-                  fetchLeetcodeStats(leetcodeUsername.trim());
+                  fetchLeetcodeStats(leetcodeUsername.trim(), true);
                 } else {
                   setLeetcodeStats(null);
                 }

@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FolderOpen, Search, ExternalLink, Loader2, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { FolderOpen, Search, ExternalLink, Loader2, ChevronLeft, ChevronRight, Check, BookOpen } from "lucide-react";
 import { AppShell } from "@/components/app/shell";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
-import { cn } from "@/lib/utils";
+import { cn, fetchWithCache } from "@/lib/utils";
 
 const TOPICS = [
   "All Topics",
@@ -90,17 +90,21 @@ function QuestionsList() {
     const userId = user.id;
     async function fetchUserProgress() {
       try {
-        const { data, error } = await supabase
-          .from("user_progress")
-          .select("question_id, completed-at")
-          .eq("user_id", userId);
-          
-        if (error) throw error;
-        
+        const cacheKey = `user_solves_cache_${userId}`;
+        const data = await fetchWithCache(cacheKey, async () => {
+          const { data: rawData, error } = await supabase
+            .from("user_progress")
+            .select("question_id, completed-at")
+            .eq("user_id", userId);
+            
+          if (error) throw error;
+          return rawData || [];
+        });
+
         const ids = new Set<number>();
         const timesMap: { [qId: number]: string } = {};
         
-        data?.forEach((item: any) => {
+        data.forEach((item: any) => {
           ids.add(item.question_id);
           timesMap[item.question_id] = item["completed-at"] || new Date().toISOString();
         });
@@ -112,6 +116,16 @@ function QuestionsList() {
       }
     }
     fetchUserProgress();
+
+    const handleSolveEvent = () => {
+      localStorage.removeItem(`user_solves_cache_${userId}`);
+      fetchUserProgress();
+    };
+
+    window.addEventListener("question-solved", handleSolveEvent);
+    return () => {
+      window.removeEventListener("question-solved", handleSolveEvent);
+    };
   }, [user]);
 
   // Fetch questions matching filters and page offset
@@ -123,51 +137,61 @@ function QuestionsList() {
       try {
         setIsLoading(true);
         
-        let query = supabase
-          .from("questions")
-          .select("*", { count: "exact" });
+        const safeSearch = encodeURIComponent(search.trim());
+        const cacheKey = `leetcode_universe_questions_cache_${userId}_${page}_${selectedDifficulty}_${selectedTopic}_${selectedStatus}_${safeSearch}`;
 
-        if (selectedStatus === "Solved") {
-          const solvedArr = Array.from(solvedIds);
-          if (solvedArr.length > 0) {
-            query = query.in("ID", solvedArr);
-          } else {
-            query = query.eq("ID", -1); // Force empty result if none solved
+        const dataResult = await fetchWithCache(cacheKey, async () => {
+          let query = supabase
+            .from("questions")
+            .select("*", { count: "exact" });
+
+          if (selectedStatus === "Solved") {
+            const solvedArr = Array.from(solvedIds);
+            if (solvedArr.length > 0) {
+              query = query.in("ID", solvedArr);
+            } else {
+              query = query.eq("ID", -1); // Force empty result if none solved
+            }
+          } else if (selectedStatus === "Unsolved" || selectedStatus === "Todo") {
+            const solvedArr = Array.from(solvedIds);
+            if (solvedArr.length > 0) {
+              query = query.not("ID", "in", `(${solvedArr.join(",")})`);
+            }
           }
-        } else if (selectedStatus === "Unsolved" || selectedStatus === "Todo") {
-          const solvedArr = Array.from(solvedIds);
-          if (solvedArr.length > 0) {
-            query = query.not("ID", "in", `(${solvedArr.join(",")})`);
+
+          // Apply difficulty filter
+          if (selectedDifficulty !== "All" && selectedDifficulty !== "Difficulty") {
+            query = query.eq("Difficulty", selectedDifficulty);
           }
-        }
 
-        // Apply difficulty filter
-        if (selectedDifficulty !== "All" && selectedDifficulty !== "Difficulty") {
-          query = query.eq("Difficulty", selectedDifficulty);
-        }
+          // Apply topic filter
+          if (selectedTopic !== "All Topics") {
+            query = query.ilike("Topics", `%${selectedTopic}%`);
+          }
 
-        // Apply topic filter
-        if (selectedTopic !== "All Topics") {
-          query = query.ilike("Topics", `%${selectedTopic}%`);
-        }
+          // Apply search filter
+          if (search.trim()) {
+            query = query.ilike("Title", `%${search.trim()}%`);
+          }
 
-        // Apply search filter
-        if (search.trim()) {
-          query = query.ilike("Title", `%${search.trim()}%`);
-        }
+          // Handle page offset
+          const fromOffset = (page - 1) * limit;
+          const toOffset = fromOffset + limit - 1;
+          
+          const { data, count, error } = await query
+            .order("ID", { ascending: true })
+            .range(fromOffset, toOffset);
 
-        // Handle page offset
-        const fromOffset = (page - 1) * limit;
-        const toOffset = fromOffset + limit - 1;
-        
-        const { data, count, error } = await query
-          .order("ID", { ascending: true })
-          .range(fromOffset, toOffset);
+          if (error) throw error;
 
-        if (error) throw error;
+          return {
+            questions: (data as Question[]) || [],
+            totalCount: count || 0
+          };
+        });
 
-        setQuestions((data as Question[]) || []);
-        setTotalCount(count || 0);
+        setQuestions(dataResult.questions);
+        setTotalCount(dataResult.totalCount);
       } catch (err) {
         console.error("Failed to load questions list:", err);
       } finally {
@@ -183,30 +207,24 @@ function QuestionsList() {
   }, [search, selectedTopic, selectedDifficulty, selectedStatus]);
 
   // Checkbox toggle logic
-  const handleToggleSolve = async (qId: number) => {
+  const handleToggleSolve = async (qId: number, title: string, difficulty: string, link: string) => {
     if (!user) return;
     const userId = user.id;
 
     const isCurrentlySolved = solvedIds.has(qId);
-    const newSolvedIds = new Set(solvedIds);
-    const newTimestamps = { ...solvedTimestamps };
     
-    // Optimistic Update
     if (isCurrentlySolved) {
+      const newSolvedIds = new Set(solvedIds);
+      const newTimestamps = { ...solvedTimestamps };
       newSolvedIds.delete(qId);
       delete newTimestamps[qId];
-    } else {
-      newSolvedIds.add(qId);
-      newTimestamps[qId] = new Date().toISOString();
-    }
-    setSolvedIds(newSolvedIds);
-    setSolvedTimestamps(newTimestamps);
+      setSolvedIds(newSolvedIds);
+      setSolvedTimestamps(newTimestamps);
 
-    // Sync localStorage timestamps
-    const timestamps = JSON.parse(localStorage.getItem("solved_questions_timestamps") || "{}");
+      // Sync localStorage timestamps
+      const timestamps = JSON.parse(localStorage.getItem("solved_questions_timestamps") || "{}");
 
-    try {
-      if (isCurrentlySolved) {
+      try {
         // Delete progress
         const { error } = await supabase
           .from("user_progress")
@@ -216,30 +234,27 @@ function QuestionsList() {
 
         // Delete from local timestamp
         delete timestamps[qId];
-      } else {
-        // Insert progress
-        const { error } = await supabase
-          .from("user_progress")
-          .insert({
-            user_id: userId,
-            question_id: qId,
-            completed: true,
-            "completed-at": new Date().toISOString()
-          });
-        if (error) throw error;
-
-        // Save local timestamp
-        timestamps[qId] = new Date().toISOString();
+        localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
+        
+        // Dispatch solve event to trigger heatmap update
+        window.dispatchEvent(new Event("question-solved"));
+      } catch (err) {
+        console.error("Failed to update question status in Supabase:", err);
+        // Revert state if query fails
+        setSolvedIds(new Set(solvedIds));
+        setSolvedTimestamps(solvedTimestamps);
       }
-      localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
-      
-      // Dispatch solve event to trigger heatmap update
-      window.dispatchEvent(new Event("question-solved"));
-    } catch (err) {
-      console.error("Failed to update question status in Supabase:", err);
-      // Revert state if query fails
-      setSolvedIds(new Set(solvedIds));
-      setSolvedTimestamps(solvedTimestamps);
+    } else {
+      // Open reflection drawer!
+      window.dispatchEvent(new CustomEvent("open-question-drawer", {
+        detail: {
+          questionId: qId,
+          title,
+          difficulty,
+          link,
+          mode: "reflection"
+        }
+      }));
     }
   };
 
@@ -356,13 +371,13 @@ function QuestionsList() {
       <div className="bg-surface-container-lowest border border-[#2D2D2D]/60 rounded-xl overflow-hidden shadow-2xl">
         
         {/* Table header row */}
-        <div className="grid grid-cols-[48px_1fr_140px_120px_120px_64px] gap-4 px-6 py-4 border-b border-[#2D2D2D] bg-[#090909]/50 select-none">
+        <div className="grid grid-cols-[48px_1fr_140px_120px_120px_96px] gap-4 px-6 py-4 border-b border-[#2D2D2D] bg-[#090909]/50 select-none">
           <div className="font-mono-label text-mono-label text-outline uppercase">Stat</div>
           <div className="font-mono-label text-mono-label text-outline uppercase">Title</div>
           <div className="font-mono-label text-mono-label text-outline uppercase">Topic</div>
           <div className="font-mono-label text-mono-label text-outline uppercase">Difficulty</div>
           <div className="font-mono-label text-mono-label text-outline uppercase">Solved_At</div>
-          <div className="font-mono-label text-mono-label text-outline uppercase text-center font-bold">Ext</div>
+          <div className="font-mono-label text-mono-label text-outline uppercase text-center font-bold">Action</div>
         </div>
 
         {/* Table rows list */}
@@ -385,14 +400,14 @@ function QuestionsList() {
                     key={row.ID}
                     whileHover={{ x: 3, background: "linear-gradient(90deg, rgba(255, 212, 0, 0.04) 0%, transparent 100%)" }}
                     className={cn(
-                       "grid grid-cols-[48px_1fr_140px_120px_120px_64px] gap-4 px-6 py-4 border-b border-outline-variant/10 items-center transition-all",
+                       "grid grid-cols-[48px_1fr_140px_120px_120px_96px] gap-4 px-6 py-4 border-b border-outline-variant/10 items-center transition-all",
                       solved && "bg-secondary/[0.02]"
                     )}
                   >
                     {/* Interactive solve check */}
                     <div className="flex justify-start">
                       <button 
-                        onClick={() => handleToggleSolve(row.ID)}
+                        onClick={() => handleToggleSolve(row.ID, row.Title, row.Difficulty, row.Link)}
                         className={cn(
                           "w-5 h-5 rounded border flex items-center justify-center transition-all duration-300",
                           solved ? "border-secondary bg-secondary/10 text-secondary scale-110" : "border-outline-variant hover:border-primary"
@@ -442,13 +457,29 @@ function QuestionsList() {
                       {getRelativeTime(row.ID)}
                     </div>
 
-                    {/* External Link */}
-                    <div className="flex justify-center text-outline">
+                    {/* Actions */}
+                    <div className="flex items-center justify-center gap-3 text-outline">
+                      <button
+                        onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                          detail: {
+                            questionId: row.ID,
+                            title: row.Title,
+                            difficulty: row.Difficulty,
+                            link: row.Link,
+                            mode: "notebook"
+                          }
+                        }))}
+                        className="hover:text-primary transition-colors cursor-pointer"
+                        title="Open Notebook"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                      </button>
                       <a 
                         href={row.Link} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="hover:text-primary transition-colors flex items-center"
+                        className="hover:text-primary transition-colors"
+                        title="Open LeetCode"
                       >
                         <ExternalLink className="w-4 h-4" />
                       </a>

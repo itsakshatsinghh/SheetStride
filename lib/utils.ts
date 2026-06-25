@@ -99,7 +99,12 @@ if (typeof window !== "undefined") {
           key.startsWith("company_questions_cache_") || 
           key.startsWith("pattern_questions_cache_") ||
           key.startsWith("topic_patterns_cache_") ||
-          key.startsWith("core_topics_cache_")
+          key.startsWith("core_topics_cache_") ||
+          key.startsWith("questions_hub_stats_") ||
+          key.startsWith("profile_data_cache_") ||
+          key.startsWith("progress_data_cache_") ||
+          key.startsWith("user_solves_cache_") ||
+          key.startsWith("leetcode_universe_questions_cache_")
         )) {
           keysToRemove.push(key);
         }

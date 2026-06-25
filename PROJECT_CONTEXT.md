@@ -138,6 +138,11 @@ Next.js layout components (e.g. sidebars, progress meters, heatmaps) are decoupl
 *   Static resources, directories, and metadata views must be loaded via Server Components or static page rendering.
 *   Interactive lists, pagination controls, search inputs, charts, and toggle systems must reside in Client Components (marked by `"use client"`).
 
+### C. Client-Side Caching Strategy (`fetchWithCache`)
+To make page transitions feel smooth and instantaneous, database data queries should be wrapped in the `fetchWithCache` utility from `@/lib/utils`:
+1. The caching helper stores JSON-serialized results in `localStorage` with a specified Time-To-Live (TTL).
+2. All page-level and query-level cache keys (e.g., `questions_hub_stats_`, `profile_data_cache_`, `user_solves_cache_`, `leetcode_universe_questions_cache_`) are registered in `lib/utils.ts` and cleared synchronously when the `"question-solved"` event is received.
+
 ---
 
 ## 6. Known Limitations & Technical Gotchas
@@ -181,6 +186,9 @@ Keep these technical quirks in mind during development:
 *   Analytics Dashboard (Heatmap, Weekly Throughput, SVG Radial Mastery Gauges)
 *   Razorpay Order & Signature Verification API handlers
 *   Streak Calculations (Current & Peak)
+*   Spaced Repetition Revision Engine (Initial Solve Reflection, scheduling multipliers, Revisions Queue dashboard tab)
+*   Interview Notebook & History Log (Drawer tabs, editable text blocks, chronological log viewer)
+*   Client-Side Caching layer (`fetchWithCache` across Questions Hub, Profile, Progress, and LeetCode Universe with dynamic auto-invalidation)
 
 ### 🟡 In Progress
 *   Pattern Handbook Boilerplates (Expanding C++ to Python and Java templates)

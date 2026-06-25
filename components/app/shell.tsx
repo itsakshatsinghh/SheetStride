@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Topbar } from "@/components/app/topbar";
+import { QuestionDetailDrawer } from "@/components/shared/question-detail-drawer";
 import { cn } from "@/lib/utils";
 
 export function AppShell({
@@ -43,6 +44,9 @@ export function AppShell({
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* Spaced repetition and interview note drawer */}
+      <QuestionDetailDrawer />
     </div>
   );
 }

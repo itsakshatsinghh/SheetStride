@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ExternalLink, Check, Info, AlertCircle, X, Search, Clock, Target, CheckCircle2, Circle, Lock } from "lucide-react";
+import { Loader2, ExternalLink, Check, Info, AlertCircle, X, Search, Clock, Target, CheckCircle2, Circle, Lock, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { Badge } from "@/components/ui/badge";
@@ -109,29 +109,51 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
     loadData();
   }, [slug, user]);
 
-  const handleToggleSolve = async (qId: number, title: string) => {
+  // Listen to solved events to refetch progress directly from Supabase (bypassing cache)
+  useEffect(() => {
+    if (!user) return;
+    const handleSync = async () => {
+      try {
+        const { data: userSolves, error } = await supabase
+          .from("user_progress")
+          .select("question_id, completed-at")
+          .eq("user_id", user.id);
+        
+        if (!error && userSolves) {
+          const solvedSet = new Set<number>();
+          const timesMap: { [qId: number]: string } = {};
+          userSolves.forEach((item: any) => {
+            solvedSet.add(item.question_id);
+            timesMap[item.question_id] = item["completed-at"] || new Date().toISOString();
+          });
+          setSolvedIds(solvedSet);
+          setSolvedTimestamps(timesMap);
+        }
+      } catch (err) {
+        console.error("Failed to sync solves:", err);
+      }
+    };
+    window.addEventListener("question-solved", handleSync);
+    return () => window.removeEventListener("question-solved", handleSync);
+  }, [user]);
+
+  const handleToggleSolve = async (qId: number, title: string, difficulty: string, link: string) => {
     if (!user) return;
     const userId = user.id;
 
     const isCurrentlySolved = solvedIds.has(qId);
-    const newSolvedIds = new Set(solvedIds);
-    const newTimestamps = { ...solvedTimestamps };
-
-    // Optimistic Update
+    
     if (isCurrentlySolved) {
+      const newSolvedIds = new Set(solvedIds);
+      const newTimestamps = { ...solvedTimestamps };
       newSolvedIds.delete(qId);
       delete newTimestamps[qId];
-    } else {
-      newSolvedIds.add(qId);
-      newTimestamps[qId] = new Date().toISOString();
-    }
-    setSolvedIds(newSolvedIds);
-    setSolvedTimestamps(newTimestamps);
+      setSolvedIds(newSolvedIds);
+      setSolvedTimestamps(newTimestamps);
 
-    const timestamps = JSON.parse(localStorage.getItem("solved_questions_timestamps") || "{}");
+      const timestamps = JSON.parse(localStorage.getItem("solved_questions_timestamps") || "{}");
 
-    try {
-      if (isCurrentlySolved) {
+      try {
         // Delete progress record
         const { error } = await supabase
           .from("user_progress")
@@ -140,31 +162,26 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
         if (error) throw error;
 
         delete timestamps[qId];
+        localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
         triggerToast(`"${title}" marked as incomplete.`);
-      } else {
-        // Insert progress record
-        const { error } = await supabase
-          .from("user_progress")
-          .insert({
-            user_id: userId,
-            question_id: qId,
-            completed: true,
-            "completed-at": new Date().toISOString()
-          });
-        if (error) throw error;
-
-        timestamps[qId] = new Date().toISOString();
-        triggerToast(`"${title}" solved! Progress updated.`);
+        window.dispatchEvent(new Event("question-solved"));
+      } catch (err) {
+        console.error("Failed to sync solve status with database:", err);
+        // Revert optimistic state
+        setSolvedIds(new Set(solvedIds));
+        setSolvedTimestamps(solvedTimestamps);
       }
-      localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
-      
-      // Dispatch solve event to update header stats
-      window.dispatchEvent(new Event("question-solved"));
-    } catch (err) {
-      console.error("Failed to sync solve status with database:", err);
-      // Revert optimistic state
-      setSolvedIds(new Set(solvedIds));
-      setSolvedTimestamps(solvedTimestamps);
+    } else {
+      // Open reflection drawer!
+      window.dispatchEvent(new CustomEvent("open-question-drawer", {
+        detail: {
+          questionId: qId,
+          title,
+          difficulty,
+          link,
+          mode: "reflection"
+        }
+      }));
     }
   };
 
@@ -343,6 +360,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
                 <th className="px-6 py-4">Frequency</th>
                 {user && <th className="px-6 py-4">Solved Date</th>}
                 <th className="px-6 py-4">Link</th>
+                <th className="px-6 py-4">Notes</th>
                 <th className="px-6 py-4 text-right">Track</th>
               </tr>
             </thead>
@@ -438,9 +456,31 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-outline/60 hover:text-[#f97316] transition-colors inline-flex items-center"
+                            title="Open LeetCode"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
+                        </td>
+
+                        {/* Notebook Link */}
+                        <td className="px-6 py-4.5">
+                          {user && (
+                            <button
+                              onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                                detail: {
+                                  questionId: row.question_id,
+                                  title: row.title,
+                                  difficulty: row.difficulty,
+                                  link: row.link,
+                                  mode: "notebook"
+                                }
+                              }))}
+                              className="text-outline/60 hover:text-[#f97316] transition-colors inline-flex items-center cursor-pointer"
+                              title="Open Notebook"
+                            >
+                              <BookOpen className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </td>
 
                         {/* Solve Checkbox */}
@@ -448,7 +488,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
                           <div className="flex justify-end">
                             {user ? (
                               <button
-                                onClick={() => handleToggleSolve(row.question_id, row.title)}
+                                onClick={() => handleToggleSolve(row.question_id, row.title, row.difficulty, row.link)}
                                 className={cn(
                                   "w-4 h-4 rounded border flex items-center justify-center transition-all duration-300 cursor-pointer",
                                   solved ? "border-secondary bg-secondary/15 text-secondary scale-110" : "border-outline-variant/60 hover:border-[#f97316] bg-transparent"

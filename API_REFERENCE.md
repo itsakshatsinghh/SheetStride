@@ -157,3 +157,63 @@ Since SheetStride utilizes Supabase, the majority of database queries are execut
       target_user_id: userId
     });
     ```
+
+---
+
+## 3. Third-Party LeetCode Stats API (Alfa LeetCode API)
+
+SheetStride integrates with the public, unofficial LeetCode statistics API (`alfa-leetcode-api`) to retrieve live progress records. The base URL is: `https://alfa-leetcode-api.onrender.com/`.
+
+We consume three key endpoints in the Profile developer HUD:
+
+### A. Full Profile & Solve Counters
+*   **Endpoint:** `GET /:username/profile`
+*   **Purpose:** Consolidated profile fetch providing solved totals, difficulty distributions, and global rankings in one call.
+*   **Response Payload Structure:**
+    ```json
+    {
+      "totalSolved": 419,
+      "easySolved": 140,
+      "mediumSolved": 241,
+      "hardSolved": 38,
+      "ranking": 273955,
+      "matchedUserStats": {
+        "acSubmissionNum": [...],
+        "totalSubmissionNum": [...]
+      }
+    }
+    ```
+
+### B. User Contest Standing
+*   **Endpoint:** `GET /:username/contest`
+*   **Purpose:** Fetches contest participation statistics, top percentage groupings, and rating score indicators.
+*   **Response Payload Structure:**
+    ```json
+    {
+      "userContestRanking": {
+        "attendedContestsCount": 23,
+        "rating": 1845.5,
+        "globalRanking": 12450,
+        "topPercentage": 4.5
+      }
+    }
+    ```
+
+### C. Live Accepted Submissions
+*   **Endpoint:** `GET /:username/acSubmission?limit=7`
+*   **Purpose:** Retrieves the last 7 accepted solutions resolved by the target user.
+*   **Response Payload Structure:**
+    ```json
+    {
+      "count": 7,
+      "submission": [
+        {
+          "title": "Two Sum",
+          "titleSlug": "two-sum",
+          "timestamp": "1719332210",
+          "statusDisplay": "Accepted",
+          "lang": "cpp"
+        }
+      ]
+    }
+    ```

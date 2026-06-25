@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ExternalLink, X, Lock, CheckCircle2, Circle } from "lucide-react";
+import { Check, ExternalLink, X, Lock, CheckCircle2, Circle, BookOpen } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -66,32 +66,31 @@ export function PatternQuestionsClient({
     }
 
     fetchSolveStatus();
+
+    window.addEventListener("question-solved", fetchSolveStatus);
+    return () => {
+      window.removeEventListener("question-solved", fetchSolveStatus);
+    };
   }, [user]);
 
   // Checkbox toggle logic
-  const handleToggleSolve = async (qId: number, title: string) => {
+  const handleToggleSolve = async (qId: number, title: string, difficulty: string, link: string) => {
     if (!user) return;
     const userId = user.id;
 
     const isCurrentlySolved = solvedIds.has(qId);
-    const newSolvedIds = new Set(solvedIds);
-    const newTimestamps = { ...solvedTimestamps };
 
-    // Optimistic Update
     if (isCurrentlySolved) {
+      const newSolvedIds = new Set(solvedIds);
+      const newTimestamps = { ...solvedTimestamps };
       newSolvedIds.delete(qId);
       delete newTimestamps[qId];
-    } else {
-      newSolvedIds.add(qId);
-      newTimestamps[qId] = new Date().toISOString();
-    }
-    setSolvedIds(newSolvedIds);
-    setSolvedTimestamps(newTimestamps);
+      setSolvedIds(newSolvedIds);
+      setSolvedTimestamps(newTimestamps);
 
-    const timestamps = JSON.parse(localStorage.getItem("solved_questions_timestamps") || "{}");
+      const timestamps = JSON.parse(localStorage.getItem("solved_questions_timestamps") || "{}");
 
-    try {
-      if (isCurrentlySolved) {
+      try {
         // Delete progress record
         const { error } = await supabase
           .from("user_progress")
@@ -100,31 +99,26 @@ export function PatternQuestionsClient({
         if (error) throw error;
 
         delete timestamps[qId];
+        localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
         triggerToast(`"${title}" marked as incomplete.`);
-      } else {
-        // Insert progress record
-        const { error } = await supabase
-          .from("user_progress")
-          .insert({
-            user_id: userId,
-            question_id: qId,
-            completed: true,
-            "completed-at": new Date().toISOString()
-          });
-        if (error) throw error;
-
-        timestamps[qId] = new Date().toISOString();
-        triggerToast(`"${title}" solved! Progress updated.`);
+        window.dispatchEvent(new Event("question-solved"));
+      } catch (err) {
+        console.error("Failed to sync solve status with database:", err);
+        // Revert optimistic state
+        setSolvedIds(new Set(solvedIds));
+        setSolvedTimestamps(solvedTimestamps);
       }
-      localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
-      
-      // Dispatch solve event to update header stats
-      window.dispatchEvent(new Event("question-solved"));
-    } catch (err) {
-      console.error("Failed to sync solve status with database:", err);
-      // Revert optimistic state
-      setSolvedIds(new Set(solvedIds));
-      setSolvedTimestamps(solvedTimestamps);
+    } else {
+      // Open reflection drawer!
+      window.dispatchEvent(new CustomEvent("open-question-drawer", {
+        detail: {
+          questionId: qId,
+          title,
+          difficulty,
+          link,
+          mode: "reflection"
+        }
+      }));
     }
   };
 
@@ -178,6 +172,7 @@ export function PatternQuestionsClient({
                 {user && <th className="px-5 py-3.5">Status</th>}
                 {user && <th className="px-5 py-3.5">Solved Date</th>}
                 <th className="px-5 py-3.5">Link</th>
+                <th className="px-5 py-3.5">Notes</th>
                 <th className="px-5 py-3.5 text-right">Track</th>
               </tr>
             </thead>
@@ -257,9 +252,31 @@ export function PatternQuestionsClient({
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-outline/60 hover:text-primary transition-colors inline-flex items-center"
+                        title="Open LeetCode"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
+                    </td>
+
+                    {/* Notebook Link */}
+                    <td className="px-5 py-4">
+                      {user && (
+                        <button
+                          onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                            detail: {
+                              questionId: row.question_id,
+                              title: row.title,
+                              difficulty: row.difficulty,
+                              link: row.link,
+                              mode: "notebook"
+                            }
+                          }))}
+                          className="text-outline/60 hover:text-primary transition-colors inline-flex items-center cursor-pointer"
+                          title="Open Notebook"
+                        >
+                          <BookOpen className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </td>
 
                     {/* Checkbox (or redirect trigger) */}
@@ -267,7 +284,7 @@ export function PatternQuestionsClient({
                       <div className="flex justify-end">
                         {user ? (
                           <button
-                            onClick={() => handleToggleSolve(row.question_id, row.title)}
+                            onClick={() => handleToggleSolve(row.question_id, row.title, row.difficulty, row.link)}
                             className={cn(
                               "w-4 h-4 rounded border flex items-center justify-center transition-all duration-300 cursor-pointer",
                               solved ? "border-secondary bg-secondary/15 text-secondary scale-110" : "border-outline-variant/60 hover:border-primary bg-transparent"

@@ -129,8 +129,12 @@ export default function DashboardPage() {
   const [dailyQuest, setDailyQuest] = useState<any>(null);
   const [weakestTopic, setWeakestTopic] = useState("Array");
 
+  // Revision Queue states
+  const [revisionQueue, setRevisionQueue] = useState<any[]>([]);
+  const [upcomingQueue, setUpcomingQueue] = useState<any[]>([]);
+
   // Interactive console states
-  const [activeTab, setActiveTab] = useState<"proficiency" | "logs" | "diagnostics">("proficiency");
+  const [activeTab, setActiveTab] = useState<"revisions" | "proficiency" | "logs" | "diagnostics">("revisions");
   const [diagnosticLogs, setDiagnosticLogs] = useState<string[]>([
     "SYS_BOOT: Cognitive matrix online.",
     "DB_CONN: Established in 12ms.",
@@ -161,6 +165,23 @@ export default function DashboardPage() {
 
     try {
       setLoading(true);
+
+      // Fetch all active revisions directly (bypassing local cache for real-time accuracy)
+      const { data: revData, error: revError } = await supabase
+        .from("user_progress")
+        .select("*, questions(*)")
+        .eq("user_id", userId)
+        .eq("completed", true)
+        .not("next_revision_due", "is", null)
+        .order("next_revision_due", { ascending: true });
+
+      if (!revError && revData) {
+        const now = new Date();
+        const due = revData.filter((item: any) => new Date(item.next_revision_due) <= now);
+        const upcoming = revData.filter((item: any) => new Date(item.next_revision_due) > now);
+        setRevisionQueue(due);
+        setUpcomingQueue(upcoming);
+      }
       
       const dashboardData = await fetchWithCache("dashboard_data_cache", async () => {
         // 1. Fetch total counts from database
@@ -306,6 +327,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadDashboardData();
+
+    window.addEventListener("question-solved", loadDashboardData);
+    return () => {
+      window.removeEventListener("question-solved", loadDashboardData);
+    };
   }, [user]);
 
   const handleToggleDailyMission = async () => {
@@ -382,7 +408,7 @@ export default function DashboardPage() {
 
   // Stats boxes mapping
   const stats = [
-    { label: "GLOBAL PROGRESS", value: progressPercent, subtext: "System completion", tone: "primary", suffix: "%" },
+    { label: "REVISIONS DUE", value: revisionQueue.length, subtext: "Pending practice loops", tone: "primary", suffix: " TASKS" },
     { label: "CURRENT STREAK", value: currentStreak, subtext: "Consecutive solves", tone: "secondary", suffix: " DAYS" },
     { label: "LONGEST STREAK", value: longestStreak, subtext: "Personal record", tone: "tertiary", suffix: " DAYS" }
   ];
@@ -639,6 +665,7 @@ export default function DashboardPage() {
             {/* Header: Tab Triggers with spring-animated layoutId background slider */}
             <div className="flex border-b border-[#2D2D2D] pb-3 mb-6 overflow-x-auto gap-2 select-none custom-scrollbar">
               {[
+                { id: "revisions", label: `REVISION QUEUE (${revisionQueue.length})`, icon: "sync" },
                 { id: "proficiency", label: "TOPIC PROFICIENCY", icon: "schema" },
                 { id: "logs", label: "RECENT SOLVES", icon: "history" },
                 { id: "diagnostics", label: "SYSTEM DIAGNOSTICS", icon: "terminal" }
@@ -676,6 +703,113 @@ export default function DashboardPage() {
                 transition={{ duration: 0.15 }}
                 className="flex-1"
               >
+                {activeTab === "revisions" && (
+                  <div className="space-y-6">
+                    {/* Due today */}
+                    <div>
+                      <h3 className="font-mono text-[10px] text-[#FFC700] uppercase font-bold tracking-widest mb-3 border-b border-[#2D2D2D] pb-1.5 flex justify-between items-center select-none">
+                        <span>Due Today ({revisionQueue.length})</span>
+                        {revisionQueue.length > 0 && <span className="h-2 w-2 rounded-full bg-secondary shadow-[0_0_8px_#4de082] animate-pulse" />}
+                      </h3>
+                      {revisionQueue.length === 0 ? (
+                        <div className="py-6 text-center text-outline/60 font-body-sm text-xs italic">
+                          No revisions due today. You are caught up!
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {revisionQueue.map((item: any) => {
+                            const q = item.questions;
+                            if (!q) return null;
+                            return (
+                              <div key={item.question_id} className="flex items-center justify-between group bg-[#090909]/40 border border-[#2D2D2D] p-4 rounded-xl hover:border-primary/45 transition-all">
+                                <div className="min-w-0 flex-1 pr-3">
+                                  <div className="flex items-center gap-2 select-none mb-1">
+                                    <span className="font-mono text-[9px] text-outline">#{q.ID}</span>
+                                    <span className={cn(
+                                      "text-[9px] font-bold px-1.5 py-0.5 rounded uppercase",
+                                      q.Difficulty.toLowerCase() === "easy" && "bg-secondary/10 text-secondary border border-secondary/20",
+                                      q.Difficulty.toLowerCase() === "medium" && "bg-tertiary/10 text-tertiary border border-tertiary/20",
+                                      q.Difficulty.toLowerCase() === "hard" && "bg-danger/10 text-[#FF8A80] border border-danger/20"
+                                    )}>
+                                      {q.Difficulty}
+                                    </span>
+                                  </div>
+                                  <h4 className="font-headline-md text-xs font-semibold tracking-wide text-text truncate group-hover:text-primary transition-colors">
+                                    {q.Title}
+                                  </h4>
+                                  <span className="font-mono text-[9px] text-outline uppercase block mt-1">
+                                    Interval: {item.current_interval_days} Days
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                                    detail: {
+                                      questionId: q.ID,
+                                      title: q.Title,
+                                      difficulty: q.Difficulty,
+                                      link: q.Link,
+                                      mode: "priming"
+                                    }
+                                  }))}
+                                  className="bg-[#FFC700] hover:bg-[#FFE14D] text-[#000000] font-bold font-mono text-[10px] px-3.5 py-1.5 rounded-lg flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+                                >
+                                  REVISE
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Upcoming schedule */}
+                    <div>
+                      <h3 className="font-mono text-[10px] text-outline uppercase font-bold tracking-widest mb-3 border-b border-[#2D2D2D] pb-1.5 select-none">
+                        Upcoming Schedule ({upcomingQueue.length})
+                      </h3>
+                      {upcomingQueue.length === 0 ? (
+                        <div className="py-6 text-center text-outline/40 font-body-sm text-xs italic">
+                          No upcoming revisions scheduled.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {upcomingQueue.map((item: any) => {
+                            const q = item.questions;
+                            if (!q) return null;
+                            const daysLeft = Math.ceil((new Date(item.next_revision_due).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                            return (
+                              <div key={item.question_id} className="flex items-center justify-between group bg-[#090909]/20 border border-[#2D2D2D]/60 p-4 rounded-xl hover:border-outline transition-all opacity-85 hover:opacity-100">
+                                <div className="min-w-0 flex-1 pr-3">
+                                  <div className="flex items-center gap-2 select-none mb-1">
+                                    <span className="font-mono text-[9px] text-outline">#{q.ID}</span>
+                                    <span className={cn(
+                                      "text-[9px] font-bold px-1.5 py-0.5 rounded uppercase",
+                                      q.Difficulty.toLowerCase() === "easy" && "bg-secondary/10 text-secondary border border-secondary/20",
+                                      q.Difficulty.toLowerCase() === "medium" && "bg-tertiary/10 text-tertiary border border-tertiary/20",
+                                      q.Difficulty.toLowerCase() === "hard" && "bg-danger/10 text-[#FF8A80] border border-danger/20"
+                                    )}>
+                                      {q.Difficulty}
+                                    </span>
+                                  </div>
+                                  <h4 className="font-headline-md text-xs font-semibold tracking-wide text-outline-variant truncate group-hover:text-text transition-colors">
+                                    {q.Title}
+                                  </h4>
+                                  <span className="font-mono text-[9px] text-outline uppercase block mt-1">
+                                    Interval: {item.current_interval_days} Days
+                                  </span>
+                                </div>
+                                <div className="font-mono text-[10px] text-outline bg-surface-container-high/40 border border-[#2D2D2D] px-3 py-1.5 rounded-lg select-none">
+                                  DUE IN {daysLeft <= 0 ? 1 : daysLeft} {daysLeft === 1 ? "DAY" : "DAYS"}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {activeTab === "proficiency" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     {topicProgress.map((topic) => {

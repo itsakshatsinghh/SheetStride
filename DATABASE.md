@@ -56,14 +56,42 @@ This document reconstructs the complete PostgreSQL schema, views, and functions 
     *   `created_at` (`timestamp with time zone`, default: `now()`).
 *   **Constraints:** Unique composite key `(company_id, question_id)`.
 
-### `user_progress` (Completed Exercises)
-*   **Purpose:** Tracks which problems a user has completed.
+### `user_progress` (Completed Exercises & Spaced Repetition Queue)
+*   **Purpose:** Tracks problem completion states and spaced repetition revision intervals.
 *   **Columns:**
     *   `id` (`bigint`, Primary Key, Auto-increment).
     *   `user_id` (`uuid`, Foreign Key referencing `auth.users.id`, `ON DELETE CASCADE`).
     *   `question_id` (`integer`, Foreign Key referencing `questions.ID`, `ON DELETE CASCADE`).
     *   `completed` (`boolean`, default: `true`).
     *   `completed-at` (`timestamp with time zone`, default: `now()`).
+    *   `current_interval_days` (`integer`, default: `0`): Spaced interval for reviews.
+    *   `next_revision_due` (`timestamp with time zone`, default: `null`): Exposes when revision needs review.
+    *   `revision_count` (`integer`, default: `0`): Total number of times this question was revised.
+    *   `last_revised_at` (`timestamp with time zone`, default: `null`): Last revision timestamp.
+
+### `user_reflection_log` (Solve Reflection Records)
+*   **Purpose:** Stores user-input cognitive reflection logs and difficulty scores filled out during solve checkoffs.
+*   **Columns:**
+    *   `id` (`bigint`, Primary Key, Auto-increment).
+    *   `user_id` (`uuid`, Foreign Key referencing `auth.users.id`, `ON DELETE CASCADE`).
+    *   `question_id` (`integer`, Foreign Key referencing `questions.ID`, `ON DELETE CASCADE`).
+    *   `difficulty_score` (`text`): Evaluation feedback score (`"Easier"`, `"Same"`, `"Difficult"`).
+    *   `reflection` (`text`): Cognitive summary of solution strategy.
+    *   `created_at` (`timestamp with time zone`, default: `now()`).
+
+### `user_notebooks` (Structured Study Journals)
+*   **Purpose:** Holds structured markdown notebook logs (Brute Force, Optimization path, Pattern Strategy, Dry Run) written in the notebook drawers.
+*   **Columns:**
+    *   `id` (`bigint`, Primary Key, Auto-increment).
+    *   `user_id` (`uuid`, Foreign Key referencing `auth.users.id`, `ON DELETE CASCADE`).
+    *   `question_id` (`integer`, Foreign Key referencing `questions.ID`, `ON DELETE CASCADE`).
+    *   `brute_force` (`text`): Baseline approach text.
+    *   `optimization_path` (`text`): Optimization logic.
+    *   `pattern_strategy` (`text`): Pattern mapping ideas.
+    *   `dry_run` (`text`): Manual dry run code execution path trace.
+    *   `notes` (`text`): General study notes.
+    *   `updated_at` (`timestamp with time zone`, default: `now()`).
+*   **Constraints:** Unique composite key `(user_id, question_id)`.
 
 ### `sheet_questions` (Flagship Roadmap Mappings)
 *   **Purpose:** Junction table mapping questions to SheetStride Core roadmap modules.
@@ -163,6 +191,20 @@ To protect database writes and allow public reading of curriculum roadmap defini
 * **Insert Policy:** `auth.uid() = user_id` (Users can only write completion logs matching their authenticated user ID)
 * **Update Policy:** `auth.uid() = user_id` (Users can only update their own progress records)
 * **Delete Policy:** `auth.uid() = user_id` (Users can only delete progress records for their own user ID)
+
+#### `user_reflection_log`
+* **RLS status:** Enabled
+* **Select Policy:** `auth.uid() = user_id` (Users can read reflections they created)
+* **Insert Policy:** `auth.uid() = user_id` (Users can write new reflection entries under their UID)
+* **Update Policy:** `auth.uid() = user_id` (Users can modify their own reflections)
+* **Delete Policy:** `auth.uid() = user_id` (Users can delete their reflections)
+
+#### `user_notebooks`
+* **RLS status:** Enabled
+* **Select Policy:** `auth.uid() = user_id` (Users can read notebooks they created)
+* **Insert Policy:** `auth.uid() = user_id` (Users can write new notebook blocks under their UID)
+* **Update Policy:** `auth.uid() = user_id` (Users can update their own notebooks)
+* **Delete Policy:** `auth.uid() = user_id` (Users can delete their notebooks)
 
 #### `profiles` (Mirror profiles)
 * **RLS status:** Enabled

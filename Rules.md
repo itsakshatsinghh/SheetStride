@@ -1,6 +1,8 @@
 Always read AGENTS.md first.
 
-Then read PROJECT\_CONTEXT.md.
+Then read PROJECT_CONTEXT.md.
+
+Read sheetstrideprinciples.md before making any architectural, UI/UX, database, or feature decisions to ensure alignment with SheetStride's core philosophy.
 
 Only read deeper docs when necessary.
 
