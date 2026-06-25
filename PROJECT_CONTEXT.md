@@ -98,6 +98,11 @@ The database runs on Supabase (PostgreSQL) and exposes these core relations, vie
 5.  **`sheet_questions`:** Maps questions to SheetStride Core roadmap modules (Sheet_order, question_id, question_name, Pattern_name, topic_name).
 6.  **`pattern_metadata`:** Holds algorithm descriptions, complexity requirements, and template boilerplate code (pattern_name, topic_name, core_idea, recognition_keywords, tc, sc, difficulty, cpp_template).
 
+### Row-Level Security (RLS) Policies
+*   **User Tracking:** `user_progress` and `profiles` tables have RLS enabled and restrict read/write access strictly to the owner (`auth.uid() = user_id`).
+*   **Master Curriculum:** `questions`, `companies`, `company_questions`, `sheet_questions`, and `pattern_metadata` tables have RLS enabled and allow public SELECT access to all roles (both `anon` and `authenticated`) while restricting insertions/modifications.
+
+
 ### Database Views
 *   `view_sheet_questions`: Combines `sheet_questions` and `questions` to build the core roadmap checklist.
 *   `view_company_summary`: Groups `companies` and `company_questions` to provide company profiles and problem counts.

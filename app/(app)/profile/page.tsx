@@ -7,7 +7,7 @@ import { AppShell } from "@/components/app/shell";
 import { Heatmap } from "@/components/shared/heatmap";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeSocialInput } from "@/lib/utils";
 
 interface SolvedQuestion {
   ID: number;
@@ -754,6 +754,37 @@ export default function ProfilePage() {
               }
 
               try {
+                // Sanitize social inputs to prevent Stored XSS
+                let sanitizedGithub = "";
+                let sanitizedLinkedin = "";
+                let sanitizedInstagram = "";
+
+                try {
+                  sanitizedGithub = sanitizeSocialInput(github, "github");
+                } catch (e: any) {
+                  alert(`GitHub Validation Error: ${e.message}`);
+                  return;
+                }
+
+                try {
+                  sanitizedLinkedin = sanitizeSocialInput(linkedin, "linkedin");
+                } catch (e: any) {
+                  alert(`LinkedIn Validation Error: ${e.message}`);
+                  return;
+                }
+
+                try {
+                  sanitizedInstagram = sanitizeSocialInput(instagram, "instagram");
+                } catch (e: any) {
+                  alert(`Instagram Validation Error: ${e.message}`);
+                  return;
+                }
+
+                // Update local inputs to normalized values
+                setGithub(sanitizedGithub);
+                setLinkedin(sanitizedLinkedin);
+                setInstagram(sanitizedInstagram);
+
                 // Save to profiles database
                 try {
                   await supabase
@@ -762,9 +793,9 @@ export default function ProfilePage() {
                       id: user?.id,
                       leetcode_username: leetcodeUsername.trim(),
                       bio: bio.trim(),
-                      instagram: instagram.trim(),
-                      linkedin: linkedin.trim(),
-                      github: github.trim()
+                      instagram: sanitizedInstagram,
+                      linkedin: sanitizedLinkedin,
+                      github: sanitizedGithub
                     });
                 } catch (dbErr) {
                   console.warn("Profiles database upsert skipped:", dbErr);
@@ -775,9 +806,9 @@ export default function ProfilePage() {
                   data: {
                     leetcode_username: leetcodeUsername.trim(),
                     bio: bio.trim(),
-                    instagram: instagram.trim(),
-                    linkedin: linkedin.trim(),
-                    github: github.trim()
+                    instagram: sanitizedInstagram,
+                    linkedin: sanitizedLinkedin,
+                    github: sanitizedGithub
                   }
                 });
 

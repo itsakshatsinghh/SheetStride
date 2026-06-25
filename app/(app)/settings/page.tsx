@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeSocialInput } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -110,6 +110,40 @@ export default function SettingsPage() {
       setIsUpdating(true);
       setUpdateMsg("");
 
+      // Sanitize social inputs to prevent Stored XSS
+      let sanitizedGithub = "";
+      let sanitizedLinkedin = "";
+      let sanitizedInstagram = "";
+
+      try {
+        sanitizedGithub = sanitizeSocialInput(github, "github");
+      } catch (err: any) {
+        setUpdateMsg(`ERR: GitHub Link Invalid - ${err.message}`);
+        setIsUpdating(false);
+        return;
+      }
+
+      try {
+        sanitizedLinkedin = sanitizeSocialInput(linkedin, "linkedin");
+      } catch (err: any) {
+        setUpdateMsg(`ERR: LinkedIn Link Invalid - ${err.message}`);
+        setIsUpdating(false);
+        return;
+      }
+
+      try {
+        sanitizedInstagram = sanitizeSocialInput(instagram, "instagram");
+      } catch (err: any) {
+        setUpdateMsg(`ERR: Instagram Link Invalid - ${err.message}`);
+        setIsUpdating(false);
+        return;
+      }
+
+      // Update local states to normalized values
+      setGithub(sanitizedGithub);
+      setLinkedin(sanitizedLinkedin);
+      setInstagram(sanitizedInstagram);
+
       // 1. Attempt profiles database upsert
       try {
         await supabase
@@ -120,9 +154,9 @@ export default function SettingsPage() {
             preferred_language: preferredLanguage,
             leetcode_username: leetcodeUsername.trim(),
             bio: bio.trim(),
-            instagram: instagram.trim(),
-            linkedin: linkedin.trim(),
-            github: github.trim()
+            instagram: sanitizedInstagram,
+            linkedin: sanitizedLinkedin,
+            github: sanitizedGithub
           });
       } catch (err) {
         console.warn("profiles table update skipped (table may not exist):", err);
@@ -135,9 +169,9 @@ export default function SettingsPage() {
           preferred_language: preferredLanguage,
           leetcode_username: leetcodeUsername.trim(),
           bio: bio.trim(),
-          instagram: instagram.trim(),
-          linkedin: linkedin.trim(),
-          github: github.trim()
+          instagram: sanitizedInstagram,
+          linkedin: sanitizedLinkedin,
+          github: sanitizedGithub
         }
       });
 

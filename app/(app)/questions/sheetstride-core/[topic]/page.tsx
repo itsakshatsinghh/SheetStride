@@ -8,6 +8,7 @@ import { AppShell } from "@/components/app/shell";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
+import { fetchWithCache } from "@/lib/utils";
 
 const TOPIC_SLUGS: { [key: string]: string } = {
   "two-pointer-patterns": "I. Two Pointer Patterns",
@@ -94,97 +95,110 @@ export default function PatternExplorerPage({ params }: { params: Promise<{ topi
       try {
         setLoading(true);
 
-        // 1. Fetch user's solved question IDs
-        const { data: userSolves, error: solvesError } = await supabase
-          .from("user_progress")
-          .select("question_id")
-          .eq("user_id", userId);
+        const cacheKey = `topic_patterns_cache_${user ? user.id : "anon"}_${topicSlug}`;
+        const dataResult = await fetchWithCache(cacheKey, async () => {
+          // 1. Fetch user's solved question IDs
+          const { data: userSolves, error: solvesError } = await supabase
+            .from("user_progress")
+            .select("question_id")
+            .eq("user_id", userId);
 
-        if (solvesError) throw solvesError;
-        const solvedIds = new Set(userSolves?.map((row: any) => row.question_id) || []);
+          if (solvesError) throw solvesError;
+          const solvedIdsArr = userSolves?.map((row: any) => row.question_id) || [];
 
-        // 2. Fetch sheet questions for this topic, joined with difficulty
-        const { data: qData, error: qError } = await supabase
-          .from("sheet_questions")
-          .select(`
-            question_id: "question ID",
-            Pattern_name: "Pattern name",
-            questions (
-              Difficulty
-            )
-          `)
-          .eq("topic name", dbName);
+          // 2. Fetch sheet questions for this topic, joined with difficulty
+          const { data: qData, error: qError } = await supabase
+            .from("sheet_questions")
+            .select(`
+              question_id: "question ID",
+              Pattern_name: "Pattern name",
+              questions (
+                Difficulty
+              )
+            `)
+            .eq("topic name", dbName);
 
-        if (qError) throw qError;
-
-        // Group questions by pattern
-        const patternMap: { [key: string]: { total: number; solved: number; questionsList: any[] } } = {};
-        
-        let tTotal = 0;
-        let tSolved = 0;
-
-        qData?.forEach((row: any) => {
-          const rawPatName = row.Pattern_name || "General";
-          const patName = rawPatName.trim();
-          const qId = row.question_id;
-
-          tTotal++;
-          if (solvedIds.has(qId)) {
-            tSolved++;
-          }
-
-          if (!patternMap[patName]) {
-            patternMap[patName] = { total: 0, solved: 0, questionsList: [] };
-          }
-
-          patternMap[patName].total++;
-          if (solvedIds.has(qId)) {
-            patternMap[patName].solved++;
-          }
-          patternMap[patName].questionsList.push(row);
-        });
-
-        setTopicTotal(tTotal);
-        setTopicSolved(tSolved);
-
-        // Map grouped results to PatternStats array
-        const statsList = Object.entries(patternMap).map(([name, data]) => {
-          const percent = data.total > 0 ? Math.round((data.solved / data.total) * 100) : 0;
-          
-          // Compute difficulty mix
-          const diffCounts: { [key: string]: number } = { easy: 0, medium: 0, hard: 0 };
-          data.questionsList.forEach(q => {
-            const diff = q.questions?.Difficulty?.toLowerCase() || "";
-            if (diffCounts[diff] !== undefined) {
-              diffCounts[diff]++;
-            }
-          });
-
-          const totalQuestions = data.total;
-          const mixParts: string[] = [];
-          if (diffCounts.easy > 0) {
-            mixParts.push(`${Math.round((diffCounts.easy / totalQuestions) * 100)}% Easy`);
-          }
-          if (diffCounts.medium > 0) {
-            mixParts.push(`${Math.round((diffCounts.medium / totalQuestions) * 100)}% Medium`);
-          }
-          if (diffCounts.hard > 0) {
-            mixParts.push(`${Math.round((diffCounts.hard / totalQuestions) * 100)}% Hard`);
-          }
-          const difficultyMix = `Mix: ${mixParts.join(", ")}`;
+          if (qError) throw qError;
 
           return {
-            name,
-            slug: slugifyPattern(name),
-            total: data.total,
-            solved: data.solved,
-            percent,
-            difficultyMix,
-            isCompleted: percent === 100
+            solvedIdsArr,
+            qData: qData || []
           };
-        });
+        }, 300000); // 5 minutes TTL
 
-        setPatterns(statsList);
+        if (dataResult) {
+          const solvedIds = new Set(dataResult.solvedIdsArr);
+          const qData = dataResult.qData;
+
+          // Group questions by pattern
+          const patternMap: { [key: string]: { total: number; solved: number; questionsList: any[] } } = {};
+          
+          let tTotal = 0;
+          let tSolved = 0;
+
+          qData.forEach((row: any) => {
+            const rawPatName = row.Pattern_name || "General";
+            const patName = rawPatName.trim();
+            const qId = row.question_id;
+
+            tTotal++;
+            if (solvedIds.has(qId)) {
+              tSolved++;
+            }
+
+            if (!patternMap[patName]) {
+              patternMap[patName] = { total: 0, solved: 0, questionsList: [] };
+            }
+
+            patternMap[patName].total++;
+            if (solvedIds.has(qId)) {
+              patternMap[patName].solved++;
+            }
+            patternMap[patName].questionsList.push(row);
+          });
+
+          setTopicTotal(tTotal);
+          setTopicSolved(tSolved);
+
+          // Map grouped results to PatternStats array
+          const statsList = Object.entries(patternMap).map(([name, data]) => {
+            const percent = data.total > 0 ? Math.round((data.solved / data.total) * 100) : 0;
+            
+            // Compute difficulty mix
+            const diffCounts: { [key: string]: number } = { easy: 0, medium: 0, hard: 0 };
+            data.questionsList.forEach(q => {
+              const diff = q.questions?.Difficulty?.toLowerCase() || "";
+              if (diffCounts[diff] !== undefined) {
+                diffCounts[diff]++;
+              }
+            });
+
+            const totalQuestions = data.total;
+            const mixParts: string[] = [];
+            if (diffCounts.easy > 0) {
+              mixParts.push(`${Math.round((diffCounts.easy / totalQuestions) * 100)}% Easy`);
+            }
+            if (diffCounts.medium > 0) {
+              mixParts.push(`${Math.round((diffCounts.medium / totalQuestions) * 100)}% Medium`);
+            }
+            if (diffCounts.hard > 0) {
+              mixParts.push(`${Math.round((diffCounts.hard / totalQuestions) * 100)}% Hard`);
+            }
+            const difficultyMix = `Mix: ${mixParts.join(", ")}`;
+
+            return {
+              name,
+              slug: slugifyPattern(name),
+              total: data.total,
+              solved: data.solved,
+              percent,
+              difficultyMix,
+              isCompleted: percent === 100
+            };
+          });
+
+          setPatterns(statsList);
+        }
       } catch (err) {
         console.error("Failed to load pattern stats:", err);
       } finally {

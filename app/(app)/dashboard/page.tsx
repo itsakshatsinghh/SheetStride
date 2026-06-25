@@ -9,7 +9,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, fetchWithCache } from "@/lib/utils";
 
 // requestAnimationFrame count-up hook for GPU-friendly 60fps animations
 function CountUp({ end, duration = 1.0, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
@@ -162,130 +162,141 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       
-      // 1. Fetch total counts from database
-      const { count: countAll } = await supabase
-        .from("questions")
-        .select("*", { count: "exact", head: true });
-      if (countAll !== null) setTotalQuestions(countAll);
-
-      // 2. Fetch user's solved questions from user_progress
-      const { data: userProgress, error: progressError } = await supabase
-        .from("user_progress")
-        .select(`
-          question_id,
-          "completed-at"
-        `)
-        .eq("user_id", userId)
-        .order("completed-at", { ascending: true });
-
-      if (progressError) throw progressError;
-
-      let solved: SolvedQuestion[] = [];
-      if (userProgress && userProgress.length > 0) {
-        const questionIds = userProgress.map((row: any) => row.question_id);
-        const { data: questionsData, error: questionsError } = await supabase
+      const dashboardData = await fetchWithCache("dashboard_data_cache", async () => {
+        // 1. Fetch total counts from database
+        const { count: countAll } = await supabase
           .from("questions")
-          .select("ID, Title, Difficulty, Topics")
-          .in("ID", questionIds);
+          .select("*", { count: "exact", head: true });
 
-        if (questionsError) throw questionsError;
+        // 2. Fetch user's solved questions from user_progress
+        const { data: userProgress, error: progressError } = await supabase
+          .from("user_progress")
+          .select(`
+            question_id,
+            "completed-at"
+          `)
+          .eq("user_id", userId)
+          .order("completed-at", { ascending: true });
 
-        const questionsMap = new Map(questionsData?.map((q: any) => [q.ID, q]));
-        solved = userProgress
-          .map((row: any) => {
-            const q = questionsMap.get(row.question_id);
-            if (!q) return null;
-            return {
-              ID: q.ID,
-              Title: q.Title,
-              Difficulty: q.Difficulty,
-              Topics: q.Topics
-            };
-          })
-          .filter(Boolean) as SolvedQuestion[];
-      }
-      
-      setSolvedList(solved);
+        if (progressError) throw progressError;
 
-      // 3. Compute streaks using database RPC function with correct parameter name target_user_id
-      const { data: streakData, error: streakError } = await supabase
-        .rpc("calculate_user_streaks", { target_user_id: userId });
-
-      if (!streakError && streakData && streakData.length > 0) {
-        setCurrentStreak(streakData[0].res_current_streak || 0);
-        setLongestStreak(streakData[0].res_max_streak || 0);
-      } else {
-        // Fallbacks in case RPC fails or returns empty
-        setCurrentStreak(0);
-        setLongestStreak(0);
-      }
-
-      // 4. Calculate weakest topic and fetch Daily Mission question
-      const topicStatsMap: { [key: string]: number } = {};
-      solved.forEach((q) => {
-        if (q.Topics) {
-          q.Topics.split(",").forEach((t) => {
-            const cleanTopic = t.trim();
-            topicStatsMap[cleanTopic] = (topicStatsMap[cleanTopic] || 0) + 1;
-          });
-        }
-      });
-
-      const TOPIC_DENOMINATORS: { [key: string]: number } = {
-        "Array": 500,
-        "String": 300,
-        "Hash Table": 250,
-        "Dynamic Programming": 350,
-        "Tree": 200,
-        "Graph": 150,
-        "Binary Search": 130,
-        "Linked List": 90
-      };
-
-      let computedWeakest = "Array";
-      let lowestRatio = 1.0;
-      Object.entries(TOPIC_DENOMINATORS).forEach(([topic, total]) => {
-        const solvedCount = topicStatsMap[topic] || 0;
-        const ratio = solvedCount / total;
-        if (ratio < lowestRatio) {
-          lowestRatio = ratio;
-          computedWeakest = topic;
-        }
-      });
-      setWeakestTopic(computedWeakest);
-
-      // Fetch unsolved questions in weakest topic
-      const solvedIdsSet = new Set(solved.map(q => q.ID));
-      const { data: topicQuestions } = await supabase
-        .from("questions")
-        .select("ID, Title, Difficulty, Link, Topics")
-        .ilike("Topics", `%${computedWeakest}%`)
-        .limit(50);
-
-      let quest = null;
-      if (topicQuestions) {
-        quest = topicQuestions.find(q => !solvedIdsSet.has(q.ID));
-      }
-
-      // Fallback
-      if (!quest) {
-        const { data: generalQuestions } = await supabase
-          .from("general_questions" as any) // fallback table or questions fallback
-          .select("ID, Title, Difficulty, Link, Topics")
-          .limit(100);
-
-        if (!generalQuestions) {
-          const { data: altQuestions } = await supabase
+        let solved: SolvedQuestion[] = [];
+        if (userProgress && userProgress.length > 0) {
+          const questionIds = userProgress.map((row: any) => row.question_id);
+          const { data: questionsData, error: questionsError } = await supabase
             .from("questions")
+            .select("ID, Title, Difficulty, Topics")
+            .in("ID", questionIds);
+
+          if (questionsError) throw questionsError;
+
+          const questionsMap = new Map(questionsData?.map((q: any) => [q.ID, q]));
+          solved = userProgress
+            .map((row: any) => {
+              const q = questionsMap.get(row.question_id);
+              if (!q) return null;
+              return {
+                ID: q.ID,
+                Title: q.Title,
+                Difficulty: q.Difficulty,
+                Topics: q.Topics
+              };
+            })
+            .filter(Boolean) as SolvedQuestion[];
+        }
+
+        // 3. Compute streaks
+        let currentStreak = 0;
+        let longestStreak = 0;
+        const { data: streakData, error: streakError } = await supabase
+          .rpc("calculate_user_streaks", { target_user_id: userId });
+
+        if (!streakError && streakData && streakData.length > 0) {
+          currentStreak = streakData[0].res_current_streak || 0;
+          longestStreak = streakData[0].res_max_streak || 0;
+        }
+
+        // 4. Calculate weakest topic and fetch Daily Mission question
+        const topicStatsMap: { [key: string]: number } = {};
+        solved.forEach((q) => {
+          if (q.Topics) {
+            q.Topics.split(",").forEach((t) => {
+              const cleanTopic = t.trim();
+              topicStatsMap[cleanTopic] = (topicStatsMap[cleanTopic] || 0) + 1;
+            });
+          }
+        });
+
+        const TOPIC_DENOMINATORS: { [key: string]: number } = {
+          "Array": 500,
+          "String": 300,
+          "Hash Table": 250,
+          "Dynamic Programming": 350,
+          "Tree": 200,
+          "Graph": 150,
+          "Binary Search": 130,
+          "Linked List": 90
+        };
+
+        let computedWeakest = "Array";
+        let lowestRatio = 1.0;
+        Object.entries(TOPIC_DENOMINATORS).forEach(([topic, total]) => {
+          const solvedCount = topicStatsMap[topic] || 0;
+          const ratio = solvedCount / total;
+          if (ratio < lowestRatio) {
+            lowestRatio = ratio;
+            computedWeakest = topic;
+          }
+        });
+
+        // Fetch unsolved questions in weakest topic
+        const solvedIdsSet = new Set(solved.map(q => q.ID));
+        const { data: topicQuestions } = await supabase
+          .from("questions")
+          .select("ID, Title, Difficulty, Link, Topics")
+          .ilike("Topics", `%${computedWeakest}%`)
+          .limit(50);
+
+        let quest = null;
+        if (topicQuestions) {
+          quest = topicQuestions.find(q => !solvedIdsSet.has(q.ID));
+        }
+
+        if (!quest) {
+          const { data: generalQuestions } = await supabase
+            .from("general_questions" as any)
             .select("ID, Title, Difficulty, Link, Topics")
             .limit(100);
-          quest = altQuestions?.find(q => !solvedIdsSet.has(q.ID));
-        } else {
-          quest = generalQuestions.find(q => !solvedIdsSet.has(q.ID));
-        }
-      }
-      setDailyQuest(quest);
 
+          if (!generalQuestions) {
+            const { data: altQuestions } = await supabase
+              .from("questions")
+              .select("ID, Title, Difficulty, Link, Topics")
+              .limit(100);
+            quest = altQuestions?.find(q => !solvedIdsSet.has(q.ID));
+          } else {
+            quest = generalQuestions.find(q => !solvedIdsSet.has(q.ID));
+          }
+        }
+
+        return {
+          totalQuestions: countAll || 0,
+          solvedList: solved,
+          currentStreak,
+          longestStreak,
+          weakestTopic: computedWeakest,
+          dailyQuest: quest
+        };
+      }, 300000); // 5 minutes TTL
+
+      if (dashboardData) {
+        if (dashboardData.totalQuestions !== null) setTotalQuestions(dashboardData.totalQuestions);
+        setSolvedList(dashboardData.solvedList);
+        setCurrentStreak(dashboardData.currentStreak);
+        setLongestStreak(dashboardData.longestStreak);
+        setWeakestTopic(dashboardData.weakestTopic);
+        setDailyQuest(dashboardData.dailyQuest);
+      }
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
     } finally {

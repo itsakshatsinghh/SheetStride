@@ -123,23 +123,22 @@ function QuestionsList() {
       try {
         setIsLoading(true);
         
-        let query;
+        let query = supabase
+          .from("questions")
+          .select("*", { count: "exact" });
+
         if (selectedStatus === "Solved") {
-          query = supabase
-            .from("questions")
-            .select("*, user_progress!inner(completed)", { count: "exact" })
-            .eq("user_progress.user_id", userId);
+          const solvedArr = Array.from(solvedIds);
+          if (solvedArr.length > 0) {
+            query = query.in("ID", solvedArr);
+          } else {
+            query = query.eq("ID", -1); // Force empty result if none solved
+          }
         } else if (selectedStatus === "Unsolved" || selectedStatus === "Todo") {
-          query = supabase
-            .from("questions")
-            .select("*, user_progress(completed)", { count: "exact" })
-            .eq("user_progress.user_id", userId)
-            .is("user_progress", null);
-        } else {
-          query = supabase
-            .from("questions")
-            .select("*, user_progress(completed)", { count: "exact" })
-            .eq("user_progress.user_id", userId);
+          const solvedArr = Array.from(solvedIds);
+          if (solvedArr.length > 0) {
+            query = query.not("ID", "in", `(${solvedArr.join(",")})`);
+          }
         }
 
         // Apply difficulty filter

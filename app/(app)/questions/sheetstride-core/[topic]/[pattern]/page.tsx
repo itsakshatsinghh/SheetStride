@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
-import { cn } from "@/lib/utils";
+import { cn, fetchWithCache } from "@/lib/utils";
 
 import { TOPIC_SLUGS, TOPIC_DISPLAY_NAMES, slugifyPattern } from "@/lib/slugs";
 
@@ -104,97 +104,106 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
       try {
         setLoading(true);
 
-        // 1. Fetch user's solved question IDs
-        const { data: userSolves, error: solvesError } = await supabase
-          .from("user_progress")
-          .select("question_id, completed-at")
-          .eq("user_id", userId);
+        const cacheKey = `pattern_questions_cache_${user ? user.id : "anon"}_${topicSlug}_${patternSlug}`;
+        const dataResult = await fetchWithCache(cacheKey, async () => {
+          // 1. Fetch user's solved question IDs
+          let solvedArr: any[] = [];
+          if (user) {
+            const { data: userSolves, error: solvesError } = await supabase
+              .from("user_progress")
+              .select("question_id, completed-at")
+              .eq("user_id", userId);
 
-        if (solvesError) throw solvesError;
-        
-        const ids = new Set<number>();
-        const timesMap: { [qId: number]: string } = {};
-        
-        userSolves?.forEach((item: any) => {
-          ids.add(item.question_id);
-          timesMap[item.question_id] = item["completed-at"] || new Date().toISOString();
-        });
-
-        setSolvedIds(ids);
-        setSolvedTimestamps(timesMap);
-
-        // 2. Fetch sheet questions mapped under this topic from the optimized view
-        const { data: qData, error: qError } = await supabase
-          .from("view_sheet_questions")
-          .select("*")
-          .eq("topic_name", dbName);
-
-        if (qError) throw qError;
-
-        // Group sheet questions by their pattern slug
-        const matched = qData?.filter((row: any) => {
-          return slugifyPattern(row.pattern_name || "") === patternSlug;
-        });
-
-        let resolvedPatternName = "";
-        if (matched && matched.length > 0) {
-          resolvedPatternName = matched[0].pattern_name;
-          setDbPatternName(resolvedPatternName);
-          
-          // Fetch additional metadata (Title and Topics) from the master questions table
-          const qIds = matched.map((row: any) => row.question_id);
-          const { data: questionsMeta, error: metaQError } = await supabase
-            .from("questions")
-            .select("ID, Title, Topics")
-            .in("ID", qIds);
-            
-          const metaMap = new Map();
-          if (!metaQError && questionsMeta) {
-            questionsMeta.forEach((q: any) => {
-              metaMap.set(q.ID, q);
-            });
+            if (solvesError) throw solvesError;
+            solvedArr = userSolves || [];
           }
 
-          const mappedQList = matched
-            .map((row: any) => {
-              const meta = metaMap.get(row.question_id);
-              return {
-                ID: row.question_id,
-                Title: meta?.Title || row.question_name || row.title || "",
-                Difficulty: row.difficulty,
-                Link: row.link,
-                Topics: meta?.Topics || row.topics || "",
-                "Acceptance Rate (%)": row.acceptance_rate,
-              };
-            })
-            .filter(Boolean) as Question[];
-          
-          // Sort by ID ascending
-          mappedQList.sort((a, b) => a.ID - b.ID);
-          setQuestions(mappedQList);
-        } else {
-          setQuestions([]);
-        }
-
-        // Fetch pattern metadata
-        if (resolvedPatternName) {
-          const { data: metaDataList, error: metaError } = await supabase
-            .from("pattern_metadata")
+          // 2. Fetch sheet questions mapped under this topic from the optimized view
+          const { data: qData, error: qError } = await supabase
+            .from("view_sheet_questions")
             .select("*")
-            .eq("pattern_name", resolvedPatternName)
-            .limit(1);
+            .eq("topic_name", dbName);
 
-          if (metaError) {
-            console.warn("Failed to fetch pattern metadata:", metaError);
-            setPatternMetadata(null);
-          } else {
-            const metaData = metaDataList && metaDataList.length > 0 ? metaDataList[0] : null;
-            setPatternMetadata(metaData);
+          if (qError) throw qError;
+
+          // Group sheet questions by their pattern slug
+          const matched = qData?.filter((row: any) => {
+            return slugifyPattern(row.pattern_name || "") === patternSlug;
+          });
+
+          let resolvedPatternName = "";
+          let mappedQList: Question[] = [];
+          let metaData = null;
+
+          if (matched && matched.length > 0) {
+            resolvedPatternName = matched[0].pattern_name;
+            
+            // Fetch additional metadata (Title and Topics) from the master questions table
+            const qIds = matched.map((row: any) => row.question_id);
+            const { data: questionsMeta, error: metaQError } = await supabase
+              .from("questions")
+              .select("ID, Title, Topics")
+              .in("ID", qIds);
+              
+            const metaMap = new Map();
+            if (!metaQError && questionsMeta) {
+              questionsMeta.forEach((q: any) => {
+                metaMap.set(q.ID, q);
+              });
+            }
+
+            mappedQList = matched
+              .map((row: any) => {
+                const meta = metaMap.get(row.question_id);
+                return {
+                  ID: row.question_id,
+                  Title: meta?.Title || row.question_name || row.title || "",
+                  Difficulty: row.difficulty,
+                  Link: row.link,
+                  Topics: meta?.Topics || row.topics || "",
+                  "Acceptance Rate (%)": row.acceptance_rate,
+                };
+              })
+              .filter(Boolean) as Question[];
+            
+            mappedQList.sort((a, b) => a.ID - b.ID);
           }
-        } else {
-          setPatternMetadata(null);
-        }
 
+          // Fetch pattern metadata
+          if (resolvedPatternName) {
+            const { data: metaDataList, error: metaError } = await supabase
+              .from("pattern_metadata")
+              .select("*")
+              .eq("pattern_name", resolvedPatternName)
+              .limit(1);
+
+            if (!metaError && metaDataList && metaDataList.length > 0) {
+              metaData = metaDataList[0];
+            }
+          }
+
+          return {
+            resolvedPatternName,
+            solvedArr,
+            mappedQList,
+            metaData
+          };
+        }, 300000); // 5 minutes TTL
+
+        if (dataResult) {
+          setDbPatternName(dataResult.resolvedPatternName);
+          setQuestions(dataResult.mappedQList);
+          setPatternMetadata(dataResult.metaData);
+
+          const ids = new Set<number>();
+          const timesMap: { [qId: number]: string } = {};
+          dataResult.solvedArr.forEach((item: any) => {
+            ids.add(item.question_id);
+            timesMap[item.question_id] = item["completed-at"] || new Date().toISOString();
+          });
+          setSolvedIds(ids);
+          setSolvedTimestamps(timesMap);
+        }
       } catch (err) {
         console.error("Failed to load question explorer data:", err);
         setPatternMetadata(null);

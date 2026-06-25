@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
-import { cn } from "@/lib/utils";
+import { cn, fetchWithCache } from "@/lib/utils";
 
 interface CompanyQuestion {
   question_id: number;
@@ -45,54 +45,59 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
       try {
         setLoading(true);
 
-        // 1. Fetch company profile details from view_company_summary
-        const { data: summaryData, error: summaryError } = await supabase
-          .from("view_company_summary")
-          .select("*")
-          .eq("company_slug", slug)
-          .limit(1);
+        const cacheKey = `company_questions_cache_${user ? user.id : "anon"}_${slug}`;
+        const sheetData = await fetchWithCache(cacheKey, async () => {
+          // 1. Fetch company profile details from view_company_summary
+          const { data: summaryData, error: summaryError } = await supabase
+            .from("view_company_summary")
+            .select("*")
+            .eq("company_slug", slug)
+            .limit(1);
 
-        if (summaryError) throw summaryError;
-        if (!summaryData || summaryData.length === 0) {
-          setCompanyName("");
-          setLoading(false);
-          return;
-        }
+          if (summaryError) throw summaryError;
+          const companyName = summaryData?.[0]?.company_name || "";
 
-        const compProfile = summaryData[0];
-        setCompanyName(compProfile.company_name);
+          // 2. Fetch user's solved question IDs if logged in
+          let solvedArr: any[] = [];
+          if (user) {
+            const { data: userSolves, error: solvesError } = await supabase
+              .from("user_progress")
+              .select("question_id, completed-at")
+              .eq("user_id", user.id);
 
-        // 2. Fetch user's solved question IDs if logged in
-        let solvedSet = new Set<number>();
-        let timesMap: { [qId: number]: string } = {};
-
-        if (user) {
-          const { data: userSolves, error: solvesError } = await supabase
-            .from("user_progress")
-            .select("question_id, completed-at")
-            .eq("user_id", user.id);
-
-          if (!solvesError && userSolves) {
-            userSolves.forEach((item: any) => {
-              solvedSet.add(item.question_id);
-              timesMap[item.question_id] = item["completed-at"] || new Date().toISOString();
-            });
+            if (!solvesError && userSolves) {
+              solvedArr = userSolves;
+            }
           }
-        }
-        setSolvedIds(solvedSet);
-        setSolvedTimestamps(timesMap);
 
-        // 3. Fetch questions mapped under this company from the view
-        const { data: questionsData, error: qError } = await supabase
-          .from("view_company_questions")
-          .select("question_id, title, difficulty, link, topics, acceptance_rate, frequency")
-          .eq("company_slug", slug)
-          .order("frequency", { ascending: false });
+          // 3. Fetch questions mapped under this company from the view
+          const { data: questionsData, error: qError } = await supabase
+            .from("view_company_questions")
+            .select("question_id, title, difficulty, link, topics, acceptance_rate, frequency")
+            .eq("company_slug", slug)
+            .order("frequency", { ascending: false });
 
-        if (qError) throw qError;
+          if (qError) throw qError;
 
-        if (questionsData) {
-          setQuestions(questionsData);
+          return {
+            companyName,
+            solvedArr,
+            questions: questionsData || []
+          };
+        }, 300000); // 5 minutes TTL
+
+        if (sheetData) {
+          setCompanyName(sheetData.companyName);
+          setQuestions(sheetData.questions);
+
+          const solvedSet = new Set<number>();
+          const timesMap: { [qId: number]: string } = {};
+          sheetData.solvedArr.forEach((item: any) => {
+            solvedSet.add(item.question_id);
+            timesMap[item.question_id] = item["completed-at"] || new Date().toISOString();
+          });
+          setSolvedIds(solvedSet);
+          setSolvedTimestamps(timesMap);
         }
       } catch (err) {
         console.error("Failed to load company sheet detail data:", err);

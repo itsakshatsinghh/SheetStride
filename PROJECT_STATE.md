@@ -35,5 +35,5 @@ This snapshot represents the current status of features, models, and integration
 | **Auth System** | Login, Auth Context Provider, Middleware protection | Session recovery (sometimes sluggish on OTP verify) | None |
 | **Analytics** | Radial charts, week bars, peak day calculations, heatmap | None | None |
 | **Questions Hub** | SheetStride Core, LeetCode Database, Company Sheets | None | External Sheets (Neetcode/Striver) |
-| **Database** | RLS tables, views, streak calculation function | None | Custom triggers for automated streak updates |
+| **Database** | RLS tables and master public-read policies configured, views, streak calculation function | None | Custom triggers for automated streak updates |
 | **Checkout API** | Razorpay Order Creation and Verification Route Handlers | None | Production payment webhooks |

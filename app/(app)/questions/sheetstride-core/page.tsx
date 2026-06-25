@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
+import { fetchWithCache } from "@/lib/utils";
 
 const TOPIC_CONFIGS: { 
   [key: string]: { 
@@ -81,68 +82,81 @@ export default function SheetstrideCorePage() {
       try {
         setLoading(true);
 
-        // 1. Fetch user's solved question IDs
-        const { data: userSolves, error: solvesError } = await supabase
-          .from("user_progress")
-          .select("question_id")
-          .eq("user_id", userId);
+        const cacheKey = `core_topics_cache_${user ? user.id : "anon"}`;
+        const dataResult = await fetchWithCache(cacheKey, async () => {
+          // 1. Fetch user's solved question IDs
+          const { data: userSolves, error: solvesError } = await supabase
+            .from("user_progress")
+            .select("question_id")
+            .eq("user_id", userId);
 
-        if (solvesError) throw solvesError;
-        const solvedIds = new Set(userSolves?.map((row: any) => row.question_id) || []);
+          if (solvesError) throw solvesError;
+          const solvedIdsArr = userSolves?.map((row: any) => row.question_id) || [];
 
-        // 2. Fetch all Core roadmap questions
-        const { data: coreQuestions, error: coreError } = await supabase
-          .from("sheet_questions")
-          .select("*");
+          // 2. Fetch all Core roadmap questions
+          const { data: coreQuestions, error: coreError } = await supabase
+            .from("sheet_questions")
+            .select("*");
 
-        if (coreError) throw coreError;
-
-        // Group counts by topic
-        const topicCounts: { [key: string]: { total: number; solved: number } } = {};
-        
-        // Initialize keys
-        TOPIC_ORDER.forEach(topic => {
-          topicCounts[topic] = { total: 0, solved: 0 };
-        });
-
-        coreQuestions?.forEach((q: any) => {
-          const tName = q["topic name"];
-          const qId = q["question ID"];
-          if (topicCounts[tName]) {
-            topicCounts[tName].total++;
-            if (solvedIds.has(qId)) {
-              topicCounts[tName].solved++;
-            }
-          }
-        });
-
-        // Map to topic stats
-        let gSolved = 0;
-        let gTotal = 0;
-
-        const statsList = TOPIC_ORDER.map(dbName => {
-          const config = TOPIC_CONFIGS[dbName];
-          const counts = topicCounts[dbName] || { total: 0, solved: 0 };
-          const percent = counts.total > 0 ? Math.round((counts.solved / counts.total) * 100) : 0;
-
-          gSolved += counts.solved;
-          gTotal += counts.total;
+          if (coreError) throw coreError;
 
           return {
-            dbName,
-            displayName: config.displayName,
-            slug: config.slug,
-            badge: config.badge,
-            badgeTone: config.badgeTone,
-            total: counts.total,
-            solved: counts.solved,
-            percent
+            solvedIdsArr,
+            coreQuestions: coreQuestions || []
           };
-        });
+        }, 300000); // 5 minutes TTL
 
-        setTopicsList(statsList);
-        setGlobalSolved(gSolved);
-        setGlobalTotal(gTotal);
+        if (dataResult) {
+          const solvedIds = new Set(dataResult.solvedIdsArr);
+          const coreQuestions = dataResult.coreQuestions;
+
+          // Group counts by topic
+          const topicCounts: { [key: string]: { total: number; solved: number } } = {};
+          
+          // Initialize keys
+          TOPIC_ORDER.forEach(topic => {
+            topicCounts[topic] = { total: 0, solved: 0 };
+          });
+
+          coreQuestions.forEach((q: any) => {
+            const tName = q["topic name"];
+            const qId = q["question ID"];
+            if (topicCounts[tName]) {
+              topicCounts[tName].total++;
+              if (solvedIds.has(qId)) {
+                topicCounts[tName].solved++;
+              }
+            }
+          });
+
+          // Map to topic stats
+          let gSolved = 0;
+          let gTotal = 0;
+
+          const statsList = TOPIC_ORDER.map(dbName => {
+            const config = TOPIC_CONFIGS[dbName];
+            const counts = topicCounts[dbName] || { total: 0, solved: 0 };
+            const percent = counts.total > 0 ? Math.round((counts.solved / counts.total) * 100) : 0;
+
+            gSolved += counts.solved;
+            gTotal += counts.total;
+
+            return {
+              dbName,
+              displayName: config.displayName,
+              slug: config.slug,
+              badge: config.badge,
+              badgeTone: config.badgeTone,
+              total: counts.total,
+              solved: counts.solved,
+              percent
+            };
+          });
+
+          setTopicsList(statsList);
+          setGlobalSolved(gSolved);
+          setGlobalTotal(gTotal);
+        }
 
         // Fetch streak from timestamps in local storage
         const storedTimestamps = localStorage.getItem("solved_questions_timestamps");

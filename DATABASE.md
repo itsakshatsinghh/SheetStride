@@ -148,3 +148,33 @@ JOIN public.questions q ON cq.question_id = q."ID";
 *   **Signature:** `calculate_user_streaks(target_user_id uuid)`
 *   **Returns:** `TABLE(res_current_streak integer, res_max_streak integer)`
 *   **Behavior:** Examines dates from `user_progress` for the given user, tracks consecutive days where at least one problem was marked as completed, and returns the current active and all-time highest streaks.
+
+---
+
+## 5. Row-Level Security (RLS) Policies
+
+To protect database writes and allow public reading of curriculum roadmap definitions, Row-Level Security (RLS) policies are active on the database tables:
+
+### A. User Tracking Tables (Write Protected)
+
+#### `user_progress`
+* **RLS status:** Enabled
+* **Select Policy:** `auth.uid() = user_id` (Users can only read progress records belonging to their account)
+* **Insert Policy:** `auth.uid() = user_id` (Users can only write completion logs matching their authenticated user ID)
+* **Update Policy:** `auth.uid() = user_id` (Users can only update their own progress records)
+* **Delete Policy:** `auth.uid() = user_id` (Users can only delete progress records for their own user ID)
+
+#### `profiles` (Mirror profiles)
+* **RLS status:** Enabled
+* **Select Policy:** `true` (Allows public profiles to be read)
+* **Insert/Update Policy:** `auth.uid() = id` (Users can only insert or update their own profile columns)
+
+### B. Master Curriculum Tables (Read-Only)
+
+The master roadmaps and questions database tables are secured using RLS but allow public SELECT privileges to both `anon` and `authenticated` roles:
+
+#### `questions`, `companies`, `company_questions`, `sheet_questions`, `pattern_metadata`
+* **RLS status:** Enabled
+* **Select Policy:** `true` (Allows SELECT access for `public` role, covering both `anon` and `authenticated` roles)
+* **Insert/Update/Delete Policies:** Denied by default (Write operations restricted to backend/superusers)
+

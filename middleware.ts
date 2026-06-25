@@ -30,7 +30,21 @@ export async function middleware(request: NextRequest) {
   if (accessToken) {
     const payload = parseJwt(accessToken);
     if (payload && payload.exp * 1000 > Date.now()) {
-      isValid = true;
+      // Locally unexpired token; cryptographically verify signature with Supabase auth API
+      try {
+        const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+          method: "GET",
+          headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${accessToken}`,
+          },
+        });
+        if (userResponse.ok) {
+          isValid = true;
+        }
+      } catch (error) {
+        console.error("Token cryptographic verification failed in middleware:", error);
+      }
     }
   }
 

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
+import { fetchWithCache } from "@/lib/utils";
 
 interface CompanySummary {
   company_id: string;
@@ -28,12 +29,15 @@ export default function CompanySheetsPage() {
     async function fetchCompanies() {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from("view_company_summary")
-          .select("*")
-          .order("company_name", { ascending: true });
+        const data = await fetchWithCache("company_summary_cache", async () => {
+          const { data, error } = await supabase
+            .from("view_company_summary")
+            .select("*")
+            .order("company_name", { ascending: true });
 
-        if (error) throw error;
+          if (error) throw error;
+          return data || [];
+        }, 3600000); // 1 hour TTL
 
         if (data) {
           setCompanies(data);
