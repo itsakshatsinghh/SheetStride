@@ -8,6 +8,7 @@ import { AppShell } from "@/components/app/shell";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { fetchWithCache } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function MissionLibraryPage() {
   const { user } = useAuth();
@@ -110,11 +111,89 @@ export default function MissionLibraryPage() {
 
   if (loading) {
     return (
-      <AppShell>
-        <div className="flex h-[70vh] items-center justify-center bg-[#090909] text-primary">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="font-mono-label text-mono-label tracking-[0.2em]">BOOTING_QUESTIONS_MODULE...</p>
+      <AppShell className="max-w-container-max mx-auto px-gutter py-6" gridBackground>
+        {/* Header / Breadcrumb */}
+        <header className="mb-12 relative overflow-hidden">
+          <nav className="flex items-center gap-2 mb-4 text-on-surface-variant font-mono-label text-mono-label uppercase">
+            <Skeleton className="h-4 w-24" />
+          </nav>
+          <Skeleton className="h-10 w-80 mb-4" />
+          <Skeleton className="h-5 w-full max-w-2xl" />
+        </header>
+
+        {/* Mission Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* SHEETSTRIDE CORE - Flagship Skeleton */}
+          <div className="bg-[#111111]/72 border border-[#2D2D2D]/60 p-6 flex flex-col justify-between overflow-hidden lg:col-span-2 rounded-xl min-h-[340px]">
+            <div className="space-y-6">
+              <div className="flex justify-between items-start">
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="h-6 w-32 rounded" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-7 w-48" />
+                <Skeleton className="h-12 w-full max-w-lg" />
+              </div>
+              
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-8 border-t border-outline-variant/30 pt-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-6 w-12" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Progress Bar */}
+              <Skeleton className="w-full h-1.5 rounded-full" />
+            </div>
+            
+            <div className="flex items-center justify-between mt-6">
+              <Skeleton className="w-16 h-8 rounded-full" />
+              <Skeleton className="w-40 h-10 rounded-lg" />
+            </div>
+          </div>
+
+          {/* LEETCODE UNIVERSE Skeleton */}
+          <div className="bg-[#111111]/72 border border-[#2D2D2D]/60 p-6 flex flex-col justify-between rounded-xl min-h-[340px]">
+            <div className="space-y-6">
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-12 w-full" />
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4.5 w-20" />
+                  <Skeleton className="h-4.5 w-16" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4.5 w-20" />
+                  <Skeleton className="h-4.5 w-24" />
+                </div>
+              </div>
+            </div>
+            <Skeleton className="w-full h-11 rounded-lg mt-6" />
+          </div>
+
+          {/* COMPANY SHEETS Skeleton */}
+          <div className="bg-[#111111]/72 border border-[#f97316]/20 p-6 flex flex-col justify-between rounded-xl min-h-[340px]">
+            <div className="space-y-6">
+              <div className="flex justify-between items-start">
+                <Skeleton className="h-7 w-40" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <Skeleton className="h-12 w-full" />
+              <div className="space-y-4 border-t border-outline-variant/15 pt-4">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4.5 w-28" />
+                  <Skeleton className="h-4.5 w-12" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4.5 w-28" />
+                  <Skeleton className="h-4.5 w-16" />
+                </div>
+              </div>
+            </div>
+            <Skeleton className="w-full h-11 rounded-lg mt-6 bg-[#f97316]/5 border border-[#f97316]/20" />
           </div>
         </div>
       </AppShell>

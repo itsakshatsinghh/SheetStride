@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { cn, fetchWithCache } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TOPICS = [
   "All Topics",
@@ -42,16 +43,69 @@ interface Question {
   "Similar Questions"?: any;
 }
 
-export default function LeetcodeUniversePage() {
+function LeetcodeUniverseSkeleton() {
   return (
-    <Suspense fallback={
-      <div className="flex h-96 items-center justify-center bg-[#090909] text-primary">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="font-mono-label text-mono-label tracking-[0.2em]">BOOTING_DATABASE_MODULE...</p>
+    <AppShell className="max-w-container-max mx-auto px-gutter" gridBackground>
+      {/* Breadcrumbs */}
+      <div className="py-2">
+        <Skeleton className="h-4 w-32" />
+      </div>
+
+      {/* Header section */}
+      <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-6 pt-2">
+        <div className="space-y-2">
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+        <Skeleton className="h-16 w-32 rounded-xl" />
+      </div>
+
+      {/* Toolbar controls */}
+      <div className="bg-[#111111]/40 border border-[#2D2D2D] rounded-xl p-4 mb-6 flex flex-col lg:flex-row gap-4 items-center">
+        <Skeleton className="h-10 w-full lg:w-96 rounded-lg" />
+        <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+          <Skeleton className="h-10 w-32 rounded-lg" />
+          <Skeleton className="h-10 w-28 rounded-lg" />
+          <Skeleton className="h-10 w-24 rounded-lg" />
+          <Skeleton className="h-10 w-32 rounded-lg ml-auto lg:ml-0" />
         </div>
       </div>
-    }>
+
+      {/* Table grid outline */}
+      <div className="bg-[#111111]/20 border border-[#2D2D2D]/60 rounded-xl overflow-hidden">
+        {/* Table header */}
+        <div className="grid grid-cols-[48px_1fr_140px_120px_120px_96px] gap-4 px-6 py-4 border-b border-[#2D2D2D] bg-[#090909]/50">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-4 w-16" />
+          ))}
+        </div>
+        {/* Table rows */}
+        <div className="p-6 space-y-4">
+          {Array.from({ length: 8 }).map((_, idx) => (
+            <div key={idx} className="grid grid-cols-[48px_1fr_140px_120px_120px_96px] gap-4 py-3 border-b border-outline-variant/10 last:border-0 items-center">
+              <Skeleton className="w-5 h-5 rounded" />
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-3 w-8" />
+                <Skeleton className="h-4 w-48 sm:w-64" />
+              </div>
+              <Skeleton className="h-7 w-20 rounded" />
+              <Skeleton className="h-6 w-16 rounded" />
+              <Skeleton className="h-3.5 w-16" />
+              <div className="flex justify-center gap-3">
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-4 w-4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+export default function LeetcodeUniversePage() {
+  return (
+    <Suspense fallback={<LeetcodeUniverseSkeleton />}>
       <QuestionsList />
     </Suspense>
   );
@@ -383,8 +437,23 @@ function QuestionsList() {
         {/* Table rows list */}
         <div className="overflow-y-auto max-h-[600px] custom-scrollbar">
           {isLoading ? (
-            <div className="flex h-64 items-center justify-center text-primary">
-              <Loader2 className="h-8 w-8 animate-spin" />
+            <div className="space-y-4 p-6">
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div key={idx} className="grid grid-cols-[48px_1fr_140px_120px_120px_96px] gap-4 py-3 border-b border-outline-variant/10 last:border-0 items-center">
+                  <Skeleton className="w-5 h-5 rounded" />
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-3 w-8" />
+                    <Skeleton className="h-4 w-48 sm:w-64" />
+                  </div>
+                  <Skeleton className="h-7 w-20 rounded" />
+                  <Skeleton className="h-6 w-16 rounded" />
+                  <Skeleton className="h-3.5 w-16" />
+                  <div className="flex justify-center gap-3">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-4" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : questions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">

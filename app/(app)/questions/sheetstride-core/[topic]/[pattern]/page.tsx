@@ -10,6 +10,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { cn, fetchWithCache } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { TOPIC_SLUGS, TOPIC_DISPLAY_NAMES, slugifyPattern } from "@/lib/slugs";
 
@@ -304,11 +305,50 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
 
   if (loading) {
     return (
-      <AppShell>
-        <div className="flex h-[70vh] items-center justify-center bg-[#090909] text-primary">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="font-mono-label text-mono-label tracking-[0.2em]">BOOTING_SOLUTIONS_MATRIX...</p>
+      <AppShell className="max-w-container-max mx-auto px-gutter py-6" gridBackground>
+        {/* Breadcrumbs */}
+        <div className="py-2">
+          <Skeleton className="h-4 w-64" />
+        </div>
+
+        {/* Page Header */}
+        <div className="mb-12 relative pt-2">
+          <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary/20 rounded" />
+          <Skeleton className="h-8 w-80 mb-4" />
+          <Skeleton className="h-5 w-full max-w-3xl" />
+        </div>
+
+        {/* Pattern Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-[#111111]/72 border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-2">
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-8 w-16" />
+            </div>
+          ))}
+        </div>
+
+        {/* Question Table Grid container */}
+        <div className="bg-[#111111] border border-[#2D2D2D] rounded-xl overflow-hidden relative">
+          <div className="grid grid-cols-[60px_1fr_120px_100px_100px_120px_60px_60px_80px] gap-4 px-6 py-4 border-b border-[#2D2D2D] bg-[#090909]/50">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <Skeleton key={i} className="h-4 w-12" />
+            ))}
+          </div>
+          <div className="p-6 space-y-4">
+            {Array.from({ length: 5 }).map((_, idx) => (
+              <div key={idx} className="grid grid-cols-[60px_1fr_120px_100px_100px_120px_60px_60px_80px] gap-4 py-3 border-b border-outline-variant/10 last:border-0 items-center">
+                <Skeleton className="h-3.5 w-6" />
+                <Skeleton className="h-4.5 w-48 sm:w-64" />
+                <Skeleton className="h-3.5 w-16" />
+                <Skeleton className="h-6 w-16 rounded" />
+                <Skeleton className="h-5 w-14 rounded" />
+                <Skeleton className="h-3.5 w-20" />
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-8 w-14 rounded ml-auto" />
+              </div>
+            ))}
           </div>
         </div>
       </AppShell>

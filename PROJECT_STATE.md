@@ -20,6 +20,7 @@ This snapshot represents the current status of features, models, and integration
 *   **Spaced Repetition Revision Engine:** Lightweight 15-second cognitive reflection modal on solve checkoff, automatic scheduled revision queue, and multiplier feedback loops (Easier / Same / Difficult).
 *   **Interview Notebook:** Private structured study journal (Brute Force, Optimization path, Pattern Strategy, Dry Run) and timeline log viewer inside right-hand slidedrawer.
 *   **Client-Side Caching Layer:** Persistent browser-level caching using `fetchWithCache` across Questions Hub, Profile, Progress Analytics, and LeetCode Universe (complete with automatic cache invalidation via custom solve event bus).
+*   **Skeleton Loading UI:** Layout-matched, shimmering dark-mode skeletons integrated across all dynamic hydration pages (Dashboard, Progress Analytics, Questions Hub, LeetCode Universe, SheetStride Core Index, Topic, Pattern detail pages, Company Sheets Index, details, and Profile) to minimize layout shifts (CLS) and improve perceived performance.
 
 ### 🟡 In Progress
 *   **Detailed Pattern Handbooks:** Complete C++ template parsing is active, but expanded pseudocode blueprints and custom code highlight presets for other languages (Python, Java) are ongoing.

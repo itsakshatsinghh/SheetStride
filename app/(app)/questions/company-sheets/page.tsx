@@ -8,6 +8,7 @@ import { AppShell } from "@/components/app/shell";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { fetchWithCache } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CompanySummary {
   company_id: string;
@@ -107,7 +108,7 @@ export default function CompanySheetsPage() {
           <div>
             <span className="block font-mono-label text-[9px] text-outline/60 uppercase tracking-widest mb-0.5">COMPANIES_ACTIVE</span>
             {loading ? (
-              <span className="font-mono-stats text-mono-stats text-on-surface animate-pulse">...</span>
+              <Skeleton className="h-7 w-12 mt-1 bg-[#f97316]/20" />
             ) : (
               <span className="font-mono-stats text-mono-stats text-[#f97316] font-bold">{totalCompanies}</span>
             )}
@@ -121,7 +122,7 @@ export default function CompanySheetsPage() {
           <div>
             <span className="block font-mono-label text-[9px] text-outline/60 uppercase tracking-widest mb-0.5">TOTAL_MAPPED_QUESTIONS</span>
             {loading ? (
-              <span className="font-mono-stats text-mono-stats text-on-surface animate-pulse">...</span>
+              <Skeleton className="h-7 w-16 mt-1 bg-primary/20" />
             ) : (
               <span className="font-mono-stats text-mono-stats text-primary font-bold">{totalQuestions}</span>
             )}
@@ -151,11 +152,19 @@ export default function CompanySheetsPage() {
 
       {/* Grid Content */}
       {loading ? (
-        <div className="flex h-64 items-center justify-center text-[#f97316]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="font-mono-label text-mono-label tracking-[0.2em] text-[#f97316]">SYNCING_COMPANY_SHEETS...</p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 12 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="bg-[#111111]/72 border border-outline-variant/10 p-5 rounded-xl flex flex-col justify-between h-36 relative"
+            >
+              <div>
+                <Skeleton className="h-5 w-32 mb-2 bg-[#f97316]/10" />
+                <Skeleton className="h-3.5 w-16 mb-2" />
+              </div>
+              <Skeleton className="h-4.5 w-20 self-end rounded" />
+            </div>
+          ))}
         </div>
       ) : filteredCompanies.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 bg-[#111111] border border-[#2D2D2D] rounded-xl">

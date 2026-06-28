@@ -9,6 +9,7 @@ import { Heatmap } from "@/components/shared/heatmap";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { cn, fetchWithCache } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // requestAnimationFrame count-up hook for GPU-friendly 60fps animations
 function CountUp({ end, duration = 1.0, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
@@ -284,13 +285,139 @@ export default function ProgressPage() {
 
   if (loading) {
     return (
-      <AppShell>
-        <div className="flex h-[70vh] items-center justify-center">
-          <div className="flex flex-col items-center gap-4 text-primary">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="font-mono-label text-mono-label tracking-[0.2em]">INITIALIZING_METRICS...</p>
+      <AppShell className="space-y-stack-lg max-w-container-max mx-auto px-gutter" gridBackground>
+        {/* Header section */}
+        <section className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 pt-6">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="flex gap-3">
+            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-36" />
+          </div>
+        </section>
+
+        {/* Main Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-8">
+          {/* Heatmap / Contribution Grid (Full Width Span) */}
+          <div className="md:col-span-12 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl relative overflow-hidden">
+            <div className="flex justify-between items-center mb-6">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <div className="flex flex-wrap gap-1.5 justify-between py-2">
+              {Array.from({ length: 42 }).map((_, idx) => (
+                <Skeleton key={idx} className="w-5 h-5 sm:w-6 sm:h-6 rounded-sm flex-shrink-0" />
+              ))}
+            </div>
+          </div>
+
+          {/* Weekly Throughput Card */}
+          <div className="md:col-span-8 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl">
+            <Skeleton className="h-5 w-48 mb-8" />
+            <div className="h-64 flex items-end justify-between gap-4 px-4 pb-2">
+              {[15, 30, 25, 45, 20, 10, 5].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-3">
+                  <Skeleton className="w-full rounded-t-lg bg-surface-container-highest/60" style={{ height: `${h * 5}px` }} />
+                  <Skeleton className="h-3.5 w-8" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Topic Mastery Donut */}
+          <div className="md:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col justify-between">
+            <Skeleton className="h-5 w-48 mb-6" />
+            <div className="flex-1 flex items-center justify-center relative py-4">
+              <div className="w-40 h-40 rounded-full border-[12px] border-[#2D2D2D] flex items-center justify-center">
+                <div className="text-center space-y-1">
+                  <Skeleton className="h-8 w-16 mx-auto" />
+                  <Skeleton className="h-3 w-16 mx-auto" />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2 mt-6">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-3.5 w-8" />
+              </div>
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-3.5 w-8" />
+              </div>
+            </div>
+          </div>
+
+          {/* Insight Card 1 */}
+          <div className="md:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl border-l-4 border-l-secondary space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <Skeleton className="h-6 w-6 rounded" />
+            </div>
+            <Skeleton className="h-12 w-full" />
+          </div>
+
+          {/* Insight Card 2 */}
+          <div className="md:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl border-l-4 border-l-error space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+              <Skeleton className="h-6 w-6 rounded" />
+            </div>
+            <Skeleton className="h-12 w-full" />
+          </div>
+
+          {/* Insight Card 3 */}
+          <div className="md:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-28" />
+              <div className="flex items-baseline gap-2">
+                <Skeleton className="h-9 w-12" />
+                <Skeleton className="h-3.5 w-8" />
+              </div>
+            </div>
+            <Skeleton className="h-4 w-full rounded-full" />
+          </div>
+
+          {/* Difficulty Breakdown */}
+          <div className="md:col-span-12 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl space-y-4">
+            <Skeleton className="h-5 w-48" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-3.5 w-24" />
+                    <Skeleton className="h-3.5 w-12" />
+                  </div>
+                  <Skeleton className="h-2 w-full rounded-full" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Topic Distribution Table */}
+        <section className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#2D2D2D] bg-[#111111]/50">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <div className="p-6 space-y-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-6 py-2 border-b border-[#2D2D2D]/40 last:border-0">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-2 flex-1 max-w-md rounded-full" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ))}
+          </div>
+        </section>
       </AppShell>
     );
   }

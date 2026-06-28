@@ -189,6 +189,7 @@ Keep these technical quirks in mind during development:
 *   Spaced Repetition Revision Engine (Initial Solve Reflection, scheduling multipliers, Revisions Queue dashboard tab)
 *   Interview Notebook & History Log (Drawer tabs, editable text blocks, chronological log viewer)
 *   Client-Side Caching layer (`fetchWithCache` across Questions Hub, Profile, Progress, and LeetCode Universe with dynamic auto-invalidation)
+*   Layout-matched Skeleton UI loaders (shimmer placeholders matching cards, grids, and tables across Dashboard, Progress Analytics, Profile, and Questions directories)
 
 ### 🟡 In Progress
 *   Pattern Handbook Boilerplates (Expanding C++ to Python and Java templates)

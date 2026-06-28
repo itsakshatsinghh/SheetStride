@@ -10,6 +10,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { fetchWithCache } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TOPIC_CONFIGS: { 
   [key: string]: { 
@@ -227,12 +228,42 @@ export default function SheetstrideCorePage() {
 
   if (loading) {
     return (
-      <AppShell>
-        <div className="flex h-[70vh] items-center justify-center bg-[#090909] text-primary">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="font-mono-label text-mono-label tracking-[0.2em]">INITIALIZING_ROADMAP...</p>
+      <AppShell className="max-w-container-max mx-auto px-gutter py-6" gridBackground>
+        {/* Breadcrumbs */}
+        <div className="py-2">
+          <Skeleton className="h-4 w-32" />
+        </div>
+
+        {/* Page Header */}
+        <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 pt-2">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-80" />
+            <Skeleton className="h-4.5 w-96" />
           </div>
+          <Skeleton className="h-20 w-80 rounded-xl" />
+        </header>
+
+        {/* Topic Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 15 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="bg-[#111111]/72 border border-[#2D2D2D]/60 rounded-xl p-6 flex flex-col justify-between min-h-[220px]"
+            >
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <Skeleton className="h-6 w-40" />
+                  <Skeleton className="h-5 w-16 rounded" />
+                </div>
+                <div className="flex items-center justify-between mb-2">
+                  <Skeleton className="h-3.5 w-16" />
+                  <Skeleton className="h-3.5 w-20" />
+                </div>
+                <Skeleton className="h-1.5 w-full rounded-full mb-6" />
+              </div>
+              <Skeleton className="h-11 w-full rounded-lg" />
+            </div>
+          ))}
         </div>
       </AppShell>
     );

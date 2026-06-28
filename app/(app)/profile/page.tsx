@@ -8,6 +8,7 @@ import { Heatmap } from "@/components/shared/heatmap";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { cn, sanitizeSocialInput, fetchWithCache } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SolvedQuestion {
   ID: number;
@@ -305,12 +306,49 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <AppShell>
-        <div className="flex h-[70vh] items-center justify-center">
-          <div className="flex flex-col items-center gap-4 text-primary">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="font-mono-label text-mono-label tracking-[0.2em]">DECRYPTING_USER_PROFILE...</p>
+      <AppShell className="space-y-stack-lg max-w-container-max mx-auto px-gutter" gridBackground>
+        {/* Profile Header Section */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter pt-6">
+          {/* Developer Identity Card */}
+          <div className="lg:col-span-8 bg-[#111111]/72 border border-[#2D2D2D] p-stack-lg flex flex-col md:flex-row items-center md:items-start gap-gutter relative overflow-hidden rounded-lg min-h-[220px]">
+            <Skeleton className="w-32 h-32 md:w-40 md:h-40 rounded-xl shrink-0" />
+            <div className="flex-1 space-y-4 w-full">
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+              <div className="flex gap-4">
+                <Skeleton className="h-8 w-24 rounded" />
+                <Skeleton className="h-8 w-24 rounded" />
+              </div>
+            </div>
           </div>
+
+          {/* Connected Accounts Card */}
+          <div className="lg:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] p-stack-lg rounded-lg flex flex-col justify-between min-h-[220px]">
+            <div className="space-y-4">
+              <Skeleton className="h-5 w-40" />
+              <div className="flex items-center gap-3 border border-[#2D2D2D]/60 p-4 rounded-xl">
+                <Skeleton className="w-10 h-10 rounded-lg" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+            </div>
+            <Skeleton className="h-10 w-full rounded-lg" />
+          </div>
+        </section>
+
+        {/* Bento stats grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-[#111111]/72 border border-[#2D2D2D] p-6 rounded-xl space-y-4">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-10 w-20" />
+              <Skeleton className="h-3.5 w-full" />
+            </div>
+          ))}
         </div>
       </AppShell>
     );

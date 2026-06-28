@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { cn, fetchWithCache } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // requestAnimationFrame count-up hook for GPU-friendly 60fps animations
 function CountUp({ end, duration = 1.0, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
@@ -430,13 +431,131 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <AppShell>
-        <div className="flex h-[70vh] items-center justify-center">
-          <div className="flex flex-col items-center gap-4 text-primary">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="font-mono-label text-mono-label tracking-[0.2em]">INITIALIZING_METRICS...</p>
+      <AppShell className="space-y-stack-lg max-w-container-max mx-auto px-gutter" gridBackground>
+        {/* Hero section */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter pt-6">
+          {/* Main Hero Card Skeleton */}
+          <div className="lg:col-span-8 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg relative overflow-hidden">
+            <header className="flex justify-between items-start mb-stack-lg">
+              <div className="space-y-2 w-full max-w-md">
+                <Skeleton className="h-4 w-24 bg-primary/10" />
+                <Skeleton className="h-8 w-64" />
+              </div>
+            </header>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-stack-lg relative z-10">
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-28" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-12 w-12 rounded-lg" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-28" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-12 w-12 rounded-lg" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-2 w-full rounded-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* Stats metrics block */}
+          <div className="lg:col-span-4 grid grid-rows-3 gap-stack-md">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-md rounded-lg flex items-center justify-between"
+              >
+                <div className="space-y-2">
+                  <Skeleton className="h-3.5 w-32" />
+                  <Skeleton className="h-9 w-24" />
+                </div>
+                <Skeleton className="h-9 w-9 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Scroll-Linked Ticker Shimmer */}
+        <div className="py-4 border-y border-[#2D2D2D]/20 my-4">
+          <Skeleton className="h-8 w-full" />
         </div>
+
+        {/* Heatmap Section */}
+        <section className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg">
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+            <Skeleton className="h-4 w-32" />
+          </header>
+          <div className="flex flex-wrap gap-1.5 justify-between py-2">
+            {Array.from({ length: 42 }).map((_, idx) => (
+              <Skeleton key={idx} className="w-5 h-5 sm:w-6 sm:h-6 rounded-sm flex-shrink-0" />
+            ))}
+          </div>
+        </section>
+
+        {/* Bottom widgets grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+          {/* Daily Mission Skeleton */}
+          <div className="lg:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg flex flex-col justify-between min-h-[380px]">
+            <div className="space-y-6">
+              <div className="flex justify-between items-start">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-6 w-6 rounded" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-7 w-48" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
+                <Skeleton className="h-16 w-full" />
+              </div>
+            </div>
+            <div className="space-y-3 mt-4">
+              <Skeleton className="h-11 w-full rounded-lg" />
+              <Skeleton className="h-11 w-full rounded-lg" />
+            </div>
+          </div>
+
+          {/* Interactive console card */}
+          <div className="lg:col-span-8 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg flex flex-col justify-between min-h-[460px]">
+            <div>
+              <div className="flex border-b border-[#2D2D2D] pb-3 mb-6 gap-4 overflow-x-auto">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-28 sm:w-36 flex-shrink-0" />
+                ))}
+              </div>
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-32" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="border border-[#2D2D2D] p-4 rounded-xl flex items-center justify-between gap-4">
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <Skeleton className="h-8 w-16 rounded-lg" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </AppShell>
     );
   }

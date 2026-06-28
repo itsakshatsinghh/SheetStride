@@ -10,6 +10,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { cn, fetchWithCache } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CompanyQuestion {
   question_id: number;
@@ -247,11 +248,48 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
 
   if (loading) {
     return (
-      <AppShell>
-        <div className="flex h-[70vh] items-center justify-center bg-[#090909] text-[#f97316]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="font-mono-label text-mono-label tracking-[0.2em] text-[#f97316]">DECRYPTING_INTERVIEW_SHEETS...</p>
+      <AppShell className="max-w-container-max mx-auto px-gutter py-6" gridBackground>
+        {/* Breadcrumbs */}
+        <div className="py-2">
+          <Skeleton className="h-4 w-64" />
+        </div>
+
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 pt-2">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-80 mb-4" />
+            <Skeleton className="h-5 w-full max-w-2xl" />
+          </div>
+          <Skeleton className="h-16 w-36 rounded-xl bg-[#f97316]/10" />
+        </div>
+
+        {/* Toolbar Controls */}
+        <div className="bg-surface-container-low border border-[#2D2D2D]/60 rounded-xl p-4 mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <Skeleton className="h-11 w-full lg:w-96 rounded-lg" />
+          <Skeleton className="h-4 w-24 rounded" />
+        </div>
+
+        {/* Questions Table Grid container */}
+        <div className="bg-[#111111] border border-[#2D2D2D] rounded-xl overflow-hidden relative">
+          <div className="grid grid-cols-[60px_1fr_120px_100px_100px_120px_60px_60px_80px] gap-4 px-6 py-4 border-b border-[#2D2D2D] bg-[#090909]/50">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <Skeleton key={i} className="h-4 w-12" />
+            ))}
+          </div>
+          <div className="p-6 space-y-4">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div key={idx} className="grid grid-cols-[60px_1fr_120px_100px_100px_120px_60px_60px_80px] gap-4 py-3 border-b border-outline-variant/10 last:border-0 items-center">
+                <Skeleton className="h-3.5 w-6" />
+                <Skeleton className="h-4.5 w-48 sm:w-64" />
+                <Skeleton className="h-3.5 w-16" />
+                <Skeleton className="h-6 w-16 rounded" />
+                <Skeleton className="h-5 w-14 rounded bg-[#f97316]/10" />
+                <Skeleton className="h-3.5 w-20" />
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-8 w-14 rounded ml-auto" />
+              </div>
+            ))}
           </div>
         </div>
       </AppShell>

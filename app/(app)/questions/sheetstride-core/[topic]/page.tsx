@@ -9,6 +9,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { fetchWithCache } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TOPIC_SLUGS: { [key: string]: string } = {
   "two-pointer-patterns": "I. Two Pointer Patterns",
@@ -211,12 +212,58 @@ export default function PatternExplorerPage({ params }: { params: Promise<{ topi
 
   if (loading) {
     return (
-      <AppShell>
-        <div className="flex h-[70vh] items-center justify-center bg-[#090909] text-primary">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="font-mono-label text-mono-label tracking-[0.2em]">INITIALIZING_PATTERNS...</p>
+      <AppShell className="max-w-container-max mx-auto px-gutter py-6" gridBackground>
+        {/* Breadcrumbs */}
+        <div className="py-2">
+          <Skeleton className="h-4 w-48" />
+        </div>
+
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 pt-2">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-80" />
+            <Skeleton className="h-4 w-64" />
           </div>
+          <Skeleton className="h-16 w-48 rounded-xl" />
+        </div>
+
+        {/* Pattern Card Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="bg-[#111111]/72 border border-[#2D2D2D]/60 p-6 rounded-xl flex flex-col justify-between min-h-[280px]"
+            >
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <Skeleton className="h-5.5 w-24 rounded" />
+                  <Skeleton className="h-6 w-6 rounded" />
+                </div>
+                <Skeleton className="h-6.5 w-40 mb-4" />
+                
+                <div className="flex justify-between items-end mb-6">
+                  <div>
+                    <Skeleton className="h-3 w-14 mb-1" />
+                    <Skeleton className="h-5 w-8" />
+                  </div>
+                  <div className="text-right">
+                    <Skeleton className="h-3 w-12 mb-1" />
+                    <Skeleton className="h-5 w-8" />
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-6">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-8" />
+                  </div>
+                  <Skeleton className="h-1.5 w-full rounded-full" />
+                  <Skeleton className="h-3 w-28 mx-auto pt-1" />
+                </div>
+              </div>
+              <Skeleton className="h-11 w-full rounded-lg" />
+            </div>
+          ))}
         </div>
       </AppShell>
     );
