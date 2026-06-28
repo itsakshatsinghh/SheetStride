@@ -134,6 +134,13 @@ export default function DashboardPage() {
   const [revisionQueue, setRevisionQueue] = useState<any[]>([]);
   const [upcomingQueue, setUpcomingQueue] = useState<any[]>([]);
 
+  // LeetCode Stats states
+  const [leetcodeStats, setLeetcodeStats] = useState<any>(null);
+  const [leetcodeLoading, setLeetcodeLoading] = useState(false);
+  const [leetcodeError, setLeetcodeError] = useState("");
+  const [leetcodeUsername, setLeetcodeUsername] = useState("");
+  const [upcomingContest, setUpcomingContest] = useState<any>(null);
+
   // Interactive console states
   const [activeTab, setActiveTab] = useState<"revisions" | "proficiency" | "logs" | "diagnostics">("revisions");
   const [diagnosticLogs, setDiagnosticLogs] = useState<string[]>([
@@ -167,52 +174,72 @@ export default function DashboardPage() {
     try {
       setLoading(true);
 
-      // Fetch all active revisions directly (bypassing local cache for real-time accuracy)
-      const { data: revData, error: revError } = await supabase
+      // Fetch all active revisions directly by manually joining questions
+      const { data: progressList, error: progressErr } = await supabase
         .from("user_progress")
-        .select("*, questions(*)")
+        .select("*")
         .eq("user_id", userId)
         .eq("completed", true)
         .not("next_revision_due", "is", null)
         .order("next_revision_due", { ascending: true });
 
-      if (!revError && revData) {
-        const now = new Date();
-        const due = revData.filter((item: any) => new Date(item.next_revision_due) <= now);
-        const upcoming = revData.filter((item: any) => new Date(item.next_revision_due) > now);
-        setRevisionQueue(due);
-        setUpcomingQueue(upcoming);
-      }
-      
-      const dashboardData = await fetchWithCache("dashboard_data_cache", async () => {
-        // 1. Fetch total counts from database
-        const { count: countAll } = await supabase
+      let revData: any[] = [];
+      if (!progressErr && progressList && progressList.length > 0) {
+        const questionIds = progressList.map((row: any) => row.question_id);
+        const { data: questionsData, error: questionsError } = await supabase
           .from("questions")
-          .select("*", { count: "exact", head: true });
+          .select("ID, Title, Difficulty, Link, Topics")
+          .in("ID", questionIds);
+        
+        if (!questionsError && questionsData) {
+          const questionsMap = new Map(questionsData.map((q: any) => [q.ID, q]));
+          revData = progressList
+            .map((row: any) => {
+              const q = questionsMap.get(row.question_id);
+              if (!q) return null;
+              return {
+                ...row,
+                questions: q
+              };
+            })
+            .filter(Boolean);
+        }
+      }
 
-        // 2. Fetch user's solved questions from user_progress
-        const { data: userProgress, error: progressError } = await supabase
-          .from("user_progress")
-          .select(`
-            question_id,
-            "completed-at"
-          `)
-          .eq("user_id", userId)
-          .order("completed-at", { ascending: true });
+      const now = new Date();
+      const due = revData.filter((item: any) => new Date(item.next_revision_due) <= now);
+      const upcoming = revData.filter((item: any) => new Date(item.next_revision_due) > now);
+      setRevisionQueue(due);
+      setUpcomingQueue(upcoming);
+      
+      // 1. Fetch total counts from database
+      const { count: countAll } = await supabase
+        .from("questions")
+        .select("*", { count: "exact", head: true });
+      if (countAll !== null) setTotalQuestions(countAll);
 
-        if (progressError) throw progressError;
+      // 2. Fetch user's solved questions from user_progress
+      const { data: userProgress, error: progressError } = await supabase
+        .from("user_progress")
+        .select(`
+          question_id,
+          "completed-at"
+        `)
+        .eq("user_id", userId)
+        .order("completed-at", { ascending: true });
 
-        let solved: SolvedQuestion[] = [];
-        if (userProgress && userProgress.length > 0) {
-          const questionIds = userProgress.map((row: any) => row.question_id);
-          const { data: questionsData, error: questionsError } = await supabase
-            .from("questions")
-            .select("ID, Title, Difficulty, Topics")
-            .in("ID", questionIds);
+      if (progressError) throw progressError;
 
-          if (questionsError) throw questionsError;
+      let solved: SolvedQuestion[] = [];
+      if (userProgress && userProgress.length > 0) {
+        const questionIds = userProgress.map((row: any) => row.question_id);
+        const { data: questionsData, error: questionsError } = await supabase
+          .from("questions")
+          .select("ID, Title, Difficulty, Topics")
+          .in("ID", questionIds);
 
-          const questionsMap = new Map(questionsData?.map((q: any) => [q.ID, q]));
+        if (!questionsError && questionsData) {
+          const questionsMap = new Map(questionsData.map((q: any) => [q.ID, q]));
           solved = userProgress
             .map((row: any) => {
               const q = questionsMap.get(row.question_id);
@@ -226,52 +253,86 @@ export default function DashboardPage() {
             })
             .filter(Boolean) as SolvedQuestion[];
         }
+      }
+      setSolvedList(solved);
 
-        // 3. Compute streaks
-        let currentStreak = 0;
-        let longestStreak = 0;
-        const { data: streakData, error: streakError } = await supabase
-          .rpc("calculate_user_streaks", { target_user_id: userId });
+      // 3. Compute streaks
+      let currentStreak = 0;
+      let longestStreak = 0;
+      const { data: streakData, error: streakError } = await supabase
+        .rpc("calculate_user_streaks", { target_user_id: userId });
 
-        if (!streakError && streakData && streakData.length > 0) {
-          currentStreak = streakData[0].res_current_streak || 0;
-          longestStreak = streakData[0].res_max_streak || 0;
+      if (!streakError && streakData && streakData.length > 0) {
+        currentStreak = streakData[0].res_current_streak || 0;
+        longestStreak = streakData[0].res_max_streak || 0;
+      }
+      setCurrentStreak(currentStreak);
+      setLongestStreak(longestStreak);
+
+      // 4. Calculate weakest topic and fetch Daily Mission question
+      const topicStatsMap: { [key: string]: number } = {};
+      solved.forEach((q) => {
+        if (q.Topics) {
+          q.Topics.split(",").forEach((t) => {
+            const cleanTopic = t.trim();
+            topicStatsMap[cleanTopic] = (topicStatsMap[cleanTopic] || 0) + 1;
+          });
         }
+      });
 
-        // 4. Calculate weakest topic and fetch Daily Mission question
-        const topicStatsMap: { [key: string]: number } = {};
-        solved.forEach((q) => {
-          if (q.Topics) {
-            q.Topics.split(",").forEach((t) => {
-              const cleanTopic = t.trim();
-              topicStatsMap[cleanTopic] = (topicStatsMap[cleanTopic] || 0) + 1;
-            });
+      const TOPIC_DENOMINATORS: { [key: string]: number } = {
+        "Array": 500,
+        "String": 300,
+        "Hash Table": 250,
+        "Dynamic Programming": 350,
+        "Tree": 200,
+        "Graph": 150,
+        "Binary Search": 130,
+        "Linked List": 90
+      };
+
+      let computedWeakest = "Array";
+      let lowestRatio = 1.0;
+      Object.entries(TOPIC_DENOMINATORS).forEach(([topic, total]) => {
+        const solvedCount = topicStatsMap[topic] || 0;
+        const ratio = solvedCount / total;
+        if (ratio < lowestRatio) {
+          lowestRatio = ratio;
+          computedWeakest = topic;
+        }
+      });
+      setWeakestTopic(computedWeakest);
+
+      // 5. Fetch official Daily LeetCode Problem from Alfa API
+      let quest = null;
+      try {
+        const res = await fetch("https://alfa-leetcode-api.onrender.com/daily").then(r => r.ok ? r.json() : null);
+        if (res && res.questionTitle) {
+          // Find matching question in database by title
+          const { data: qMatch } = await supabase
+            .from("questions")
+            .select("ID, Title, Difficulty, Link, Topics")
+            .eq("Title", res.questionTitle)
+            .maybeSingle();
+
+          if (qMatch) {
+            quest = qMatch;
+          } else {
+            quest = {
+              ID: 9999, // Fallback ID for non-roadmap daily quest
+              Title: res.questionTitle,
+              Difficulty: res.difficulty || "Medium",
+              Link: res.questionLink,
+              Topics: "LeetCode Daily"
+            };
           }
-        });
+        }
+      } catch (dailyErr) {
+        console.warn("Failed to fetch official daily, falling back:", dailyErr);
+      }
 
-        const TOPIC_DENOMINATORS: { [key: string]: number } = {
-          "Array": 500,
-          "String": 300,
-          "Hash Table": 250,
-          "Dynamic Programming": 350,
-          "Tree": 200,
-          "Graph": 150,
-          "Binary Search": 130,
-          "Linked List": 90
-        };
-
-        let computedWeakest = "Array";
-        let lowestRatio = 1.0;
-        Object.entries(TOPIC_DENOMINATORS).forEach(([topic, total]) => {
-          const solvedCount = topicStatsMap[topic] || 0;
-          const ratio = solvedCount / total;
-          if (ratio < lowestRatio) {
-            lowestRatio = ratio;
-            computedWeakest = topic;
-          }
-        });
-
-        // Fetch unsolved questions in weakest topic
+      // If official daily fetching failed or was empty, fall back to weakest topic question
+      if (!quest) {
         const solvedIdsSet = new Set(solved.map(q => q.ID));
         const { data: topicQuestions } = await supabase
           .from("questions")
@@ -279,7 +340,6 @@ export default function DashboardPage() {
           .ilike("Topics", `%${computedWeakest}%`)
           .limit(50);
 
-        let quest = null;
         if (topicQuestions) {
           quest = topicQuestions.find(q => !solvedIdsSet.has(q.ID));
         }
@@ -289,7 +349,6 @@ export default function DashboardPage() {
             .from("general_questions" as any)
             .select("ID, Title, Difficulty, Link, Topics")
             .limit(100);
-
           if (!generalQuestions) {
             const { data: altQuestions } = await supabase
               .from("questions")
@@ -300,24 +359,30 @@ export default function DashboardPage() {
             quest = generalQuestions.find(q => !solvedIdsSet.has(q.ID));
           }
         }
+      }
+      setDailyQuest(quest);
 
-        return {
-          totalQuestions: countAll || 0,
-          solvedList: solved,
-          currentStreak,
-          longestStreak,
-          weakestTopic: computedWeakest,
-          dailyQuest: quest
-        };
-      }, 300000); // 5 minutes TTL
+      // Fetch leetcode username from profiles
+      let leetcodeUser = "";
+      try {
+        const { data: dbProfile } = await supabase
+          .from("profiles")
+          .select("leetcode_username")
+          .eq("id", userId)
+          .maybeSingle();
+        if (dbProfile?.leetcode_username) {
+          leetcodeUser = dbProfile.leetcode_username;
+        } else {
+          leetcodeUser = user?.user_metadata?.leetcode_username || "";
+        }
+      } catch (dbErr) {
+        console.warn("DB profiles check failed:", dbErr);
+        leetcodeUser = user?.user_metadata?.leetcode_username || "";
+      }
+      setLeetcodeUsername(leetcodeUser);
 
-      if (dashboardData) {
-        if (dashboardData.totalQuestions !== null) setTotalQuestions(dashboardData.totalQuestions);
-        setSolvedList(dashboardData.solvedList);
-        setCurrentStreak(dashboardData.currentStreak);
-        setLongestStreak(dashboardData.longestStreak);
-        setWeakestTopic(dashboardData.weakestTopic);
-        setDailyQuest(dashboardData.dailyQuest);
+      if (leetcodeUser) {
+        await fetchLeetcodeStats(leetcodeUser);
       }
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
@@ -325,6 +390,39 @@ export default function DashboardPage() {
       setLoading(false);
     }
   }
+
+  const fetchLeetcodeStats = async (username: string) => {
+    if (!username) return;
+    try {
+      setLeetcodeLoading(true);
+      setLeetcodeError("");
+      const cleanUsername = username.trim().replace(/^@/, "");
+      const baseUrl = "https://alfa-leetcode-api.onrender.com";
+      const resProfile = await fetch(`${baseUrl}/${cleanUsername}/profile`).then(r => r.ok ? r.json() : null);
+      if (!resProfile || resProfile.errors) {
+        throw new Error("Could not load LeetCode statistics.");
+      }
+      
+      const statsData = {
+        profile: {
+          ranking: resProfile.ranking
+        },
+        solved: {
+          solvedProblem: resProfile.totalSolved,
+          easySolved: resProfile.easySolved,
+          mediumSolved: resProfile.mediumSolved,
+          hardSolved: resProfile.hardSolved
+        },
+        ranking: resProfile.ranking
+      };
+      setLeetcodeStats(statsData);
+    } catch (err: any) {
+      console.error("Failed to fetch LeetCode stats on dashboard:", err);
+      setLeetcodeError("Unavailable");
+    } finally {
+      setLeetcodeLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadDashboardData();
@@ -354,7 +452,7 @@ export default function DashboardPage() {
 
       timestamps[qId] = new Date().toISOString();
       localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
-      
+
       // Dispatch solve event to update heatmap
       window.dispatchEvent(new Event("question-solved"));
 
@@ -376,6 +474,32 @@ export default function DashboardPage() {
   const easyPercent = totalEasy > 0 ? Math.round((easySolved / totalEasy) * 100) : 0;
   const mediumPercent = totalMedium > 0 ? Math.round((mediumSolved / totalMedium) * 100) : 0;
   const hardPercent = totalHard > 0 ? Math.round((hardSolved / totalHard) * 100) : 0;
+
+  // Live LeetCode stats breakdown metrics
+  const easyCount = leetcodeStats?.solved?.easySolved || 0;
+  const medCount = leetcodeStats?.solved?.mediumSolved || 0;
+  const hardCount = leetcodeStats?.solved?.hardSolved || 0;
+  const totalLiveSolved = leetcodeStats?.solved?.solvedProblem || leetcodeStats?.solved?.totalSolved || (easyCount + medCount + hardCount) || 0;
+
+  const totalSegments = (easyCount + medCount + hardCount) || 1;
+  const easyPct = (easyCount / totalSegments) * 100;
+  const medPct = (medCount / totalSegments) * 100;
+  const hardPct = (hardCount / totalSegments) * 100;
+
+  const getContestTimeLeft = (startTime: any) => {
+    if (!startTime) return "TBD";
+    const startMs = typeof startTime === "number" ? startTime * 1000 : new Date(startTime).getTime();
+    const diff = startMs - Date.now();
+    if (diff <= 0) return "ACTIVE";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+    if (days > 0) {
+      return `${days}D ${hours % 24}H`;
+    }
+    return `${hours}H ${Math.floor((diff / (1000 * 60)) % 60)}M`;
+  };
+
+  const isDailyQuestSolved = dailyQuest ? solvedList.some(q => q.Title.toLowerCase() === dailyQuest.Title.toLowerCase()) : false;
 
   // Calculate topic counts
   const getTopicProgress = () => {
@@ -490,68 +614,57 @@ export default function DashboardPage() {
           <Skeleton className="h-8 w-full" />
         </div>
 
-        {/* Heatmap Section */}
-        <section className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg">
-          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <div className="space-y-2">
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-4 w-96" />
+        {/* Heatmap Row Skeleton */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+          <div className="lg:col-span-12 bg-[#111111]/72 border border-[#2D2D2D] p-6 rounded-xl min-h-[180px]">
+            <header className="flex justify-between items-start mb-4">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </div>
+            </header>
+            <div className="flex flex-wrap gap-1.5 justify-between py-2">
+              {Array.from({ length: 42 }).map((_, idx) => (
+                <Skeleton key={idx} className="w-5 h-5 sm:w-6 sm:h-6 rounded-sm flex-shrink-0" />
+              ))}
             </div>
-            <Skeleton className="h-4 w-32" />
-          </header>
-          <div className="flex flex-wrap gap-1.5 justify-between py-2">
-            {Array.from({ length: 42 }).map((_, idx) => (
-              <Skeleton key={idx} className="w-5 h-5 sm:w-6 sm:h-6 rounded-sm flex-shrink-0" />
-            ))}
           </div>
         </section>
 
-        {/* Bottom widgets grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-          {/* Daily Mission Skeleton */}
-          <div className="lg:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg flex flex-col justify-between min-h-[380px]">
-            <div className="space-y-6">
-              <div className="flex justify-between items-start">
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-6 w-6 rounded" />
-              </div>
-              <div className="space-y-3">
-                <Skeleton className="h-7 w-48" />
-                <div className="flex gap-2">
-                  <Skeleton className="h-5 w-16" />
-                  <Skeleton className="h-5 w-24" />
-                </div>
-                <Skeleton className="h-16 w-full" />
-              </div>
-            </div>
-            <div className="space-y-3 mt-4">
-              <Skeleton className="h-11 w-full rounded-lg" />
-              <Skeleton className="h-11 w-full rounded-lg" />
-            </div>
-          </div>
-
-          {/* Interactive console card */}
-          <div className="lg:col-span-8 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg flex flex-col justify-between min-h-[460px]">
-            <div>
-              <div className="flex border-b border-[#2D2D2D] pb-3 mb-6 gap-4 overflow-x-auto">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-28 sm:w-36 flex-shrink-0" />
-                ))}
-              </div>
+        {/* Dynamic Cards Deck Skeleton */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-[#111111]/72 border border-[#2D2D2D] p-6 rounded-xl flex flex-col justify-between min-h-[220px]">
               <div className="space-y-4">
                 <Skeleton className="h-5 w-32" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="border border-[#2D2D2D] p-4 rounded-xl flex items-center justify-between gap-4">
-                      <div className="space-y-2 flex-1">
-                        <Skeleton className="h-3 w-16" />
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-24" />
-                      </div>
-                      <Skeleton className="h-8 w-16 rounded-lg" />
+                <Skeleton className="h-6 w-48" />
+              </div>
+              <Skeleton className="h-8 w-full rounded" />
+            </div>
+          ))}
+        </section>
+
+        {/* Interactive console card */}
+        <section className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg flex flex-col justify-between min-h-[460px]">
+          <div>
+            <div className="flex border-b border-[#2D2D2D] pb-3 mb-6 gap-4 overflow-x-auto">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-8 w-28 sm:w-36 flex-shrink-0" />
+              ))}
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-5 w-32" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="border border-[#2D2D2D] p-4 rounded-xl flex items-center justify-between gap-4">
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
                     </div>
-                  ))}
-                </div>
+                    <Skeleton className="h-8 w-16 rounded-lg" />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -675,110 +788,250 @@ export default function DashboardPage() {
         </motion.div>
       </section>
 
-      {/* Scroll-Linked Parallax Topics Ticker */}
       <ParallaxText />
 
-      {/* Contribution Heatmap Map Section */}
-      <motion.section 
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15, duration: 0.4 }}
-        className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
-      >
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div>
-            <h2 className="font-headline-md text-headline-md text-on-surface">Contribution Map</h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">Visualizing problem solving consistency across the cycles.</p>
-          </div>
-          <div className="flex items-center gap-2 font-mono-label text-mono-label text-outline">
-            <span>Less</span>
-            <div className="flex gap-1">
-              <div className="w-3 h-3 rounded-sm bg-surface-container-lowest"></div>
-              <div className="w-3 h-3 bg-primary/20 rounded-sm"></div>
-              <div className="w-3 h-3 bg-primary/40 rounded-sm"></div>
-              <div className="w-3 h-3 bg-primary/60 rounded-sm"></div>
-              <div className="w-3 h-3 bg-primary rounded-sm"></div>
-            </div>
-            <span>More</span>
-          </div>
-        </header>
-
-        {/* Heatmap renderer */}
-        <div className="overflow-x-auto custom-scrollbar pb-2">
-          <Heatmap mode="dashboard" />
-        </div>
-      </motion.section>
-
-      {/* Bottom widgets grid */}
+      {/* Contribution Heatmap Section */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-        {/* Daily Mission */}
+        {/* Contribution Heatmap */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.4 }}
-          className="lg:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg mission-pulse flex flex-col justify-between transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
+          transition={{ delay: 0.15, duration: 0.4 }}
+          className="lg:col-span-12 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)] flex flex-col justify-between"
         >
-          <div>
-            <div className="flex justify-between items-start mb-6">
-              <span className="font-mono-label text-mono-label text-primary bg-primary/10 px-2 py-1 rounded">PRIORITY: OMEGA</span>
-              <span className="material-symbols-outlined text-primary">target</span>
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+            <div>
+              <h2 className="font-headline-md text-base text-on-surface font-bold uppercase tracking-wide">Contribution Map</h2>
+              <p className="font-body-sm text-[11px] text-on-surface-variant">Consistency tracker across learning cycles.</p>
             </div>
-            
+            <div className="flex items-center gap-2 font-mono text-[9px] text-outline">
+              <span>Less</span>
+              <div className="flex gap-1">
+                <div className="w-2.5 h-2.5 rounded-sm bg-surface-container-lowest"></div>
+                <div className="w-2.5 h-2.5 bg-primary/20 rounded-sm"></div>
+                <div className="w-2.5 h-2.5 bg-primary/40 rounded-sm"></div>
+                <div className="w-2.5 h-2.5 bg-primary/60 rounded-sm"></div>
+                <div className="w-2.5 h-2.5 bg-primary rounded-sm"></div>
+              </div>
+              <span>More</span>
+            </div>
+          </header>
+          {/* Heatmap renderer */}
+          <div className="overflow-x-auto custom-scrollbar pb-1">
+            <Heatmap mode="dashboard" />
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Dynamic Widget Grid (Daily Challenge, Company Curricula, LeetCode Live Stats) */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+        {/* Card 1: Daily LeetCode Challenge */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.4 }}
+          className={cn(
+            "border backdrop-blur-[12px] p-6 rounded-xl flex flex-col justify-between transition-all duration-300 min-h-[220px]",
+            isDailyQuestSolved 
+              ? "bg-[#111111]/30 border-[#2D2D2D]/60 opacity-50 grayscale select-none hover:shadow-none" 
+              : "bg-[#111111]/72 border-[#2D2D2D] hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
+          )}
+        >
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-[9px] text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 tracking-wider font-bold">DAILY MISSION</span>
+              <span className="material-symbols-outlined text-primary text-lg">target</span>
+            </div>
+
             {dailyQuest ? (
-              <div className="space-y-4">
-                <h2 className="font-headline-md text-headline-md text-on-surface line-clamp-1">{dailyQuest.Title}</h2>
+              <div className="space-y-3">
+                <h3 className="font-headline-md text-sm font-bold text-on-surface truncate">{dailyQuest.Title}</h3>
                 <div className="flex gap-2">
-                  <Badge 
+                  <Badge
                     tone={
-                      dailyQuest.Difficulty.toLowerCase() === "easy" ? "secondary" : 
+                      dailyQuest.Difficulty.toLowerCase() === "easy" ? "secondary" :
                       dailyQuest.Difficulty.toLowerCase() === "medium" ? "tertiary" : "danger"
                     }
                   >
                     {dailyQuest.Difficulty.toUpperCase()}
                   </Badge>
-                  <span className="text-[10px] text-muted self-center uppercase truncate">{dailyQuest.Topics?.split(",")[0]}</span>
+                  <span className="text-[9px] text-muted self-center uppercase truncate">{dailyQuest.Topics?.split(",")[0] || "LeetCode"}</span>
                 </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-                  Resolve this logic gate to expand your cognitive index. Selected topic: <strong className="text-secondary">{weakestTopic.toUpperCase()}</strong>.
+                <p className="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+                  Solve on LeetCode, then record reflections in your journal notebook.
                 </p>
-                
-                <div className="space-y-3 pt-4">
-                  <a 
-                    href={dailyQuest.Link} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="flex items-center justify-center gap-2 text-on-secondary text-body-sm bg-secondary p-3 rounded-lg font-bold cursor-pointer hover:brightness-110 active:scale-95 transition-all text-center uppercase"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">play_arrow</span>
-                    INITIATE PROBLEM SOLVING
-                  </a>
-                  <button 
-                    onClick={handleToggleDailyMission}
-                    className="w-full flex items-center justify-center gap-2 text-on-surface-variant text-body-sm border border-[#2D2D2D] p-3 rounded-lg hover:bg-surface-variant/10 cursor-pointer transition-all uppercase"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">check_circle</span>
-                    MARK AS RESOLVED
-                  </button>
-                </div>
               </div>
             ) : (
-              <div className="py-12 text-center text-muted font-display-arcade text-xs">
-                ALL SYSTEMS CLEAR
+              <div className="py-4 text-center text-muted font-mono text-[10px]">
+                NO ACTIVE DAILY CHALLENGE
               </div>
             )}
           </div>
-          <div className="mt-8 flex items-center justify-between border-t border-outline-variant/30 pt-4">
-            <span className="font-mono-label text-mono-label text-outline">REWARD: 500 XP</span>
-            <span className="material-symbols-outlined text-tertiary">workspace_premium</span>
-          </div>
+
+          {dailyQuest && (
+            <div className="grid grid-cols-2 gap-2 mt-4 pt-2 border-t border-white/5">
+              {isDailyQuestSolved ? (
+                <div className="col-span-2 text-center py-2 text-emerald-400 font-mono text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 bg-emerald-500/5 border border-emerald-500/10 rounded">
+                  <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                  MISSION ACCOMPLISHED
+                </div>
+              ) : (
+                <>
+                  <a
+                    href={dailyQuest.Link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1 text-black text-[11px] bg-primary px-3 py-2 rounded font-bold cursor-pointer hover:bg-[#FFE14D] transition-all uppercase tracking-wider text-center"
+                  >
+                    SOLVE <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                      detail: {
+                        questionId: dailyQuest.ID,
+                        title: dailyQuest.Title,
+                        difficulty: dailyQuest.Difficulty,
+                        link: dailyQuest.Link,
+                        mode: "priming"
+                      }
+                    }))}
+                    className="flex items-center justify-center gap-1 text-white text-[11px] border border-[#2D2D2D] px-3 py-2 rounded font-bold cursor-pointer hover:bg-white/5 transition-all uppercase tracking-wider text-center"
+                  >
+                    LOG SOLVE
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </motion.div>
 
-        {/* Interactive console card (8 Columns wide) */}
-        <motion.div 
+        {/* Card 2: Company Curriculum Sheets */}
+        <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.4 }}
-          className="lg:col-span-8 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg flex flex-col justify-between transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)] min-h-[460px]"
+          className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)] min-h-[220px]"
+        >
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-[9px] text-tertiary bg-tertiary/10 px-2 py-0.5 rounded border border-tertiary/20 tracking-wider font-bold">CORPORATE ROADS</span>
+              <span className="material-symbols-outlined text-tertiary text-lg">schema</span>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-headline-md text-sm font-bold text-on-surface">Company Curricula</h3>
+              <p className="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+                Unlock targeted sheets mapped from over 463 companies, compiled from recent interviews.
+              </p>
+              <div className="flex flex-wrap gap-1 select-none">
+                {["Google", "Meta", "Amazon", "Citadel", "HFTs"].map(comp => (
+                  <span key={comp} className="text-[8px] font-mono border border-white/5 px-1.5 py-0.5 rounded bg-white/2 text-white/50">{comp}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-2 border-t border-white/5">
+            <Link
+              href="/questions/company-sheets"
+              className="w-full flex items-center justify-center gap-1.5 text-black text-[11px] bg-[#FFD400] px-3 py-2 rounded font-bold hover:bg-[#FFE14D] transition-all uppercase tracking-wider text-center"
+            >
+              EXPLORE SHEETS
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Card 3: Expanded LeetCode Live Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.4 }}
+          className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)] min-h-[220px]"
+        >
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-[9px] text-secondary bg-secondary/10 px-2 py-0.5 rounded border border-secondary/20 tracking-wider font-bold">LIVE METRICS</span>
+              <span className="material-symbols-outlined text-secondary text-lg animate-pulse">donut_large</span>
+            </div>
+
+            {leetcodeUsername ? (
+              <div className="space-y-3">
+                {/* Stats Numbers */}
+                <div className="flex justify-between items-baseline">
+                  <h3 className="font-mono text-xs text-white truncate font-bold">@{leetcodeUsername}</h3>
+                  <span className="font-mono text-xs font-bold text-white">
+                    {totalLiveSolved} <span className="text-[9px] font-normal text-muted">solved</span>
+                  </span>
+                </div>
+
+                {/* Comparative Ratio Bar Graph */}
+                <div className="space-y-1.5">
+                  <div className="h-2.5 w-full rounded-full bg-[#1A1A1A] flex overflow-hidden border border-white/5 shadow-inner">
+                    <div 
+                      className="bg-emerald-500 transition-all duration-500" 
+                      style={{ width: `${easyPct}%` }}
+                      title={`Easy: ${easyCount} (${Math.round(easyPct)}%)`}
+                    />
+                    <div 
+                      className="bg-[#FFD400] transition-all duration-500" 
+                      style={{ width: `${medPct}%` }}
+                      title={`Medium: ${medCount} (${Math.round(medPct)}%)`}
+                    />
+                    <div 
+                      className="bg-red-500 transition-all duration-500" 
+                      style={{ width: `${hardPct}%` }}
+                      title={`Hard: ${hardCount} (${Math.round(hardPct)}%)`}
+                    />
+                  </div>
+                  {/* Legend / Info Split */}
+                  <div className="flex justify-between text-[8px] font-mono text-outline select-none">
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> E ({Math.round(easyPct)}%)</span>
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#FFD400]" /> M ({Math.round(medPct)}%)</span>
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> H ({Math.round(hardPct)}%)</span>
+                  </div>
+                </div>
+
+                {/* Detailed counts */}
+                <div className="grid grid-cols-3 gap-1.5 text-[9px] text-center font-mono select-none">
+                  <div className="bg-emerald-500/5 border border-emerald-500/15 p-1.5 rounded">
+                    <span className="text-emerald-400 block font-bold text-[8px] tracking-wider">EASY</span>
+                    <span className="text-white font-bold">{easyCount}</span>
+                  </div>
+                  <div className="bg-[#FFD400]/5 border border-[#FFD400]/15 p-1.5 rounded">
+                    <span className="text-[#FFD400] block font-bold text-[8px] tracking-wider">MED</span>
+                    <span className="text-white font-bold">{medCount}</span>
+                  </div>
+                  <div className="bg-red-500/5 border border-red-500/15 p-1.5 rounded">
+                    <span className="text-red-400 block font-bold text-[8px] tracking-wider">HARD</span>
+                    <span className="text-white font-bold">{hardCount}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <h3 className="font-headline-md text-xs font-bold text-on-surface">Sync LeetCode Profile</h3>
+                <p className="font-body-sm text-[10px] text-on-surface-variant leading-relaxed">
+                  Connect your LeetCode username in Profile settings to view live statistics on your HUD dashboard.
+                </p>
+                <Link
+                  href="/profile"
+                  className="w-full flex items-center justify-center gap-1.5 text-white text-[11px] border border-[#2D2D2D] px-3 py-2 rounded font-bold hover:bg-white/5 transition-all uppercase tracking-wider text-center"
+                >
+                  CONNECT ACCOUNT
+                </Link>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Interactive console card (Full width) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.4 }}
+          className="lg:col-span-12 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg flex flex-col justify-between transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)] min-h-[460px]"
         >
           <div>
             {/* Header: Tab Triggers with spring-animated layoutId background slider */}
@@ -786,8 +1039,7 @@ export default function DashboardPage() {
               {[
                 { id: "revisions", label: `REVISION QUEUE (${revisionQueue.length})`, icon: "sync" },
                 { id: "proficiency", label: "TOPIC PROFICIENCY", icon: "schema" },
-                { id: "logs", label: "RECENT SOLVES", icon: "history" },
-                { id: "diagnostics", label: "SYSTEM DIAGNOSTICS", icon: "terminal" }
+                { id: "logs", label: "RECENT SOLVES", icon: "history" }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -983,48 +1235,8 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {activeTab === "diagnostics" && (
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 font-mono text-xs">
-                    {/* Diagnostic metrics */}
-                    <div className="md:col-span-5 grid grid-cols-2 gap-3">
-                      <div className="bg-[#090909]/50 border border-[#2D2D2D] p-3 rounded-lg flex flex-col justify-between">
-                        <span className="text-[9px] text-outline uppercase tracking-wider flex items-center gap-1.5"><Network className="w-3.5 h-3.5 text-primary" /> HOST_PING</span>
-                        <span className="text-secondary font-bold text-sm">24 ms</span>
-                      </div>
-                      <div className="bg-[#090909]/50 border border-[#2D2D2D] p-3 rounded-lg flex flex-col justify-between">
-                        <span className="text-[9px] text-outline uppercase tracking-wider flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-secondary" /> INTEGRITY</span>
-                        <span className="text-secondary font-bold text-sm">100%</span>
-                      </div>
-                      <div className="bg-[#090909]/50 border border-[#2D2D2D] p-3 rounded-lg flex flex-col justify-between col-span-2">
-                        <span className="text-[9px] text-outline uppercase tracking-wider flex items-center gap-1.5"><Terminal className="w-3.5 h-3.5 text-tertiary" /> SYS_ACCURACY</span>
-                        <span className="text-primary font-bold text-sm">94.2% (TOP_5%)</span>
-                      </div>
-                    </div>
-
-                    {/* Live log stream */}
-                    <div className="md:col-span-7 bg-[#090909] border border-[#2D2D2D] rounded-lg p-4 font-mono text-[10px] text-outline-variant space-y-2 select-text max-h-[160px] overflow-y-auto custom-scrollbar">
-                      <div className="flex justify-between items-center border-b border-[#2D2D2D] pb-1.5 mb-2 select-none text-[9px] text-outline">
-                        <span>LIVE TERMINAL FEED</span>
-                        <span className="animate-pulse flex items-center gap-1 text-secondary"><span className="w-1.5 h-1.5 rounded-full bg-secondary"></span> ONLINE</span>
-                      </div>
-                      {diagnosticLogs.map((log, index) => (
-                        <div key={index} className={cn(
-                          "truncate font-mono",
-                          index === 0 ? "text-primary font-bold" : "text-outline/70"
-                        )}>
-                          {log}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </motion.div>
             </AnimatePresence>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-outline-variant/30 flex justify-between items-center text-[10px] font-mono-label text-outline/50">
-            <span>CONSOLE CLUSTER: ACTIVE</span>
-            <span className="flex items-center gap-1"><RefreshCw className="w-3 h-3 animate-spin text-primary" /> REAL-TIME MONITORING</span>
           </div>
         </motion.div>
       </section>
