@@ -142,6 +142,7 @@ Next.js layout components (e.g. sidebars, progress meters, heatmaps) are decoupl
 To make page transitions feel smooth and instantaneous, database data queries should be wrapped in the `fetchWithCache` utility from `@/lib/utils`:
 1. The caching helper stores JSON-serialized results in `localStorage` with a specified Time-To-Live (TTL).
 2. All page-level and query-level cache keys (e.g., `questions_hub_stats_`, `profile_data_cache_`, `user_solves_cache_`, `leetcode_universe_questions_cache_`) are registered in `lib/utils.ts` and cleared synchronously when the `"question-solved"` event is received.
+3. Dashboard queries and LeetCode live sync statistics are bypass-decached and run live on every load to guarantee real-time updates without cache latency.
 
 ---
 
@@ -174,6 +175,10 @@ Keep these technical quirks in mind during development:
 *   **Issue:** The Supabase Auth router can experience lag while establishing sessions during Magic Link redirections.
 *   **Resolution:** The login redirect handler must display a spinner to indicate that session authentication is in progress.
 
+### 5. PostgreSQL Manual Joins on Missing Schema Constraints
+*   **Issue:** Postgrest returns relation join errors (`PGRST200`) when executing joined select operations (like `.select("*, questions(*)")`) if there is no registered foreign key constraint between the tables in the PostgreSQL schema cache.
+*   **Resolution:** Perform queries in two separate steps (fetching the progress rows first, and manual inline querying of question details by ID lists) to manually reconstruct joined items.
+
 ---
 
 ## 7. Current Project State Matrix
@@ -186,10 +191,13 @@ Keep these technical quirks in mind during development:
 *   Analytics Dashboard (Heatmap, Weekly Throughput, SVG Radial Mastery Gauges)
 *   Razorpay Order & Signature Verification API handlers
 *   Streak Calculations (Current & Peak)
-*   Spaced Repetition Revision Engine (Initial Solve Reflection, scheduling multipliers, Revisions Queue dashboard tab)
+*   Spaced Repetition Revision Engine (Initial Solve Reflection, scheduling multipliers, Revisions Queue dashboard tab, tabbed Spaced Repetition panel on Progress page, and Early Practice checks to preserve scheduled future due dates during early attempts)
 *   Interview Notebook & History Log (Drawer tabs, editable text blocks, chronological log viewer)
-*   Client-Side Caching layer (`fetchWithCache` across Questions Hub, Profile, Progress, and LeetCode Universe with dynamic auto-invalidation)
+*   Client-Side Caching layer (`fetchWithCache` across Questions Hub, Profile, Progress, and LeetCode Universe with dynamic auto-invalidation, decached dashboard queries)
 *   Layout-matched Skeleton UI loaders (shimmer placeholders matching cards, grids, and tables across Dashboard, Progress Analytics, Profile, and Questions directories)
+*   Yellow snowfall backdrop canvas on pitch-black login UI (with amber brand border controls)
+*   Corrected live stats sync proxy routes `/api/leetcode-contests` and live `/cleanUsername/profile` query sanitizers
+*   Postgres manual join helpers on progress retrieval ranges
 
 ### 🟡 In Progress
 *   Pattern Handbook Boilerplates (Expanding C++ to Python and Java templates)

@@ -17,9 +17,9 @@ This snapshot represents the current status of features, models, and integration
     *   **Topic Mastery Meter:** SVG radial donut gauge representing the user's completion progress.
 *   **Profile System:** Cyberpunk split layout showing user stats, profile detail updates, and premium Razorpay donation links.
 *   **Streak Tracking:** Auto-calculation of solve streaks (current and max) via database RPCs.
-*   **Spaced Repetition Revision Engine:** Lightweight 15-second cognitive reflection modal on solve checkoff, automatic scheduled revision queue, and multiplier feedback loops (Easier / Same / Difficult).
+*   **Spaced Repetition Revision Engine:** Lightweight 15-second cognitive reflection modal on solve checkoff, automatic scheduled revision queue, and multiplier feedback loops (Easier / Same / Difficult). Includes **Early Practice Protection** (early solves don't push the scheduled due dates out) and a dedicated tabbed **Revision Engine Queue** (Due vs. Upcoming) on the Progress page.
 *   **Interview Notebook:** Private structured study journal (Brute Force, Optimization path, Pattern Strategy, Dry Run) and timeline log viewer inside right-hand slidedrawer.
-*   **Client-Side Caching Layer:** Persistent browser-level caching using `fetchWithCache` across Questions Hub, Profile, Progress Analytics, and LeetCode Universe (complete with automatic cache invalidation via custom solve event bus).
+*   **Client-Side Caching Layer:** Persistent browser-level caching using `fetchWithCache` across Questions Hub, Profile, Progress Analytics, and LeetCode Universe (complete with automatic cache invalidation via custom solve event bus). Dashboard data loading and LeetCode profile sync stats load completely live on every entry/solve event to eliminate sync delays.
 *   **Skeleton Loading UI:** Layout-matched, shimmering dark-mode skeletons integrated across all dynamic hydration pages (Dashboard, Progress Analytics, Questions Hub, LeetCode Universe, SheetStride Core Index, Topic, Pattern detail pages, Company Sheets Index, details, and Profile) to minimize layout shifts (CLS) and improve perceived performance.
 
 ### 🟡 In Progress
@@ -41,4 +41,4 @@ This snapshot represents the current status of features, models, and integration
 | **Questions Hub** | SheetStride Core, LeetCode Database, Company Sheets | None | External Sheets (Neetcode/Striver) |
 | **Database** | RLS tables and master public-read policies configured, views, streak calculation function | None | Custom triggers for automated streak updates |
 | **Checkout API** | Razorpay Order Creation and Verification Route Handlers | None | Production payment webhooks |
-| **Caching Layer** | Local caching (`fetchWithCache`) on Questions Hub, Profile, Progress, and LeetCode Universe; invalidate-on-solve triggers | None | None |
+| **Caching Layer** | Local caching (`fetchWithCache`) on Questions Hub, Profile, Progress, and LeetCode Universe; invalidate-on-solve triggers; decached real-time query engines on Dashboard and LeetCode stats | None | None |
