@@ -171,8 +171,20 @@ export function QuestionDetailDrawer() {
     
     try {
       const intervalDays = INITIAL_INTERVALS[confidence] || 2;
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + intervalDays);
+      let finalInterval = intervalDays;
+      let finalDueDate = new Date();
+      finalDueDate.setDate(finalDueDate.getDate() + intervalDays);
+
+      if (progress) {
+        const now = new Date();
+        const existingDueDate = progress.next_revision_due ? new Date(progress.next_revision_due) : null;
+        const isEarlySolve = existingDueDate ? (now < existingDueDate) : false;
+        
+        if (isEarlySolve && existingDueDate) {
+          finalInterval = progress.current_interval_days || intervalDays;
+          finalDueDate = existingDueDate;
+        }
+      }
       
       const completedAt = new Date().toISOString();
 
@@ -184,8 +196,8 @@ export function QuestionDetailDrawer() {
           question_id: qId,
           completed: true,
           "completed-at": completedAt,
-          current_interval_days: intervalDays,
-          next_revision_due: dueDate.toISOString(),
+          current_interval_days: finalInterval,
+          next_revision_due: finalDueDate.toISOString(),
           revision_count: 0,
           last_revised_at: null
         });
@@ -227,7 +239,7 @@ export function QuestionDetailDrawer() {
       localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
 
       // Trigger micro-success state
-      setSuccessMsg(`REVISION SCHEDULED: DUE IN ${intervalDays} DAYS`);
+      setSuccessMsg(`REVISION SCHEDULED: DUE IN ${finalInterval} DAYS`);
       window.dispatchEvent(new Event("question-solved"));
 
       setTimeout(() => {
@@ -258,8 +270,18 @@ export function QuestionDetailDrawer() {
         newInterval = Math.max(2, Math.floor(currentInterval * 0.5));
       }
 
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + newInterval);
+      // Check if this revision is solved early (before the next_revision_due timestamp)
+      const now = new Date();
+      const existingDueDate = progress?.next_revision_due ? new Date(progress.next_revision_due) : null;
+      const isEarlySolve = existingDueDate ? (now < existingDueDate) : false;
+
+      let dueDate = new Date();
+      if (isEarlySolve && existingDueDate) {
+        dueDate = existingDueDate;
+        newInterval = currentInterval;
+      } else {
+        dueDate.setDate(dueDate.getDate() + newInterval);
+      }
       
       const nowStr = new Date().toISOString();
       const nextAttemptNumber = (history?.length || 0) + 1;
