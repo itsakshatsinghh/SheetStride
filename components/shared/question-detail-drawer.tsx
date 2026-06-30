@@ -429,12 +429,24 @@ export function QuestionDetailDrawer() {
                   </span>
                 </div>
               </div>
-              <button 
-                onClick={handleClose}
-                className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-surface-container-highest hover:text-[#FFC700] transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                {link && (
+                  <button 
+                    onClick={() => window.open(link, "_blank", "noopener,noreferrer")}
+                    className="h-8 px-3 rounded-lg border border-[#FFD400]/25 bg-[#FFD400]/5 hover:bg-[#FFD400]/10 flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#FFD400] transition-all cursor-pointer select-none"
+                    title="Open on LeetCode"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-[#FFD400]" />
+                    <span>LEETCODE</span>
+                  </button>
+                )}
+                <button 
+                  onClick={handleClose}
+                  className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-surface-container-highest hover:text-[#FFC700] transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Content box */}
