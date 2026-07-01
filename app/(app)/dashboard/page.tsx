@@ -845,7 +845,20 @@ export default function DashboardPage() {
 
             {dailyQuest ? (
               <div className="space-y-3">
-                <h3 className="font-headline-md text-sm font-bold text-on-surface truncate">{dailyQuest.Title}</h3>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                    detail: {
+                      questionId: dailyQuest.ID,
+                      title: dailyQuest.Title,
+                      difficulty: dailyQuest.Difficulty,
+                      link: dailyQuest.Link,
+                      mode: "description"
+                    }
+                  }))}
+                  className="font-headline-md text-sm font-bold text-on-surface hover:text-primary transition-colors cursor-pointer text-left truncate block w-full"
+                >
+                  {dailyQuest.Title}
+                </button>
                 <div className="flex gap-2">
                   <Badge
                     tone={
@@ -1105,9 +1118,20 @@ export default function DashboardPage() {
                                       {q.Difficulty}
                                     </span>
                                   </div>
-                                  <h4 className="font-headline-md text-xs font-semibold tracking-wide text-text truncate group-hover:text-primary transition-colors">
+                                  <button
+                                    onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                                      detail: {
+                                        questionId: q.ID,
+                                        title: q.Title,
+                                        difficulty: q.Difficulty,
+                                        link: q.Link,
+                                        mode: "description"
+                                      }
+                                    }))}
+                                    className="font-headline-md text-xs font-semibold tracking-wide text-text hover:text-primary transition-colors cursor-pointer text-left truncate block w-full"
+                                  >
                                     {q.Title}
-                                  </h4>
+                                  </button>
                                   <span className="font-mono text-[9px] text-outline uppercase block mt-1">
                                     Interval: {item.current_interval_days} Days
                                   </span>

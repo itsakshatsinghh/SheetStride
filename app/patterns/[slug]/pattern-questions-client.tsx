@@ -194,17 +194,23 @@ export function PatternQuestionsClient({
 
                     {/* Title */}
                     <td className="px-5 py-4">
-                      <a
-                        href={row.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                          detail: {
+                            questionId: row.question_id,
+                            title: row.title,
+                            difficulty: row.difficulty,
+                            link: row.link,
+                            mode: "description"
+                          }
+                        }))}
                         className={cn(
-                          "font-headline-md text-xs font-semibold tracking-wide transition-colors hover:text-primary",
+                          "font-headline-md text-xs font-semibold tracking-wide transition-colors hover:text-primary cursor-pointer text-left",
                           solved ? "text-outline line-through opacity-60" : "text-text"
                         )}
                       >
                         {row.title}
-                      </a>
+                      </button>
                     </td>
 
                     {/* Difficulty */}

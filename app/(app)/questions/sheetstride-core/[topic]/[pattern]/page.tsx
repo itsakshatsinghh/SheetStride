@@ -496,17 +496,23 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
                       
                       {/* Title */}
                       <td className="px-6 py-5">
-                        <a 
-                          href={row.Link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
+                        <button 
+                          onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                            detail: {
+                              questionId: row.ID,
+                              title: row.Title,
+                              difficulty: row.Difficulty,
+                              link: row.Link,
+                              mode: "description"
+                            }
+                          }))}
                           className={cn(
-                            "font-headline-md text-headline-md transition-colors leading-snug",
+                            "font-headline-md text-headline-md transition-colors leading-snug cursor-pointer text-left",
                             solved ? "text-on-surface-variant line-through opacity-60" : "text-on-surface hover:text-primary"
                           )}
                         >
                           {row.Title}
-                        </a>
+                        </button>
                       </td>
 
                       {/* Topic tag */}

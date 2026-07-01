@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { Heatmap } from "@/components/shared/heatmap";
+import { CalendarHUD } from "@/components/shared/calendar-hud";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -462,7 +463,20 @@ export default function ProgressPage() {
                       return (
                         <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-[#0A0A0A]/40 border border-[#2D2D2D] rounded-lg hover:border-primary/40 transition-all group">
                           <div className="space-y-1 flex-1 min-w-0">
-                            <h4 className="font-bold text-xs text-white truncate group-hover:text-primary transition-colors">{item.questions.Title}</h4>
+                            <button
+                              onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                                detail: {
+                                  questionId: item.questions.ID,
+                                  title: item.questions.Title,
+                                  difficulty: item.questions.Difficulty,
+                                  link: item.questions.Link,
+                                  mode: "description"
+                                }
+                              }))}
+                              className="font-bold text-xs text-white text-left truncate group-hover:text-primary transition-colors cursor-pointer block"
+                            >
+                              {item.questions.Title}
+                            </button>
                             <div className="flex gap-2 items-center flex-wrap">
                               <span className={cn(
                                 "text-[9px] font-mono border px-1.5 py-0.5 rounded font-bold uppercase",
@@ -506,7 +520,20 @@ export default function ProgressPage() {
                       return (
                         <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-[#0A0A0A]/40 border border-[#2D2D2D] rounded-lg hover:border-primary/45 transition-all group">
                           <div className="space-y-1 flex-1 min-w-0">
-                            <h4 className="font-bold text-xs text-white truncate group-hover:text-primary transition-colors">{item.questions.Title}</h4>
+                            <button
+                              onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                                detail: {
+                                  questionId: item.questions.ID,
+                                  title: item.questions.Title,
+                                  difficulty: item.questions.Difficulty,
+                                  link: item.questions.Link,
+                                  mode: "description"
+                                }
+                              }))}
+                              className="font-bold text-xs text-white text-left truncate group-hover:text-primary transition-colors cursor-pointer block"
+                            >
+                              {item.questions.Title}
+                            </button>
                             <div className="flex gap-2 items-center flex-wrap">
                               <span className={cn(
                                 "text-[9px] font-mono border px-1.5 py-0.5 rounded font-bold uppercase",
@@ -718,6 +745,15 @@ export default function ProgressPage() {
           <div className="overflow-x-auto custom-scrollbar pb-1">
             <Heatmap mode="dashboard" />
           </div>
+        </motion.div>
+
+        {/* Scheduling CalendarHUD */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <CalendarHUD />
         </motion.div>
 
         {/* Weekly Throughput & Difficulty bar metrics */}

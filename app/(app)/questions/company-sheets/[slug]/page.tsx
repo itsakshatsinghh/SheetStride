@@ -433,17 +433,23 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
 
                         {/* Title */}
                         <td className="px-6 py-4.5">
-                          <a
-                            href={row.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                              detail: {
+                                questionId: row.question_id,
+                                title: row.title,
+                                difficulty: row.difficulty,
+                                link: row.link,
+                                mode: "description"
+                              }
+                            }))}
                             className={cn(
-                              "font-headline-md text-xs font-semibold tracking-wide transition-colors",
+                              "font-headline-md text-xs font-semibold tracking-wide transition-colors cursor-pointer text-left",
                               solved ? "text-outline line-through opacity-60" : "text-text hover:text-[#f97316]"
                             )}
                           >
                             {row.title}
-                          </a>
+                          </button>
                         </td>
 
                         {/* Topic tag */}

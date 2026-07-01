@@ -489,17 +489,23 @@ function QuestionsList() {
                     {/* Question Meta & Title */}
                     <div className="flex items-center gap-3">
                       <span className="font-mono-label text-mono-label text-outline-variant select-none">#{row.ID}</span>
-                      <a 
-                        href={row.Link} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
+                      <button 
+                        onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                          detail: {
+                            questionId: row.ID,
+                            title: row.Title,
+                            difficulty: row.Difficulty,
+                            link: row.Link,
+                            mode: "description"
+                          }
+                        }))}
                         className={cn(
-                          "font-headline-md text-headline-md transition-colors leading-snug",
+                          "font-headline-md text-headline-md transition-colors leading-snug cursor-pointer text-left",
                           solved ? "text-on-surface-variant line-through opacity-60" : "text-on-surface hover:text-primary"
                         )}
                       >
                         {row.Title}
-                      </a>
+                      </button>
                     </div>
 
                     {/* Primary Topic Tag */}

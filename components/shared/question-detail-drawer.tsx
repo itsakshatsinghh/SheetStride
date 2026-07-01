@@ -4,11 +4,32 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, ExternalLink, Loader2, BookOpen, History, Sparkles, 
-  Clock, AlertTriangle, CheckCircle2, ChevronRight, Save, Play, RefreshCw 
+  Clock, AlertTriangle, CheckCircle2, ChevronRight, Save, Play, RefreshCw, ArrowLeft 
 } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
+import { cn, fetchWithCache } from "@/lib/utils";
+
+function CollapsibleHint({ index, content }: { index: number; content: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="border border-[#232325] rounded-lg overflow-hidden bg-[#0A0A0B] select-none">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-2.5 font-mono text-[10px] text-outline hover:text-[#FFC700] hover:bg-[#121214] transition-colors text-left cursor-pointer font-bold uppercase select-none"
+      >
+        <span>Hint {index}</span>
+        <span className="text-[10px]">{isOpen ? "[-]" : "[+]"}</span>
+      </button>
+      {isOpen && (
+        <div 
+          className="p-3 text-xs text-[#E4E4E7] border-t border-[#1C1C1E] font-body-sm leading-relaxed whitespace-pre-wrap select-text bg-[#070708] leetcode-description-content"
+          dangerouslySetInnerHTML={{ __html: content }}
+        />
+      )}
+    </div>
+  );
+}
 
 // Map initial solve confidence to scheduled intervals
 const INITIAL_INTERVALS: { [key: string]: number } = {
@@ -27,7 +48,7 @@ export function QuestionDetailDrawer() {
   const [title, setTitle] = useState("");
   const [diff, setDiff] = useState("");
   const [link, setLink] = useState("");
-  const [openMode, setOpenMode] = useState<"notebook" | "reflection" | "priming" | "review">("notebook");
+  const [openMode, setOpenMode] = useState<"notebook" | "reflection" | "priming" | "review" | "description">("notebook");
   
   // Tabs for notebook mode
   const [activeTab, setActiveTab] = useState<"wiki" | "history">("wiki");
@@ -38,6 +59,9 @@ export function QuestionDetailDrawer() {
   const [progress, setProgress] = useState<any>(null);
   const [notebook, setNotebook] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [problemDescription, setProblemDescription] = useState("");
+  const [problemHints, setProblemHints] = useState<string[]>([]);
+  const [likesDislikes, setLikesDislikes] = useState<{ likes: number; dislikes: number }>({ likes: 0, dislikes: 0 });
   
   // Reflection/Review Form Fields
   const [confidence, setConfidence] = useState("comfortable");
@@ -66,6 +90,13 @@ export function QuestionDetailDrawer() {
     "Other"
   ];
 
+  // Helper to extract LeetCode title slug from URL
+  const getTitleSlug = (url: string): string => {
+    if (!url) return "";
+    const match = url.match(/\/problems\/([^/]+)/);
+    return match ? match[1] : "";
+  };
+
   // Listen to open events from other screens
   useEffect(() => {
     const handleOpen = (e: any) => {
@@ -93,6 +124,9 @@ export function QuestionDetailDrawer() {
       setPatternStrategy("");
       setDryRun("");
       setSuccessMsg("");
+      setProblemDescription("");
+      setProblemHints([]);
+      setLikesDislikes({ likes: 0, dislikes: 0 });
       setIsLoading(true);
     };
 
@@ -145,6 +179,48 @@ export function QuestionDetailDrawer() {
           .order("attempt_number", { ascending: true });
 
         setHistory(historyData || []);
+
+        // 4. Fetch LeetCode description from Alfa API
+        let currentLink = link;
+        if (!currentLink && qId) {
+          const { data: qData } = await supabase
+            .from("questions")
+            .select("Link")
+            .eq("ID", qId)
+            .maybeSingle();
+          if (qData) {
+            currentLink = qData.Link;
+          }
+        }
+        
+        if (currentLink) {
+          const titleSlug = getTitleSlug(currentLink);
+          if (titleSlug) {
+            try {
+              const cacheKey = `leetcode_desc_cache_${titleSlug}`;
+              const descData = await fetchWithCache(
+                cacheKey,
+                async () => {
+                  const res = await fetch(`https://alfa-leetcode-api.onrender.com/select?titleSlug=${titleSlug}`);
+                  if (!res.ok) throw new Error("API request failed");
+                  const apiData = await res.json();
+                  return {
+                    question: apiData.question || "",
+                    hints: apiData.hints || [],
+                    likes: apiData.likes || 0,
+                    dislikes: apiData.dislikes || 0
+                  };
+                },
+                86400000 // 24 Hours Cache TTL
+              );
+              setProblemDescription(descData.question || "");
+              setProblemHints(descData.hints || []);
+              setLikesDislikes({ likes: descData.likes, dislikes: descData.dislikes });
+            } catch (apiErr) {
+              console.error("Failed to fetch description from Alfa LeetCode API:", apiErr);
+            }
+          }
+        }
       } catch (err) {
         console.error("Failed to load drawer data:", err);
       } finally {
@@ -153,7 +229,7 @@ export function QuestionDetailDrawer() {
     }
 
     loadData();
-  }, [isOpen, qId, user]);
+  }, [isOpen, qId, user, link]);
 
   const handleToggleMistake = (option: string) => {
     if (mistakes.includes(option)) {
@@ -286,18 +362,27 @@ export function QuestionDetailDrawer() {
       const nowStr = new Date().toISOString();
       const nextAttemptNumber = (history?.length || 0) + 1;
 
-      // 1. Update progress fields
+      // 1. Update progress fields via upsert for maximum compatibility and primary-key safety
+      const upsertPayload = {
+        id: progress?.id,
+        user_id: userId,
+        question_id: qId,
+        completed: true,
+        "completed-at": progress?.["completed-at"] || progress?.completed_at || nowStr,
+        current_interval_days: newInterval,
+        next_revision_due: dueDate.toISOString(),
+        revision_count: (progress?.revision_count || 0) + 1,
+        last_revised_at: nowStr
+      };
+
       const { error: progressError } = await supabase
         .from("user_progress")
-        .update({
-          current_interval_days: newInterval,
-          next_revision_due: dueDate.toISOString(),
-          revision_count: (progress?.revision_count || 0) + 1,
-          last_revised_at: nowStr
-        })
-        .match({ user_id: userId, question_id: qId });
+        .upsert(upsertPayload);
 
-      if (progressError) throw progressError;
+      if (progressError) {
+        console.error("Progress upsert failed in handleSubmitReview:", progressError);
+        throw progressError;
+      }
 
       // 2. Log entry to reflection history
       const { error: logError } = await supabase
@@ -404,29 +489,41 @@ export function QuestionDetailDrawer() {
             className="fixed right-0 top-0 bottom-0 w-full max-w-[500px] sm:max-w-[600px] bg-[#0B0B0C] border-l border-border z-50 flex flex-col shadow-2xl overflow-hidden font-sans"
           >
             {/* Header info */}
-            <div className="p-6 border-b border-border bg-[#0E0E0F] flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-1 select-none">
-                  <span className="font-mono text-xs text-[#FFC700] uppercase font-bold tracking-wider">
-                    {openMode === "reflection" && "Solve Reflection"}
-                    {openMode === "review" && "Review Assessment"}
-                    {openMode === "priming" && "Memory Priming"}
-                    {openMode === "notebook" && "Question Workspace"}
-                  </span>
-                  <span className="h-1.5 w-1.5 rounded-full bg-secondary/80 animate-pulse" />
-                </div>
-                <h3 className="font-headline-md text-lg text-text font-bold leading-tight">{title}</h3>
-                <div className="flex items-center gap-2 mt-1.5 select-none">
-                  <span className="font-mono text-[10px] text-outline">#{qId}</span>
-                  <span className="h-1 w-1 bg-outline-variant/50 rounded-full" />
-                  <span className={cn(
-                    "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                    diff.toLowerCase() === "easy" && "bg-secondary/10 text-secondary border border-secondary/20",
-                    diff.toLowerCase() === "medium" && "bg-tertiary/10 text-tertiary border border-tertiary/20",
-                    diff.toLowerCase() === "hard" && "bg-danger/10 text-[#FF8A80] border border-danger/20"
-                  )}>
-                    {diff.toUpperCase()}
-                  </span>
+            <div className="p-6 border-b border-border bg-[#0E0E0F] flex items-center gap-4 justify-between">
+              <div className="flex items-center gap-3">
+                {(openMode === "reflection" || openMode === "review") && (
+                  <button 
+                    onClick={() => setOpenMode("description")}
+                    className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-surface-container-highest hover:text-[#FFC700] transition-colors cursor-pointer select-none"
+                    title="Back to Description"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                )}
+                <div>
+                  <div className="flex items-center gap-3 mb-1 select-none">
+                    <span className="font-mono text-xs text-[#FFC700] uppercase font-bold tracking-wider">
+                      {openMode === "reflection" && "Solve Reflection"}
+                      {openMode === "review" && "Review Assessment"}
+                      {openMode === "priming" && "Memory Priming"}
+                      {openMode === "notebook" && "Question Workspace"}
+                      {openMode === "description" && "Problem Description"}
+                    </span>
+                    <span className="h-1.5 w-1.5 rounded-full bg-secondary/80 animate-pulse" />
+                  </div>
+                  <h3 className="font-headline-md text-lg text-text font-bold leading-tight">{title}</h3>
+                  <div className="flex items-center gap-2 mt-1.5 select-none">
+                    <span className="font-mono text-[10px] text-outline">#{qId}</span>
+                    <span className="h-1 w-1 bg-outline-variant/50 rounded-full" />
+                    <span className={cn(
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                      diff.toLowerCase() === "easy" && "bg-secondary/10 text-secondary border border-secondary/20",
+                      diff.toLowerCase() === "medium" && "bg-tertiary/10 text-tertiary border border-tertiary/20",
+                      diff.toLowerCase() === "hard" && "bg-danger/10 text-[#FF8A80] border border-danger/20"
+                    )}>
+                      {diff.toUpperCase()}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -549,6 +646,87 @@ export function QuestionDetailDrawer() {
                           className="w-full bg-[#111112] border border-border text-text font-semibold py-3 rounded-lg flex items-center justify-center gap-2 hover:border-[#FFC700] transition-colors cursor-pointer text-sm"
                         >
                           PROCEED TO REVIEW ASSESSMENT
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* MODE: PROBLEM DESCRIPTION */}
+                  {openMode === "description" && (
+                    <div className="space-y-6 flex flex-col">
+                      <div className="space-y-4">
+                        {problemDescription ? (
+                          <>
+                            <div 
+                              className="leetcode-description-content text-xs text-[#E4E4E7] bg-[#0D0D0E]/80 border border-border/50 p-5 rounded-xl leading-relaxed font-body-sm overflow-x-auto whitespace-pre-wrap selection:bg-[#FFC700] selection:text-[#000000]"
+                              dangerouslySetInnerHTML={{ __html: problemDescription }}
+                            />
+
+                            {likesDislikes.likes > 0 && (
+                              <div className="flex items-center gap-4 px-1 select-none font-mono text-[9px] text-outline">
+                                <span>LIKES: <span className="text-[#10B981] font-bold">{likesDislikes.likes}</span></span>
+                                <span>DISLIKES: <span className="text-red-400 font-bold">{likesDislikes.dislikes}</span></span>
+                              </div>
+                            )}
+
+                            {problemHints.length > 0 && (
+                              <div className="bg-[#101011] border border-border/60 p-4 rounded-xl space-y-3">
+                                <span className="block font-mono text-[10px] text-[#FFC700] uppercase font-bold tracking-wider select-none">
+                                  System Hints
+                                </span>
+                                <div className="space-y-2">
+                                  {problemHints.map((hint, idx) => (
+                                    <CollapsibleHint key={idx} index={idx + 1} content={hint} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="space-y-6 animate-pulse select-none">
+                            {/* Paragraph skeleton */}
+                            <div className="space-y-3 bg-[#0D0D0E]/80 border border-border/40 p-5 rounded-xl">
+                              <div className="h-4 w-3/4 bg-white/5 rounded" />
+                              <div className="h-4 w-5/6 bg-white/5 rounded" />
+                              <div className="h-4 w-2/3 bg-white/5 rounded" />
+                              <div className="h-4 w-full bg-white/5 rounded" />
+                            </div>
+                            {/* Likes and dislikes skeleton */}
+                            <div className="flex gap-4 px-1">
+                              <div className="h-3 w-16 bg-white/5 rounded" />
+                              <div className="h-3 w-16 bg-white/5 rounded" />
+                            </div>
+                            {/* System Hints accordion skeleton */}
+                            <div className="bg-[#101011] border border-border/40 p-4 rounded-xl space-y-2">
+                              <div className="h-3.5 w-24 bg-white/5 rounded mb-3" />
+                              <div className="h-10 bg-[#0A0A0B] border border-[#232325] rounded-lg" />
+                              <div className="h-10 bg-[#0A0A0B] border border-[#232325] rounded-lg" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex flex-col gap-3 pt-2 select-none">
+                        <button
+                          onClick={() => window.open(link, "_blank", "noopener,noreferrer")}
+                          className="w-full bg-gradient-to-r from-primary to-tertiary hover:from-[#FFE14D] hover:to-[#FF8A80] text-[#000000] font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:opacity-95 shadow-lg shadow-primary/5 cursor-pointer text-sm font-headline"
+                        >
+                          <Play className="w-4 h-4 fill-[#000000]" />
+                          ATTEMPT ON LEETCODE
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (progress && progress.completed) {
+                              setOpenMode("review");
+                            } else {
+                              setOpenMode("reflection");
+                            }
+                          }}
+                          className="w-full bg-[#111112] border border-[#FFC700]/30 hover:border-[#FFC700] text-primary hover:text-[#FFE14D] font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer text-sm font-headline"
+                        >
+                          LOG YOUR SUBMISSION
                           <ChevronRight className="w-4 h-4" />
                         </button>
                       </div>
