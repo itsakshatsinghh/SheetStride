@@ -1,3 +1,7 @@
+if (typeof global !== "undefined" && typeof (global as any).WebSocket === "undefined") {
+  (global as any).WebSocket = class {};
+}
+
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

@@ -1,0 +1,159 @@
+{
+  "pattern_name": "Two Pointers",
+  "slug": "two-pointers",
+  "difficulty": "Beginner",
+  "family_name": "Pointers",
+  "overview": "In problems where we deal with sorted arrays (or <b>LinkedList</b>s) and need to find a set of elements that fulfill certain constraints, the <b>two pointers</b> approach becomes quite useful. The set of elements could be a pair, a triplet or even a subarray. For example, take a look at the following problem:\n\n> Given an array of sorted numbers and a target sum, find a pair in the array whose sum is equal to the given target.\n\nTo solve this problem, we can consider each element one by one (pointed out by the first pointer) and iterate through the remaining elements (pointed out by the second pointer) to find a pair with the given sum. The <b>time complexity</b> of this algorithm will be `O(N^2)` where `N` is the number of elements in the input array.\n\nGiven that the input array is sorted, an efficient way would be to start with one pointer in the beginning and another pointer at the end. At every step, we will see if the numbers pointed by the <b>two pointers</b> add up to the target sum. If they do not, we will do one of two things:\n1. If the sum of the two numbers pointed by the <b>two pointers</b> is greater than the target sum, this means that we need a pair with a smaller sum. So, to try more pairs, we can decrement the end-pointer.\n2. If the sum of the two numbers pointed by the <b>two pointers</b> is smaller than the target sum, this means that we need a pair with a larger sum. So, to try more pairs, we can increment the start-pointer.",
+  "recognition_signals": [
+    "array of contiguous elements",
+    "minimum size subarray",
+    "sliding range constraints"
+  ],
+  "mental_model": {
+    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
+    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
+    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
+    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+  },
+  "visualization_metadata": {
+    "type": "array-pointers",
+    "initial_state": {
+      "array": [
+        1,
+        3,
+        2,
+        6,
+        -1,
+        4
+      ],
+      "window_size": 3
+    },
+    "animation_steps": [
+      {
+        "action": "Initialize",
+        "description": "Initialize left and right boundaries at index 0.",
+        "state": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Expand",
+        "description": "Move right pointer to expand the range.",
+        "state": {
+          "left": 0,
+          "right": 2
+        }
+      },
+      {
+        "action": "Shrink",
+        "description": "Slide the window forward: shift left boundary.",
+        "state": {
+          "left": 1,
+          "right": 3
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+  },
+  "variants": [
+    {
+      "name": "Fixed-size Range",
+      "description": "The sliding bounds maintain a constant diameter throughout execution."
+    },
+    {
+      "name": "Variable-size Range",
+      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Off-by-One Range Limit",
+      "description": "Failing to validate boundary bounds before checking element values."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "related_patterns": [
+    "two-pointers",
+    "fast-slow-pointers"
+  ],
+  "question_ladder": [
+    {
+      "title": "🌴 Pair with Target Sum  aka \"Two Sum\"",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/two-sum/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Remove Duplicates",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/remove-duplicates-from-sorted-array/",
+      "type": "Medium"
+    },
+    {
+      "title": "Squaring a Sorted Array",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/squares-of-a-sorted-array/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Triplet Sum to Zero",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/3sum/",
+      "type": "Medium"
+    },
+    {
+      "title": "Triplet Sum Close to Target",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/3sum-closest/",
+      "type": "Medium"
+    },
+    {
+      "title": "Triplets with Smaller Sum",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/3sum-smaller/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Subarrays with Product Less than a Target",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/subarray-product-less-than-k/",
+      "type": "Medium"
+    },
+    {
+      "title": "Dutch National Flag Problem",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/sort-colors/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Quadruple Sum to Target",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/4sum/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Comparing Strings containing Backspaces",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/backspace-string-compare/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Minimum Window Sort",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/shortest-subarray-to-be-removed-to-make-array-sorted/",
+      "type": "Classic"
+    }
+  ],
+  "cheat_sheet": [
+    "Always verify if the array is sorted.",
+    "Check if contiguous subsegments are required."
+  ]
+}

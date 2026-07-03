@@ -1,0 +1,135 @@
+{
+  "pattern_name": "Tree Depth First Search (DFS)",
+  "slug": "tree-depth-first-search-dfs",
+  "difficulty": "Intermediate",
+  "family_name": "Algorithms",
+  "overview": "This pattern is based on the <b>Depth First Search (DFS)</b> technique to traverse a tree.\n\nWe will be using <b>recursion</b> (or we can also use a stack for the iterative approach) to keep track of all the previous (parent) nodes while traversing. This also means that the space complexity of the algorithm will be `O(H)`, where `H` is the maximum height of the tree.",
+  "recognition_signals": [
+    "array of contiguous elements",
+    "minimum size subarray",
+    "sliding range constraints"
+  ],
+  "mental_model": {
+    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
+    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
+    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
+    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+  },
+  "visualization_metadata": {
+    "type": "array-pointers",
+    "initial_state": {
+      "array": [
+        1,
+        3,
+        2,
+        6,
+        -1,
+        4
+      ],
+      "window_size": 3
+    },
+    "animation_steps": [
+      {
+        "action": "Initialize",
+        "description": "Initialize left and right boundaries at index 0.",
+        "state": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Expand",
+        "description": "Move right pointer to expand the range.",
+        "state": {
+          "left": 0,
+          "right": 2
+        }
+      },
+      {
+        "action": "Shrink",
+        "description": "Slide the window forward: shift left boundary.",
+        "state": {
+          "left": 1,
+          "right": 3
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+  },
+  "variants": [
+    {
+      "name": "Fixed-size Range",
+      "description": "The sliding bounds maintain a constant diameter throughout execution."
+    },
+    {
+      "name": "Variable-size Range",
+      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Off-by-One Range Limit",
+      "description": "Failing to validate boundary bounds before checking element values."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "related_patterns": [
+    "two-pointers",
+    "fast-slow-pointers"
+  ],
+  "question_ladder": [
+    {
+      "title": "Binary Tree Path Sum",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/path-sum/",
+      "type": "Introductory"
+    },
+    {
+      "title": "All Paths for a Sum",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/path-sum-ii/",
+      "type": "Medium"
+    },
+    {
+      "title": "Sum of Path Numbers",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/sum-root-to-leaf-numbers/",
+      "type": "Medium"
+    },
+    {
+      "title": "Path With Given Sequence",
+      "difficulty": "Medium",
+      "link": "",
+      "type": "Medium"
+    },
+    {
+      "title": "Count Paths for a Sum",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/path-sum-iii/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Tree Diameter",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/diameter-of-binary-tree/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Path with Maximum Sum",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/binary-tree-maximum-path-sum/",
+      "type": "Classic"
+    }
+  ],
+  "cheat_sheet": [
+    "Always verify if the array is sorted.",
+    "Check if contiguous subsegments are required."
+  ]
+}

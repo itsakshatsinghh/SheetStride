@@ -2,6 +2,7 @@ export const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/questions", label: "Questions" },
   { href: "/progress", label: "Progress" },
+  { href: "/patterns", label: "Pattern Atlas" },
   { href: "/profile", label: "Profile" },
   { href: "/settings", label: "Settings" }
 ] as const;

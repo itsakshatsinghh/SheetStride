@@ -1,0 +1,135 @@
+{
+  "pattern_name": "Fast & Slow pointers",
+  "slug": "fast-slow-pointers",
+  "difficulty": "Intermediate",
+  "family_name": "Pointers",
+  "overview": "The <b>Fast & Slow</b> pointer approach, also known as the <b>Hare & Tortoise algorithm</b>, is a pointer algorithm that uses two pointers which move through the array (or sequence/<b>LinkedList</b>) at different speeds. This approach is quite useful when dealing with cyclic <b>LinkedLists</b> or arrays.\n\nBy moving at different speeds (say, in a cyclic <b>LinkedList</b>), the algorithm proves that the two pointers are bound to meet. The <i>fast pointer</i> should catch the <i>slow pointer</i> once both the pointers are in a cyclic loop.\n\nOne of the famous problems solved using this technique was <b>Finding a <i>cycle</i> in a LinkedList</b>. Let’s jump onto this problem to understand the <b>Fast & Slow</b> pattern.",
+  "recognition_signals": [
+    "array of contiguous elements",
+    "minimum size subarray",
+    "sliding range constraints"
+  ],
+  "mental_model": {
+    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
+    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
+    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
+    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+  },
+  "visualization_metadata": {
+    "type": "array-pointers",
+    "initial_state": {
+      "array": [
+        1,
+        3,
+        2,
+        6,
+        -1,
+        4
+      ],
+      "window_size": 3
+    },
+    "animation_steps": [
+      {
+        "action": "Initialize",
+        "description": "Initialize left and right boundaries at index 0.",
+        "state": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Expand",
+        "description": "Move right pointer to expand the range.",
+        "state": {
+          "left": 0,
+          "right": 2
+        }
+      },
+      {
+        "action": "Shrink",
+        "description": "Slide the window forward: shift left boundary.",
+        "state": {
+          "left": 1,
+          "right": 3
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+  },
+  "variants": [
+    {
+      "name": "Fixed-size Range",
+      "description": "The sliding bounds maintain a constant diameter throughout execution."
+    },
+    {
+      "name": "Variable-size Range",
+      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Off-by-One Range Limit",
+      "description": "Failing to validate boundary bounds before checking element values."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "related_patterns": [
+    "two-pointers",
+    "fast-slow-pointers"
+  ],
+  "question_ladder": [
+    {
+      "title": "LinkedList Cycle",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/linked-list-cycle/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Start of LinkedList Cycle",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/linked-list-cycle-ii/",
+      "type": "Medium"
+    },
+    {
+      "title": "Happy Number",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/happy-number/",
+      "type": "Medium"
+    },
+    {
+      "title": "Middle of the LinkedList",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/middle-of-the-linked-list/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Palindrome LinkedList",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/palindrome-linked-list/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Rearrange a LinkedList",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/reorder-list/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Cycle in a Circular Array",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/circular-array-loop/",
+      "type": "Classic"
+    }
+  ],
+  "cheat_sheet": [
+    "Always verify if the array is sorted.",
+    "Check if contiguous subsegments are required."
+  ]
+}

@@ -1,0 +1,276 @@
+{
+  "patterns": [
+    {
+      "pattern_name": "Sliding Window",
+      "slug": "sliding-window",
+      "difficulty": "Beginner",
+      "family_name": "Pointers",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 11
+    },
+    {
+      "pattern_name": "Two Pointers",
+      "slug": "two-pointers",
+      "difficulty": "Beginner",
+      "family_name": "Pointers",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 11
+    },
+    {
+      "pattern_name": "Fast & Slow pointers",
+      "slug": "fast-slow-pointers",
+      "difficulty": "Intermediate",
+      "family_name": "Pointers",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 7
+    },
+    {
+      "pattern_name": "Pattern 4  Merge Intervals",
+      "slug": "pattern-4-merge-intervals",
+      "difficulty": "Intermediate",
+      "family_name": "Algorithms",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 6
+    },
+    {
+      "pattern_name": "Cyclic Sort",
+      "slug": "cyclic-sort",
+      "difficulty": "Intermediate",
+      "family_name": "Sorting",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 8
+    },
+    {
+      "pattern_name": "In-place Reversal of a LinkedList",
+      "slug": "in-place-reversal-of-a-linkedlist",
+      "difficulty": "Intermediate",
+      "family_name": "LinkedLists",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 5
+    },
+    {
+      "pattern_name": "Tree Breadth First Search",
+      "slug": "tree-breadth-first-search",
+      "difficulty": "Intermediate",
+      "family_name": "Trees",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 9
+    },
+    {
+      "pattern_name": "Tree Depth First Search (DFS)",
+      "slug": "tree-depth-first-search-dfs",
+      "difficulty": "Intermediate",
+      "family_name": "Algorithms",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 7
+    },
+    {
+      "pattern_name": "Two Heaps",
+      "slug": "two-heaps",
+      "difficulty": "Intermediate",
+      "family_name": "Heaps",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 4
+    },
+    {
+      "pattern_name": "Subsets",
+      "slug": "subsets",
+      "difficulty": "Intermediate",
+      "family_name": "Backtracking",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 9
+    },
+    {
+      "pattern_name": "Modified Binary Search",
+      "slug": "modified-binary-search",
+      "difficulty": "Intermediate",
+      "family_name": "Binary Search",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 10
+    },
+    {
+      "pattern_name": "Bitwise XOR",
+      "slug": "bitwise-xor",
+      "difficulty": "Intermediate",
+      "family_name": "Bitwise",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 4
+    },
+    {
+      "pattern_name": "Top 'K' Elements",
+      "slug": "top-k-elements",
+      "difficulty": "Intermediate",
+      "family_name": "Heaps",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 14
+    },
+    {
+      "pattern_name": "K-way merge",
+      "slug": "k-way-merge",
+      "difficulty": "Intermediate",
+      "family_name": "Heaps",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 6
+    },
+    {
+      "pattern_name": "0-1 Knapsack (Dynamic Programming)",
+      "slug": "0-1-knapsack-dynamic-programming",
+      "difficulty": "Intermediate",
+      "family_name": "Dynamic Programming",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 6
+    },
+    {
+      "pattern_name": "🔎 Pattern 16 Topological Sort (Graph)",
+      "slug": "pattern-16-topological-sort-graph",
+      "difficulty": "Intermediate",
+      "family_name": "Algorithms",
+      "recognition_signals": [
+        "array of contiguous elements",
+        "minimum size subarray",
+        "sliding range constraints"
+      ],
+      "variants": [
+        "Fixed-size Range",
+        "Variable-size Range"
+      ],
+      "companies": [],
+      "questions_count": 7
+    }
+  ]
+}

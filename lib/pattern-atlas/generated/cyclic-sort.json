@@ -1,0 +1,141 @@
+{
+  "pattern_name": "Cyclic Sort",
+  "slug": "cyclic-sort",
+  "difficulty": "Intermediate",
+  "family_name": "Sorting",
+  "overview": "This pattern describes an interesting approach to deal with problems involving arrays containing numbers in a given range.\n\n### For example, take the following problem:\n\n> You are given an unsorted array containing numbers taken from the range `1` to `n` The array can have duplicates, which means that some numbers will be missing. Find all the missing numbers.\n\nTo efficiently solve this problem, we can use the fact that the input array contains numbers in the range of `1` to `n`.\nFor example, to efficiently sort the array, we can try placing each number in its correct place, i.e., placing `1` at index `0`, placing `2` at index `1`, and so on. Once we are done with the sorting, we can iterate the array to find all indices that are missing the correct numbers. These will be our required numbers.",
+  "recognition_signals": [
+    "array of contiguous elements",
+    "minimum size subarray",
+    "sliding range constraints"
+  ],
+  "mental_model": {
+    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
+    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
+    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
+    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+  },
+  "visualization_metadata": {
+    "type": "array-pointers",
+    "initial_state": {
+      "array": [
+        1,
+        3,
+        2,
+        6,
+        -1,
+        4
+      ],
+      "window_size": 3
+    },
+    "animation_steps": [
+      {
+        "action": "Initialize",
+        "description": "Initialize left and right boundaries at index 0.",
+        "state": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Expand",
+        "description": "Move right pointer to expand the range.",
+        "state": {
+          "left": 0,
+          "right": 2
+        }
+      },
+      {
+        "action": "Shrink",
+        "description": "Slide the window forward: shift left boundary.",
+        "state": {
+          "left": 1,
+          "right": 3
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+  },
+  "variants": [
+    {
+      "name": "Fixed-size Range",
+      "description": "The sliding bounds maintain a constant diameter throughout execution."
+    },
+    {
+      "name": "Variable-size Range",
+      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Off-by-One Range Limit",
+      "description": "Failing to validate boundary bounds before checking element values."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "related_patterns": [
+    "two-pointers",
+    "fast-slow-pointers"
+  ],
+  "question_ladder": [
+    {
+      "title": "Cyclic Sort",
+      "difficulty": "Easy",
+      "link": "",
+      "type": "Introductory"
+    },
+    {
+      "title": "Find the Missing Number",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/missing-number/",
+      "type": "Medium"
+    },
+    {
+      "title": "Find all Missing Numbers",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/",
+      "type": "Medium"
+    },
+    {
+      "title": "Find the Duplicate Number",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/find-the-duplicate-number/",
+      "type": "Medium"
+    },
+    {
+      "title": "Find all Duplicate Numbers",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/find-all-duplicates-in-an-array/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Find the Corrupt Pair",
+      "difficulty": "Easy",
+      "link": "",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Find the Smallest Missing Positive Number",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/first-missing-positive/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Find the First K Missing Positive Numbers",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/kth-missing-positive-number/",
+      "type": "Classic"
+    }
+  ],
+  "cheat_sheet": [
+    "Always verify if the array is sorted.",
+    "Check if contiguous subsegments are required."
+  ]
+}

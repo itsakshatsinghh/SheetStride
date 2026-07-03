@@ -1,0 +1,159 @@
+{
+  "pattern_name": "Sliding Window",
+  "slug": "sliding-window",
+  "difficulty": "Beginner",
+  "family_name": "Pointers",
+  "overview": "In many problems dealing with an array (or a <b>LinkedList</b>), we are asked to find or calculate something among all the contiguous subarrays (or sublists) of a given size. For example, take a look at this problem:\n\n### Find Averages of Sub Arrays\nhttps://leetcode.com/problems/maximum-average-subarray-i/\n\n> Given an array, find the average of all contiguous subarrays of size `K` in it.\n\nLets understand this problem with a real input:\n\n`Array: [1, 3, 2, 6, -1, 4, 1, 8, 2], K=5`\n\nA <b>brute-force</b> algorithm will calculate the sum of every 5-element contiguous subarray of the given array and divide the sum by 5 to find the average.\n\n````js\nfunction findAvgOfSubarrays(arr, K) {\n  const results = []\n  \n  for(let i = 0; i < arr.length - K + 1; i++) {\n    let sum = 0\n    \n    for(let j = i; j < i + K; j++) {\n      sum += arr[j]\n    }\n    results.push(sum/K)  \n  }\n  return results\n}\n\n\nfindAvgOfSubarrays([1, 3, 2, 6, -1, 4, 1, 8, 2], 5)\n````\n\n<b>Time complexity: </b> Since for every element of the input array, we are calculating the sum of its next `K` elements, the time complexity of the above algorithm will be `O(N*K)` where `N` is the number of elements in the input array.\n\n#### Can we find a better solution? Do you see any inefficiency in the above approach?\n\nThe inefficiency is that for any two consecutive subarrays of size `5`, the overlapping part (which will contain four elements) will be evaluated twice.\n\nThe efficient way to solve this problem would be to visualize each contiguous subarray as a <i>sliding window</i> of `5` elements. This means that we will slide the window by one element when we move on to the next subarray. To reuse the sum from the previous subarray, we will subtract the element going out of the window and add the element now being included in the <i>sliding window</i>. This will save us from going through the whole subarray to find the sum and, as a result, the algorithm complexity will reduce to `O(N)`.\n\nHere is the algorithm for the <b>Sliding Window</b> approach:\n````js\nfunction findAveragesOfSubarrays(arr, k) {\n  //sliding window approach\n  \n  const results = []\n  let windowSum = 0\n  let windowStart = 0\n  \n  for(let windowEnd = 0; windowEnd < arr.length; windowEnd++) {\n    //add the next element\n    windowSum += arr[windowEnd]\n    \n    //slide the window forward \n    //we don't need to slide if we have not hit the required window size of k\n    \n    if (windowEnd >= k - 1) {\n      //we are **AUTOMATICALLY** returning the window average once we hit the window size of k\n      //and pushing to the output array\n      results.push(windowSum/k)\n      \n      //subtracting the element going out\n      windowSum -= arr[windowStart]\n      \n      //then sliding the window forward\n      windowStart++\n      \n      //adding the element coming in, in the outer/previous loop\n      //and repeating this process until we hit the end of the array\n    } \n  }\n  return results\n}\n\nfindAveragesOfSubarrays([1, 3, 2, 6, -1, 4, 1, 8, 2], 5)//[2.2, 2.8, 2.4, 3.6, 2.8]\n````",
+  "recognition_signals": [
+    "array of contiguous elements",
+    "minimum size subarray",
+    "sliding range constraints"
+  ],
+  "mental_model": {
+    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
+    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
+    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
+    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+  },
+  "visualization_metadata": {
+    "type": "array-pointers",
+    "initial_state": {
+      "array": [
+        1,
+        3,
+        2,
+        6,
+        -1,
+        4
+      ],
+      "window_size": 3
+    },
+    "animation_steps": [
+      {
+        "action": "Initialize",
+        "description": "Initialize left and right boundaries at index 0.",
+        "state": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Expand",
+        "description": "Move right pointer to expand the range.",
+        "state": {
+          "left": 0,
+          "right": 2
+        }
+      },
+      {
+        "action": "Shrink",
+        "description": "Slide the window forward: shift left boundary.",
+        "state": {
+          "left": 1,
+          "right": 3
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+  },
+  "variants": [
+    {
+      "name": "Fixed-size Range",
+      "description": "The sliding bounds maintain a constant diameter throughout execution."
+    },
+    {
+      "name": "Variable-size Range",
+      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Off-by-One Range Limit",
+      "description": "Failing to validate boundary bounds before checking element values."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "related_patterns": [
+    "two-pointers",
+    "fast-slow-pointers"
+  ],
+  "question_ladder": [
+    {
+      "title": "Maximum Sum Subarray of Size K",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/largest-subarray-length-k/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Smallest Subarray with a given sum",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/minimum-size-subarray-sum/",
+      "type": "Medium"
+    },
+    {
+      "title": "Longest Substring with K Distinct Characters",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/longest-substring-with-at-most-k-distinct-characters/",
+      "type": "Medium"
+    },
+    {
+      "title": "Fruits into Baskets",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/fruit-into-baskets/",
+      "type": "Medium"
+    },
+    {
+      "title": "No-repeat Substring",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/longest-substring-without-repeating-characters/",
+      "type": "Advanced"
+    },
+    {
+      "title": "Longest Substring with Same Letters after Replacement",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/longest-repeating-character-replacement/",
+      "type": "Advanced"
+    },
+    {
+      "title": "Longest Subarray with Ones after Replacement",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/max-consecutive-ones-iii/",
+      "type": "Advanced"
+    },
+    {
+      "title": "🌟 Permutation in a String",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/permutation-in-string/",
+      "type": "Advanced"
+    },
+    {
+      "title": "🌟 String Anagrams",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/find-all-anagrams-in-a-string/",
+      "type": "Advanced"
+    },
+    {
+      "title": "🌟 Smallest Window containing Substring",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/minimum-window-substring/",
+      "type": "Advanced"
+    },
+    {
+      "title": "🌟 Words Concatenation",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/substring-with-concatenation-of-all-words/",
+      "type": "Classic"
+    }
+  ],
+  "cheat_sheet": [
+    "Always verify if the array is sorted.",
+    "Check if contiguous subsegments are required."
+  ]
+}

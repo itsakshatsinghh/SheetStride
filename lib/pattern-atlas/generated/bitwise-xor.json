@@ -1,0 +1,117 @@
+{
+  "pattern_name": "Bitwise XOR",
+  "slug": "bitwise-xor",
+  "difficulty": "Intermediate",
+  "family_name": "Bitwise",
+  "overview": "<b>XOR</b> is a logical bitwise operator that returns `0` (false) if both bits are the same and returns `1` (true) otherwise. In other words, it only returns `1` if exactly one bit is set to `1` out of the two bits in comparison.\n\n|     A    |     B     |  A xor B  |\n|:---:|:---:|:---:|\n| 0|0|0|\n| 0|1|1|\n| 1|0|1|\n| 1|1|0|\n\nIt is surprising to know the approaches that the XOR operator enables us to solve certain problems. For example, let’s take a look at the following problem:\n\n> Given an array of `n-1` integers in the range from `1` to `n`, find the one number that is missing from the array.\n\nA straight forward approach to solve this problem can be:\n1. Find the sum of all integers from `1` to `n`; let’s call it `s1`.\n2. Subtract all the numbers in the input array from `s1`; this will give us the missing number.\n````js\nfunction findMissingNumber(arr) {\n  const n = arr.length + 1\n  \n  //find sum of all numbers from 1 to n\n  let s1 = 0\n  for(let i = 1; i <= n; i++) {\n    s1 += i\n  }\n  \n  //subtract all numbers in input from sum\n  arr.forEach((num) => {\n    s1 -= num\n  })\n  \n  //s1, is now the missing number\n  return s1\n}\n\nfindMissingNumber([1,5,2,6,4])//3\n````\n- The time complexity of the above algorithm is `O(n)` and the space complexity is `O(1)`.\n### What could go wrong with the above algorithm? \n> While finding the sum of numbers from `1` to `n`, we can get integer overflow when `n` is large.\n\nHow can we avoid this? Can XOR help us here?\n\nRemember the important property of XOR that it returns 0 if both the bits in comparison are the same. In other words, XOR of a number with itself will always result in 0. This means that if we XOR all the numbers in the input array with all numbers from the range `1` to `n` then each number in the input is going to get zeroed out except the missing number. Following are the set of steps to find the missing number using XOR:\n1. XOR all the numbers from `1` to `n`, let’s call it `x1`.\n2. XOR all the numbers in the input array, let’s call it `x2`.\n3. The missing number can be found by `x1` XOR `x2`.\n````js\nfunction findMissingNumber(arr) {\n  const n = arr.length + 1\n  \n  //x1 represents XOR of all values from 1 to n\n  //find sum of all numbers from 1 to n\n  let x1 = 1\n  for(let i = 2; i <= n; i++) {\n    x1 = x1 ^ i\n  }\n  \n  //x2 represents XOR of all values in arr\n  let x2 = arr[0]\n  for(let i = 1; i < n-1; i++) {\n    x2 = x2 ^ arr[i]\n  }\n  \n  //missing number is the xor of x1 and x2\n  return x1 ^ x2\n}\n\nfindMissingNumber([1,5,2,6,4])//3\n````\n- The time complexity of the above algorithm is `O(n)` and the space complexity is `O(1)`. The time and space complexities are the same as that of the previous solution but, in this algorithm, we will not have any integer overflow problem.\n### Important properties of XOR to remember \nFollowing are some important properties of XOR to remember:\n\n- Taking XOR of a number with itself returns 0, e.g.,\n  - 1 ^ 1 = 0\n  - 29 ^ 29 = 0\n- Taking XOR of a number with 0 returns the same number, e.g.,\n  - 1 ^ 0 = 1\n  - 31 ^ 0 = 31\n- XOR is Associative & Commutative, which means:\n  - (a ^ b) ^ c = a ^ (b ^ c)\n  - a ^ b = b ^ a",
+  "recognition_signals": [
+    "array of contiguous elements",
+    "minimum size subarray",
+    "sliding range constraints"
+  ],
+  "mental_model": {
+    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
+    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
+    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
+    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+  },
+  "visualization_metadata": {
+    "type": "array-pointers",
+    "initial_state": {
+      "array": [
+        1,
+        3,
+        2,
+        6,
+        -1,
+        4
+      ],
+      "window_size": 3
+    },
+    "animation_steps": [
+      {
+        "action": "Initialize",
+        "description": "Initialize left and right boundaries at index 0.",
+        "state": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Expand",
+        "description": "Move right pointer to expand the range.",
+        "state": {
+          "left": 0,
+          "right": 2
+        }
+      },
+      {
+        "action": "Shrink",
+        "description": "Slide the window forward: shift left boundary.",
+        "state": {
+          "left": 1,
+          "right": 3
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+  },
+  "variants": [
+    {
+      "name": "Fixed-size Range",
+      "description": "The sliding bounds maintain a constant diameter throughout execution."
+    },
+    {
+      "name": "Variable-size Range",
+      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Off-by-One Range Limit",
+      "description": "Failing to validate boundary bounds before checking element values."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "related_patterns": [
+    "two-pointers",
+    "fast-slow-pointers"
+  ],
+  "question_ladder": [
+    {
+      "title": "Single Number",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/single-number/",
+      "type": "Introductory"
+    },
+    {
+      "title": "\ude15 Two Single Numbers",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/single-number-iii/",
+      "type": "Medium"
+    },
+    {
+      "title": "\ude15 Complement of Base 10 Number",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/complement-of-base-10-integer/",
+      "type": "Medium"
+    },
+    {
+      "title": "🌟 Flip Binary Matrix",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/flipping-an-image/",
+      "type": "Classic"
+    }
+  ],
+  "cheat_sheet": [
+    "Always verify if the array is sorted.",
+    "Check if contiguous subsegments are required."
+  ]
+}

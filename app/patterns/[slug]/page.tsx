@@ -1,295 +1,304 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Cpu, Tag, AlertCircle, RefreshCw, Layers } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import fs from "fs";
+import path from "path";
+import { ChevronRight, Cpu, Tag, AlertCircle, Layers, Play, CheckCircle, Activity, ShieldAlert, Award } from "lucide-react";
 import { AppShell } from "@/components/app/shell";
-import { getPatternBySlug } from "@/lib/metadata";
-import { slugifyPattern, slugifyTopic } from "@/lib/slugs";
 import { PatternQuestionsClient } from "./pattern-questions-client";
-
-export const dynamic = "force-static";
-export const revalidate = 86400; // 24 hours
+import { PatternDetails } from "@/lib/pattern-atlas/types/pattern";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-const getKeywordsArray = (keywords: any): string[] => {
-  if (!keywords) return [];
-  if (Array.isArray(keywords)) return keywords;
-  try {
-    const parsed = JSON.parse(keywords);
-    if (Array.isArray(parsed)) return parsed;
-  } catch (e) {}
-  return [];
-};
+export const dynamic = "force-static";
 
-// Optimized dynamic metadata retrieval
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
-  const pattern = await getPatternBySlug(resolvedParams.slug);
+  const slug = resolvedParams.slug;
+  const filePath = path.join(process.cwd(), "lib", "pattern-atlas", "generated", `${slug}.json`);
 
-  if (!pattern) {
-    return {
-      title: "Pattern Not Found | SheetStride",
-    };
+  if (!fs.existsSync(filePath)) {
+    return { title: "Pattern Not Found | SheetStride" };
   }
 
-  const trimmedDesc = pattern.core_idea
-    ? pattern.core_idea.substring(0, 155) + "..."
-    : "Explore this algorithmic coding pattern, view C++ templates, and practice questions.";
-
-  return {
-    title: `${pattern.pattern_name} Coding Pattern: Code Templates & Complexity | SheetStride`,
-    description: trimmedDesc,
-    keywords: getKeywordsArray(pattern.recognition_keywords),
-    alternates: {
-      canonical: `https://sheetstride.com/patterns/${resolvedParams.slug}`,
-    },
-    openGraph: {
-      title: `${pattern.pattern_name} Coding Pattern | SheetStride`,
-      description: trimmedDesc,
-      type: "article",
-      url: `https://sheetstride.com/patterns/${resolvedParams.slug}`,
-    },
-  };
+  try {
+    const pattern: PatternDetails = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    return {
+      title: `${pattern.pattern_name} Coding Pattern: Visuals & Complexity | SheetStride`,
+      description: pattern.overview.substring(0, 155) + "...",
+      keywords: pattern.recognition_signals,
+    };
+  } catch {
+    return { title: "Pattern Details | SheetStride" };
+  }
 }
 
 export async function generateStaticParams() {
-  const { data: patterns } = await supabase
-    .from("pattern_metadata")
-    .select("pattern_name");
-
-  if (!patterns) return [];
-
-  return patterns.map((p) => ({
-    slug: slugifyPattern(p.pattern_name),
+  const dir = path.join(process.cwd(), "lib", "pattern-atlas", "generated");
+  if (!fs.existsSync(dir)) return [];
+  const files = fs.readdirSync(dir).filter(f => f.endsWith(".json") && f !== "atlas-index.json");
+  return files.map((f) => ({
+    slug: f.replace(".json", ""),
   }));
 }
 
 export default async function PatternDetailPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const pattern = await getPatternBySlug(resolvedParams.slug);
+  const slug = resolvedParams.slug;
+  const filePath = path.join(process.cwd(), "lib", "pattern-atlas", "generated", `${slug}.json`);
 
-  if (!pattern) {
+  if (!fs.existsSync(filePath)) {
     notFound();
   }
 
-  const keywords = getKeywordsArray(pattern.recognition_keywords);
-
-  // 1. Fetch related questions from view_sheet_questions (build-time query)
-  const { data: questions, error: questionsError } = await supabase
-    .from("view_sheet_questions")
-    .select("*")
-    .eq("pattern_name", pattern.pattern_name)
-    .order("Sheet_order", { ascending: true });
-
-  if (questionsError) {
-    console.error("Failed to load questions for pattern:", questionsError);
+  let pattern: PatternDetails;
+  try {
+    pattern = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch (err) {
+    console.error("Failed to parse pattern JSON:", err);
+    notFound();
   }
 
-  // 2. Query sibling patterns for "Related Patterns" (same topic)
-  let relatedPatterns: any[] = [];
-  if (pattern.topic_name) {
-    const { data: siblings } = await supabase
-      .from("pattern_metadata")
-      .select("pattern_name, core_idea, difficulty")
-      .eq("topic_name", pattern.topic_name)
-      .neq("pattern_name", pattern.pattern_name)
-      .limit(3);
-    
-    relatedPatterns = siblings || [];
-  }
-
-  // JSON-LD Structured Data Schema for SEO
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "TechArticle",
-    "headline": `${pattern.pattern_name} Coding Pattern`,
-    "description": pattern.core_idea || "",
-    "inLanguage": "en",
-    "programmingLanguage": {
-      "@type": "ComputerLanguage",
-      "name": "C++"
-    },
-    "dependencies": "LeetCode, Data Structures & Algorithms",
-    "about": keywords.map(kw => ({
-      "@type": "Thing",
-      "name": kw
-    }))
-  };
+  // Map search schema to match expected checklist components
+  const mappedQuestions = pattern.question_ladder.map((q, index) => ({
+    Sheet_order: index + 1,
+    question_id: q.question_id || (9999 + index),
+    title: q.title,
+    difficulty: q.difficulty,
+    link: q.link,
+    topics: pattern.family_name,
+    acceptance_rate: null
+  }));
 
   return (
     <AppShell className="max-w-container-max mx-auto px-gutter py-6" gridBackground>
-      {/* Inject JSON-LD Schema markup */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
       {/* Breadcrumbs HUD */}
-      <nav className="flex items-center gap-2 mb-6 text-on-surface-variant font-mono-label text-mono-label uppercase tracking-widest text-[11px] overflow-x-auto whitespace-nowrap">
+      <nav className="flex items-center gap-2 mb-6 text-on-surface-variant font-mono-label text-mono-label uppercase tracking-widest text-[11px] overflow-x-auto whitespace-nowrap select-none">
         <Link href="/" className="hover:text-primary transition-colors">HOME</Link>
         <ChevronRight className="h-3 w-3 text-outline/40 flex-shrink-0" />
-        <Link href="/patterns" className="hover:text-primary transition-colors">PATTERNS</Link>
-        {pattern.topic_name && (
-          <>
-            <ChevronRight className="h-3 w-3 text-outline/40 flex-shrink-0" />
-            <Link 
-              href={`/topics/${slugifyTopic(pattern.topic_name)}`}
-              className="hover:text-primary transition-colors"
-            >
-              {pattern.topic_name.replace(/^[A-Z]+\.\s+/, "").toUpperCase()}
-            </Link>
-          </>
-        )}
+        <Link href="/patterns" className="hover:text-primary transition-colors">PATTERN_ATLAS</Link>
         <ChevronRight className="h-3 w-3 text-outline/40 flex-shrink-0" />
         <span className="text-on-surface">{pattern.pattern_name.toUpperCase()}</span>
       </nav>
 
-      {/* Pattern Title Block */}
-      <header className="mb-10">
+      {/* Hero Header */}
+      <header className="mb-10 relative overflow-hidden bg-[#111111]/40 border border-outline-variant/20 p-6 rounded-xl backdrop-blur-md">
+        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none">
+          <Layers className="h-32 w-32" />
+        </div>
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          {pattern.topic_name && (
-            <span className="px-2.5 py-0.5 bg-[#111111] border border-primary-strong/30 text-primary font-mono-label text-[10px] tracking-wider uppercase rounded">
-              {pattern.topic_name.split(".")[1]?.trim() || pattern.topic_name}
-            </span>
-          )}
-          {pattern.difficulty && (
-            <span className={`text-[10px] font-mono-label uppercase px-2.5 py-0.5 rounded border tracking-wider ${
-              pattern.difficulty === "Easy" ? "bg-secondary/5 border-secondary/20 text-secondary" :
-              pattern.difficulty === "Medium" ? "bg-primary/5 border-primary/20 text-primary" :
-              "bg-danger/5 border-danger/20 text-danger"
-            }`}>
-              {pattern.difficulty}
-            </span>
-          )}
+          <span className="px-2.5 py-0.5 bg-primary/10 border border-primary/20 text-primary font-mono-label text-[10px] tracking-wider uppercase rounded">
+            {pattern.family_name}
+          </span>
+          <span className={`text-[10px] font-mono-label uppercase px-2.5 py-0.5 rounded border tracking-wider ${
+            pattern.difficulty === "Beginner" ? "bg-secondary/5 border-secondary/20 text-secondary" :
+            pattern.difficulty === "Intermediate" ? "bg-primary/5 border-primary/20 text-primary" :
+            "bg-danger/5 border-danger/20 text-danger"
+          }`}>
+            {pattern.difficulty}
+          </span>
         </div>
         <h1 className="font-display-arcade text-2xl md:text-3xl text-on-surface tracking-widest uppercase">
           {pattern.pattern_name}
         </h1>
       </header>
 
-      {/* Two Column Grid */}
+      {/* Two Column Main Split */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Main Content Area (2 Cols wide) */}
+        {/* Main Content (2 Cols) */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* Core Concept Overview */}
+          {/* Overview */}
           <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-3 flex items-center gap-1.5 opacity-30 text-[10px] font-mono">
-              <Layers className="h-3.5 w-3.5" />
-              <span>CORE_BLUEPRINT</span>
-            </div>
-            <h2 className="font-mono text-outline uppercase tracking-widest text-[12px] mb-4">CORE_IDEA</h2>
+            <h2 className="font-mono text-outline uppercase tracking-widest text-[11px] mb-4">01 // OVERVIEW</h2>
             <p className="font-body text-text leading-relaxed text-sm whitespace-pre-line">
-              {pattern.core_idea || "No conceptual explanation provided yet."}
+              {pattern.overview}
             </p>
-
-            {/* Keyword Tags */}
-            {keywords.length > 0 && (
-              <div className="mt-6 pt-4 border-t border-outline-variant/15">
-                <span className="block font-mono text-[10px] text-outline/50 uppercase tracking-widest mb-2">RECOGNITION_SIGNALS</span>
-                <div className="flex flex-wrap gap-2">
-                  {keywords.map((word, i) => (
-                    <span key={i} className="text-xs font-mono bg-[#090909] border border-outline-variant/20 px-3 py-1 rounded text-outline-variant">
-                      {word}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </section>
 
-          {/* Practice Questions (Client-Hydrated Toggle Overlay) */}
-          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl">
-            <h2 className="font-mono text-outline uppercase tracking-widest text-[12px] mb-4">PRACTICE_QUESTIONS</h2>
-            <PatternQuestionsClient initialQuestions={questions || []} patternName={pattern.pattern_name} />
+          {/* Mental Model Analogy */}
+          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl space-y-4">
+            <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">02 // MENTAL_MODEL</h2>
+            <div className="bg-[#090909] border border-primary/20 p-4 rounded-lg flex gap-4 items-start">
+              <Award className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="font-mono text-xs text-primary font-bold uppercase tracking-wider mb-2">ANALOGY: {pattern.mental_model.analogy}</h3>
+                <p className="font-body text-xs text-on-surface-variant leading-relaxed">
+                  {pattern.mental_model.description}
+                </p>
+              </div>
+            </div>
           </section>
 
-          {/* C++ Code Template */}
-          {pattern.cpp_template && (
-            <section className="bg-[#111111] border border-outline-variant/30 rounded-xl overflow-hidden">
-              <div className="bg-[#090909] border-b border-outline-variant/20 px-6 py-3 flex justify-between items-center">
-                <span className="font-mono text-outline uppercase tracking-widest text-[11px]">C++ CODE TEMPLATE</span>
-                <span className="font-mono text-[10px] text-primary-strong">CPP_STDLIB</span>
+          {/* Brute Force to Optimal Journey */}
+          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl space-y-4">
+            <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">03 // OPTIMIZATION_JOURNEY</h2>
+            <div className="space-y-4">
+              <div className="border border-outline-variant/15 p-4 rounded-lg bg-[#090909]/40">
+                <span className="block font-mono text-[9px] text-danger uppercase tracking-widest mb-1">BRUTE_FORCE</span>
+                <p className="font-body text-xs text-on-surface-variant leading-relaxed">
+                  {pattern.brute_force_journey.brute_force_description}
+                </p>
               </div>
-              <div className="p-6 overflow-x-auto bg-[#090909]">
-                <pre className="font-mono text-xs text-text/90 leading-relaxed whitespace-pre">
-                  <code>{pattern.cpp_template}</code>
-                </pre>
+              <div className="border border-outline-variant/15 p-4 rounded-lg bg-[#090909]/40">
+                <span className="block font-mono text-[9px] text-warning uppercase tracking-widest mb-1">INEFFICIENCY_OBSERVATION</span>
+                <p className="font-body text-xs text-on-surface-variant leading-relaxed">
+                  {pattern.brute_force_journey.inefficiency_observation}
+                </p>
+              </div>
+              <div className="border border-primary-strong/20 p-4 rounded-lg bg-[#090909]/60">
+                <span className="block font-mono text-[9px] text-primary uppercase tracking-widest mb-1">OPTIMIZED_PATTERN</span>
+                <p className="font-body text-xs text-text leading-relaxed">
+                  {pattern.brute_force_journey.optimization_concept}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Boilerplate templates */}
+          <section className="bg-[#111111] border border-outline-variant/30 rounded-xl overflow-hidden">
+            <div className="bg-[#090909] border-b border-outline-variant/20 px-6 py-3 flex justify-between items-center">
+              <span className="font-mono text-outline uppercase tracking-widest text-[11px]">04 // ALGORITHM_BLUEPRINT (PYTHON)</span>
+              <span className="font-mono text-[10px] text-primary-strong">PYTHON_EXEC</span>
+            </div>
+            <div className="p-6 overflow-x-auto bg-[#090909]">
+              <pre className="font-mono text-xs text-text/90 leading-relaxed whitespace-pre">
+                <code>{pattern.polyglot_boilerplates.python}</code>
+              </pre>
+            </div>
+          </section>
+
+          {/* Variants section */}
+          {pattern.variants.length > 0 && (
+            <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl space-y-4">
+              <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">05 // PATTERN_VARIANTS</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {pattern.variants.map((v, i) => (
+                  <div key={i} className="border border-outline-variant/20 p-4 rounded-lg bg-[#090909]/40 hover:border-outline transition-colors">
+                    <h3 className="font-display font-semibold text-xs text-text uppercase tracking-wider mb-2">{v.name}</h3>
+                    <p className="font-body text-xs text-on-surface-variant leading-relaxed">
+                      {v.description}
+                    </p>
+                  </div>
+                ))}
               </div>
             </section>
           )}
-        </div>
 
-        {/* Sidebar Panel (1 Col wide) */}
-        <div className="space-y-8">
-          
-          {/* Complexity analysis card */}
-          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl space-y-5">
-            <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">COMPLEXITY_BUDGET</h2>
-            
-            <div className="flex items-center gap-4 border-b border-outline-variant/15 pb-4">
-              <div className="h-10 w-10 bg-secondary/10 border border-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Cpu className="h-5 w-5 text-secondary" />
-              </div>
-              <div>
-                <span className="block font-mono text-[9px] text-outline/60 uppercase">TIME_COMPLEXITY</span>
-                <span className="font-mono text-sm text-text font-bold uppercase">{pattern.tc || "O(?)"}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Tag className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <span className="block font-mono text-[9px] text-outline/60 uppercase">SPACE_COMPLEXITY</span>
-                <span className="font-mono text-sm text-text font-bold uppercase">{pattern.sc || "O(?)"}</span>
-              </div>
-            </div>
-          </section>
-
-          {/* Related patterns sidebar */}
-          {relatedPatterns.length > 0 && (
+          {/* Common Mistakes */}
+          {pattern.common_mistakes.length > 0 && (
             <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl space-y-4">
-              <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">RELATED_PATTERNS</h2>
-              <div className="space-y-4">
-                {relatedPatterns.map((rel) => {
-                  const relSlug = slugifyPattern(rel.pattern_name);
-                  return (
-                    <div 
-                      key={rel.pattern_name}
-                      className="group border border-outline-variant/20 hover:border-primary/50 p-4 rounded-lg bg-[#090909]/60 transition-all hover:bg-[#090909]"
-                    >
-                      <h3 className="font-display font-bold text-[13px] text-text mb-1 group-hover:text-primary transition-colors">
-                        <Link href={`/patterns/${relSlug}`}>{rel.pattern_name}</Link>
-                      </h3>
-                      <p className="text-[11px] font-body text-on-surface-variant line-clamp-2 leading-relaxed">
-                        {rel.core_idea}
+              <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">06 // COMMON_PITFALLS</h2>
+              <div className="space-y-3">
+                {pattern.common_mistakes.map((m, i) => (
+                  <div key={i} className="border border-l-4 border-danger/40 border-outline-variant/20 p-4 rounded-lg bg-danger/[0.02] flex gap-3 items-start">
+                    <ShieldAlert className="h-4 w-4 text-danger flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-mono text-xs text-danger font-bold uppercase tracking-wider mb-1">{m.mistake_title}</h3>
+                      <p className="font-body text-xs text-on-surface-variant leading-relaxed">
+                        {m.description}
                       </p>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </section>
           )}
 
-          {/* Protip/Hint HUD */}
+          {/* Practice checklist */}
+          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl">
+            <h2 className="font-mono text-outline uppercase tracking-widest text-[11px] mb-6">07 // QUESTION_JOURNEY</h2>
+            <PatternQuestionsClient initialQuestions={mappedQuestions} patternName={pattern.pattern_name} />
+          </section>
+
+        </div>
+
+        {/* Sidebar Panel (1 Col) */}
+        <div className="space-y-8">
+          
+          {/* Metadata driven visualization panel preview */}
+          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl space-y-5 relative">
+            <div className="absolute top-0 right-0 p-3 opacity-20 text-[10px] font-mono select-none">
+              <Play className="h-4.5 w-4.5" />
+            </div>
+            <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">VISUALIZATION_ENGINE</h2>
+            
+            <div className="border border-[#222222] bg-[#090909] p-4 rounded-lg font-mono text-[11px] space-y-3 text-outline/80">
+              <div className="flex justify-between border-b border-[#222222] pb-1.5">
+                <span>LAYOUT_TYPE:</span>
+                <span className="text-secondary uppercase">{pattern.visualization_metadata.type}</span>
+              </div>
+              <div className="flex justify-between border-b border-[#222222] pb-1.5">
+                <span>INITIAL_ELEMENTS:</span>
+                <span className="text-primary truncate max-w-[120px]" title={JSON.stringify(pattern.visualization_metadata.initial_state)}>
+                  {JSON.stringify(pattern.visualization_metadata.initial_state.array || "")}
+                </span>
+              </div>
+              <div className="flex justify-between border-b border-[#222222] pb-1.5">
+                <span>LOOP_FRAMES:</span>
+                <span className="text-text">{pattern.visualization_metadata.animation_steps.length} frames</span>
+              </div>
+            </div>
+
+            {/* Loop Steps preview list */}
+            <div className="space-y-3">
+              <span className="block font-mono text-[9px] text-outline/50 uppercase tracking-widest">TRAVERSAL_TIMELINE</span>
+              {pattern.visualization_metadata.animation_steps.map((step, idx) => (
+                <div key={idx} className="flex gap-3 items-start text-xs border border-outline-variant/10 p-2.5 rounded bg-[#090909]/30">
+                  <span className="font-mono text-[10px] text-primary flex-shrink-0 mt-0.5">F_0{idx}</span>
+                  <div>
+                    <span className="block font-mono text-[10px] text-text font-bold uppercase">{step.action}</span>
+                    <p className="font-body text-[11px] text-on-surface-variant leading-relaxed mt-1">
+                      {step.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Recognition keywords tags */}
+          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl space-y-4">
+            <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">RECOGNITION_SIGNALS</h2>
+            <div className="flex flex-wrap gap-2">
+              {pattern.recognition_signals.map((sig, i) => (
+                <span key={i} className="text-xs font-mono bg-[#090909] border border-outline-variant/20 px-3 py-1 rounded text-outline-variant flex items-center gap-1.5">
+                  <Tag className="h-3 w-3 text-primary-strong" />
+                  <span>{sig}</span>
+                </span>
+              ))}
+            </div>
+          </section>
+
+          {/* Cheat Sheet tips */}
+          <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl space-y-4">
+            <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">CHEV_SHEET</h2>
+            <ul className="space-y-2.5">
+              {pattern.cheat_sheet.map((tip, i) => (
+                <li key={i} className="flex gap-2.5 items-start text-xs text-on-surface-variant leading-relaxed">
+                  <CheckCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Interview tips perspective */}
           <section className="bg-primary/5 border border-primary/20 p-6 rounded-xl flex items-start gap-4">
             <AlertCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
             <div>
-              <span className="block font-mono text-[9px] text-primary uppercase tracking-widest mb-1">PRO_TIP</span>
+              <span className="block font-mono text-[9px] text-primary uppercase tracking-widest mb-1">INTERVIEW_ADVICE</span>
               <p className="font-body text-xs text-on-surface-variant leading-relaxed">
-                Study the recognition signals. Coding tests reward candidates who can categorize problems into these 94 templates within the first 5 minutes.
+                {pattern.interview_perspective}
               </p>
             </div>
           </section>
 
         </div>
+
       </div>
     </AppShell>
   );

@@ -1,0 +1,129 @@
+{
+  "pattern_name": "0-1 Knapsack (Dynamic Programming)",
+  "slug": "0-1-knapsack-dynamic-programming",
+  "difficulty": "Intermediate",
+  "family_name": "Dynamic Programming",
+  "overview": "from this [course](https://www.educative.io/courses/grokking-dynamic-programming-patterns-for-coding-interviews)\n| |\n| --------------------------------------------------------------------------------- |\n| <b>[Pattern 1: 0/1 Knapsack](#pattern-1-01-knapsack)</b> |\n| <b>[Pattern 2: Unbounded Knapsack](#pattern-2-unbounded-knapsack)</b> |\n| <b>[Pattern 3: Fibonacci Numbers](#pattern-3-fibonacci-numbers)</b> |\n| <b>[Pattern 4: Palindromic Subsequence](#pattern-4-palindromic-subsequence)</b> |\n| <b>[Pattern 5: Longest Common Substring](#pattern-5-longest-common-substring)</b> |\n\n<b>Dynamic Programming (DP)</b> is an algorithmic technique for solving an optimization problem by breaking it down into simpler subproblems and utilizing the fact that the optimal solution to the overall problem depends upon the optimal solution to its subproblems.\n\nLet’s take the example of the <b>Fibonacci numbers</b>. As we all know, <i>Fibonacci numbers</i> are a series of numbers in which each number is the sum of the two preceding numbers. The first few <i>Fibonacci numbers</i> are `0, 1, 1, 2, 3, 5, and 8`, and they continue on from there.\n\nIf we are asked to calculate the nth Fibonacci number, we can do that with the following equation,\n\n```js\nFib(n) = Fib(n-1) + Fib(n-2), for n > 1\n```\n\nAs we can clearly see here, to solve the overall problem (i.e. `Fib(n)`), we broke it down into two smaller subproblems (which are `Fib(n-1)` and `Fib(n-2)`). This shows that we can use <b>DP</b> to solve this problem.",
+  "recognition_signals": [
+    "array of contiguous elements",
+    "minimum size subarray",
+    "sliding range constraints"
+  ],
+  "mental_model": {
+    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
+    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
+    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
+    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+  },
+  "visualization_metadata": {
+    "type": "array-pointers",
+    "initial_state": {
+      "array": [
+        1,
+        3,
+        2,
+        6,
+        -1,
+        4
+      ],
+      "window_size": 3
+    },
+    "animation_steps": [
+      {
+        "action": "Initialize",
+        "description": "Initialize left and right boundaries at index 0.",
+        "state": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Expand",
+        "description": "Move right pointer to expand the range.",
+        "state": {
+          "left": 0,
+          "right": 2
+        }
+      },
+      {
+        "action": "Shrink",
+        "description": "Slide the window forward: shift left boundary.",
+        "state": {
+          "left": 1,
+          "right": 3
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+  },
+  "variants": [
+    {
+      "name": "Fixed-size Range",
+      "description": "The sliding bounds maintain a constant diameter throughout execution."
+    },
+    {
+      "name": "Variable-size Range",
+      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Off-by-One Range Limit",
+      "description": "Failing to validate boundary bounds before checking element values."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "related_patterns": [
+    "two-pointers",
+    "fast-slow-pointers"
+  ],
+  "question_ladder": [
+    {
+      "title": "0/1 Knapsack",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/maximum-earnings-from-taxi/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Equal Subset Sum Partition",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/partition-equal-subset-sum/",
+      "type": "Medium"
+    },
+    {
+      "title": "Subset Sum",
+      "difficulty": "Medium",
+      "link": "",
+      "type": "Medium"
+    },
+    {
+      "title": "Minimum Subset Sum Difference",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/partition-array-into-two-arrays-to-minimize-sum-difference/",
+      "type": "Advanced"
+    },
+    {
+      "title": "🌟Count of Subset Sum",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/combination-sum/",
+      "type": "Advanced"
+    },
+    {
+      "title": "🌟 Target Sum",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/target-sum/",
+      "type": "Classic"
+    }
+  ],
+  "cheat_sheet": [
+    "Always verify if the array is sorted.",
+    "Check if contiguous subsegments are required."
+  ]
+}

@@ -191,14 +191,15 @@ Keep these technical quirks in mind during development:
 *   Analytics Dashboard (Heatmap, Weekly Throughput, SVG Radial Mastery Gauges)
 *   Razorpay Order & Signature Verification API handlers
 *   Streak Calculations (Current & Peak)
-*   Spaced Repetition Revision Engine (Initial Solve Reflection, scheduling multipliers, Revisions Queue dashboard tab, tabbed Spaced Repetition panel on Progress page, and Early Practice checks to preserve scheduled future due dates during early attempts)
-*   Interview Notebook, History Log & LeetCode Description Drawer (Drawer tabs, editable text blocks, chronological log viewer, interactive description display, collapsible hints accordion, like/dislike stats, and back navigation controls)
-*   Submission Calendar HUD (Progress page calendar grid displaying past solves and revision cards, styled with distinguishable cyber yellow borders and background highlights)
+*   Spaced Repetition Revision Engine (Initial Solve Reflection, scheduling multipliers, Revisions Queue dashboard tab, tabbed Spaced Repetition panel on Progress page, Early Practice checks to preserve scheduled future due dates, and LeetCode Premium skip support to bypass revision scheduling entirely)
+*   Interview Notebook, History Log & LeetCode Description Drawer (Single "My Approach" strategy notebook mapping to `biggest_takeaway` database column, chronological log viewer, interactive description display, collapsible hints accordion, like/dislike stats, and back navigation controls)
+*   Submission Calendar HUD & Redesigned Progress Cards (Progress page calendar grid displaying past solves with PREMIUM labels for premium-skipped logs, redesigned telemetry stats deck combining streaks, weakest node, and peak activity cycle, and high-fidelity monospace DSA modules progress table)
 *   Client-Side Caching layer (`fetchWithCache` across Questions Hub, Profile, Progress, LeetCode descriptions with 24hr TTL, and LeetCode Universe with dynamic auto-invalidation, decached dashboard queries)
 *   Layout-matched Skeleton UI loaders (shimmer placeholders matching cards, grids, tables, Submission Calendar grid, and problem description layout blocks across all hydration pages)
 *   Yellow snowfall backdrop canvas on pitch-black login UI (with amber brand border controls)
 *   Corrected live stats sync proxy routes `/api/leetcode-contests` and live `/cleanUsername/profile` query sanitizers
 *   Postgres manual join helpers on progress retrieval ranges
+*   Pattern Atlas Ingestion Engine & UI Pages (CLI compiler, search indexing, Zod schemas, API preview routes, and `/patterns` and `/patterns/[slug]` layouts)
 
 ### 🟡 In Progress
 *   Pattern Handbook Boilerplates (Expanding C++ to Python and Java templates)

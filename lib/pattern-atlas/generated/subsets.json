@@ -1,0 +1,147 @@
+{
+  "pattern_name": "Subsets",
+  "slug": "subsets",
+  "difficulty": "Intermediate",
+  "family_name": "Backtracking",
+  "overview": "A huge number of coding interview problems involve dealing with <b>Permutations</b> and <b>Combinations</b> of a given set of elements. This pattern describes an efficient <b>Breadth First Search (BFS)</b> approach to handle all these problems.",
+  "recognition_signals": [
+    "array of contiguous elements",
+    "minimum size subarray",
+    "sliding range constraints"
+  ],
+  "mental_model": {
+    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
+    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
+    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
+    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+  },
+  "visualization_metadata": {
+    "type": "array-pointers",
+    "initial_state": {
+      "array": [
+        1,
+        3,
+        2,
+        6,
+        -1,
+        4
+      ],
+      "window_size": 3
+    },
+    "animation_steps": [
+      {
+        "action": "Initialize",
+        "description": "Initialize left and right boundaries at index 0.",
+        "state": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Expand",
+        "description": "Move right pointer to expand the range.",
+        "state": {
+          "left": 0,
+          "right": 2
+        }
+      },
+      {
+        "action": "Shrink",
+        "description": "Slide the window forward: shift left boundary.",
+        "state": {
+          "left": 1,
+          "right": 3
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+  },
+  "variants": [
+    {
+      "name": "Fixed-size Range",
+      "description": "The sliding bounds maintain a constant diameter throughout execution."
+    },
+    {
+      "name": "Variable-size Range",
+      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Off-by-One Range Limit",
+      "description": "Failing to validate boundary bounds before checking element values."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "related_patterns": [
+    "two-pointers",
+    "fast-slow-pointers"
+  ],
+  "question_ladder": [
+    {
+      "title": "Subsets",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/subsets/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Subsets With Duplicates",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/subsets-ii/",
+      "type": "Medium"
+    },
+    {
+      "title": "Permutations",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/permutations/",
+      "type": "Medium"
+    },
+    {
+      "title": "String Permutations by changing case",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/letter-case-permutation/",
+      "type": "Medium"
+    },
+    {
+      "title": "Balanced Parentheses",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/generate-parentheses/",
+      "type": "Advanced"
+    },
+    {
+      "title": "\ude15 Unique Generalized Abbreviations",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/generalized-abbreviation/",
+      "type": "Advanced"
+    },
+    {
+      "title": "🌟 Evaluate Expression",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/different-ways-to-add-parentheses/",
+      "type": "Advanced"
+    },
+    {
+      "title": "🌟 Structurally Unique Binary Search Trees",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/unique-binary-search-trees-ii/",
+      "type": "Advanced"
+    },
+    {
+      "title": "🌟 Count of Structurally Unique Binary Search Trees",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/unique-binary-search-trees/",
+      "type": "Classic"
+    }
+  ],
+  "cheat_sheet": [
+    "Always verify if the array is sorted.",
+    "Check if contiguous subsegments are required."
+  ]
+}
