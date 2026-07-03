@@ -139,6 +139,7 @@ export function PatternQuestionsClient({
   const formatSolvedDate = (qId: number) => {
     const isoStr = solvedTimestamps[qId];
     if (!isoStr) return "-";
+    if (isoStr.startsWith("1970-01-01")) return "PREMIUM";
     const dateObj = new Date(isoStr);
     return dateObj.toLocaleDateString("en-US", {
       month: "short",

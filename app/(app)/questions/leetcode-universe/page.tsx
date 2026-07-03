@@ -327,6 +327,7 @@ function QuestionsList() {
   const getRelativeTime = (qId: number) => {
     const isoStr = solvedTimestamps[qId];
     if (!isoStr) return "Never";
+    if (isoStr.startsWith("1970-01-01")) return "PREMIUM";
     
     const diff = new Date().getTime() - new Date(isoStr).getTime();
     const mins = Math.floor(diff / 60000);

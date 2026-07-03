@@ -418,22 +418,23 @@ export default function ProgressPage() {
           <motion.div 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:border-[#FFD400]"
+            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:border-[#FFD400] hover:shadow-[0_0_20px_rgba(255,212,0,0.07)]"
           >
             <div>
-              <header className="flex justify-between items-center border-b border-[#2D2D2D] pb-4 mb-4 select-none">
-                <div>
-                  <h2 className="font-headline-md text-base text-on-surface font-bold uppercase tracking-wide flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary">sync</span> Spaced Repetition Engine
+              <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#2D2D2D] pb-4 mb-4 select-none">
+                <div className="space-y-1">
+                  <h2 className="font-headline-md text-sm text-on-surface font-bold uppercase tracking-wide flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FFC700] animate-pulse shadow-[0_0_8px_#FFC700]" />
+                    Spaced Repetition Engine
                   </h2>
-                  <p className="font-body-sm text-[11px] text-on-surface-variant">Practice scheduled loops to solidify algorithmic patterns.</p>
+                  <p className="font-body-sm text-[10px] text-outline uppercase font-semibold">Practice scheduled loops to solidify algorithmic patterns.</p>
                 </div>
-                <div className="flex bg-black/40 border border-[#2D2D2D] p-0.5 rounded font-mono text-[10px] select-none shrink-0">
+                <div className="flex bg-black/40 border border-[#2D2D2D] p-0.5 rounded font-mono text-[9px] select-none shrink-0 self-start sm:self-center">
                   <button 
                     onClick={() => setActiveRevTab("due")}
                     className={cn(
-                      "px-2.5 py-1 rounded-sm uppercase tracking-wider font-bold transition-all",
-                      activeRevTab === "due" ? "bg-primary text-black font-extrabold" : "text-outline hover:text-white"
+                      "px-3 py-1.5 rounded-sm uppercase tracking-wider font-extrabold transition-all cursor-pointer",
+                      activeRevTab === "due" ? "bg-primary text-black" : "text-outline hover:text-white"
                     )}
                   >
                     DUE ({revisionQueue.length})
@@ -441,7 +442,7 @@ export default function ProgressPage() {
                   <button 
                     onClick={() => setActiveRevTab("upcoming")}
                     className={cn(
-                      "px-2.5 py-1 rounded-sm uppercase tracking-wider font-bold transition-all",
+                      "px-3 py-1.5 rounded-sm uppercase tracking-wider font-extrabold transition-all cursor-pointer",
                       activeRevTab === "upcoming" ? "bg-[#FFD400]/10 text-primary" : "text-outline hover:text-white"
                     )}
                   >
@@ -572,44 +573,50 @@ export default function ProgressPage() {
             </div>
           </motion.div>
 
-          {/* DSA Topic Distribution Table */}
+          {/* DSA Module Distribution Table */}
           <motion.section 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] rounded-xl overflow-hidden shadow-2xl"
+            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] rounded-xl overflow-hidden hover:border-[#FFD400] transition-all duration-300 hover:shadow-[0_0_20px_rgba(255,212,0,0.07)]"
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#2D2D2D] bg-[#111111]/50 select-none">
-              <span className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">schema</span> Topic Distribution
+              <span className="font-headline-md text-xs text-on-surface font-bold uppercase tracking-wide flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shadow-[0_0_8px_#ff6b00]" />
+                DSA Module Distribution
               </span>
-              <span className="font-mono-label text-mono-label text-outline uppercase">DSA Modules</span>
+              <span className="font-mono-label text-[9px] text-outline uppercase tracking-wider">Telemetry Core</span>
             </div>
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-[#2D2D2D] bg-[#111111]/50 select-none">
-                  <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Module</th>
-                  <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Progress</th>
-                  <th className="px-6 py-4 text-right font-mono-label text-mono-label text-outline uppercase">Solved</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topicDistribution.map((row) => (
-                  <tr key={row.label} className="border-b border-[#2D2D2D]/40 hover:bg-surface-variant/10 transition-colors">
-                    <td className="px-6 py-4 text-body-lg font-bold">
-                      <Link href={`/questions?topic=${encodeURIComponent(row.label)}`} className="text-on-surface hover:text-primary transition-colors block">
-                        {row.label.toUpperCase()}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-2 bg-[#181818] rounded-full overflow-hidden max-w-md">
-                        <div className="h-full bg-primary" style={{ width: `${row.progress}%` }} />
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono-label text-mono-label text-on-surface font-semibold">{row.count}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#2D2D2D] bg-[#111111]/50 select-none font-mono text-[9px] text-outline uppercase tracking-wider">
+                    <th className="px-6 py-3.5 font-bold">Module</th>
+                    <th className="px-6 py-3.5 font-bold">Progress Index</th>
+                    <th className="px-6 py-3.5 text-right font-bold">Solved Ratio</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#2D2D2D]/30">
+                  {topicDistribution.map((row) => (
+                    <tr key={row.label} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4 text-xs font-bold font-mono">
+                        <Link href={`/questions?topic=${encodeURIComponent(row.label)}`} className="text-white hover:text-primary transition-colors block">
+                          {row.label.toUpperCase()}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-1.5 bg-[#1C1C1E] rounded-full overflow-hidden flex-1 max-w-[240px]">
+                            <div className="h-full bg-primary" style={{ width: `${row.progress}%` }} />
+                          </div>
+                          <span className="font-mono text-[10px] text-outline font-bold">{row.progress}%</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-[10px] text-white font-bold">{row.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </motion.section>
         </div>
 
@@ -619,14 +626,15 @@ export default function ProgressPage() {
           <motion.div 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
+            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col transition-all duration-300 hover:border-[#FFD400] hover:shadow-[0_0_20px_rgba(255,212,0,0.07)]"
           >
-            <h2 className="font-mono-label text-mono-label uppercase text-outline mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-tertiary">star</span> Topic_Mastery
+            <h2 className="font-mono-label text-mono-label uppercase text-outline mb-4 flex items-center gap-2 select-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#4de082] animate-pulse shadow-[0_0_8px_#4de082]" />
+              Topic_Mastery_Index
             </h2>
             <div className="flex items-center justify-center relative py-4">
               <svg className="w-36 h-36 transform -rotate-90">
-                <circle cx="72" cy="72" fill="transparent" r="62" stroke="#2D2D2D" strokeWidth="10"></circle>
+                <circle cx="72" cy="72" fill="transparent" r="62" stroke="#232325" strokeWidth="10"></circle>
                 <circle 
                   cx="72" 
                   cy="72" 
@@ -641,83 +649,72 @@ export default function ProgressPage() {
                 ></circle>
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="font-mono-stats text-mono-stats text-on-surface">
+                <span className="font-mono text-3xl font-extrabold text-white tracking-tighter">
                   <CountUp end={Math.round(completionPercent)} suffix="%" />
                 </span>
-                <span className="font-mono-label text-[9px] text-outline uppercase">Global Index</span>
+                <span className="font-mono-label text-[8px] text-outline uppercase tracking-wider mt-0.5">Global Index</span>
               </div>
             </div>
-            <div className="space-y-1.5 mt-4 border-t border-[#2D2D2D] pt-3">
-              <div className="flex justify-between items-center">
-                <span className="font-mono-label text-[10px] text-outline uppercase">Easy Mastery</span>
-                <span className="font-mono-label text-[10px] text-secondary font-bold">{easyPercent}%</span>
+            <div className="space-y-2 mt-4 border-t border-[#2D2D2D] pt-3">
+              <div className="flex justify-between items-center text-[10px]">
+                <span className="font-mono-label text-outline uppercase font-semibold">Easy Mastery</span>
+                <span className="font-mono text-secondary font-bold bg-[#4de082]/10 border border-[#4de082]/20 px-1.5 py-0.5 rounded">{easyPercent}%</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="font-mono-label text-[10px] text-outline uppercase">Medium Mastery</span>
-                <span className="font-mono-label text-[10px] text-primary font-bold">{mediumPercent}%</span>
+              <div className="flex justify-between items-center text-[10px]">
+                <span className="font-mono-label text-outline uppercase font-semibold">Medium Mastery</span>
+                <span className="font-mono text-primary font-bold bg-[#FFC700]/10 border border-[#FFC700]/20 px-1.5 py-0.5 rounded">{mediumPercent}%</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="font-mono-label text-[10px] text-outline uppercase">Hard Mastery</span>
-                <span className="font-mono-label text-[10px] text-error font-bold">{hardPercent}%</span>
+              <div className="flex justify-between items-center text-[10px]">
+                <span className="font-mono-label text-outline uppercase font-semibold">Hard Mastery</span>
+                <span className="font-mono text-error font-bold bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded">{hardPercent}%</span>
               </div>
-            </div>
-          </motion.div>
-
-          {/* Streak Card */}
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-5 rounded-xl overflow-hidden relative transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
-          >
-            <div className="relative z-10">
-              <p className="font-mono-label text-xs text-outline uppercase mb-1">Current XP Streak</p>
-              <div className="flex items-baseline gap-2 mb-3">
-                <h3 className="font-mono-stats text-3xl text-primary">{currentStreak}</h3>
-                <span className="font-mono-label text-xs text-outline">DAYS</span>
-              </div>
-              <div className="progress-track h-1.5 bg-[#1A1A1A] rounded-full overflow-hidden font-sans">
-                <div className="progress-fill h-full bg-primary" style={{ width: `${Math.min(100, (currentStreak / 30) * 100)}%` }} />
-              </div>
-            </div>
-            <div className="absolute bottom-[-15px] right-[-15px] opacity-10">
-              <span className="material-symbols-outlined text-[90px]">workspace_premium</span>
             </div>
           </motion.div>
 
-          {/* Weakest Topic */}
+          {/* System Telemetry Deck */}
           <motion.div 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-5 rounded-xl border-l-4 border-l-error transition-all duration-300 hover:bg-[#181818]/92"
+            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl space-y-6 transition-all duration-300 hover:border-[#FFD400] hover:shadow-[0_0_20px_rgba(255,212,0,0.07)]"
           >
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <p className="font-mono-label text-[10px] text-outline uppercase mb-0.5">Weakest DSA Node</p>
-                <h3 className="font-headline-md text-sm text-on-surface truncate max-w-[160px]">{weakest.toUpperCase()}</h3>
+            <h2 className="font-mono-label text-mono-label uppercase text-outline flex items-center gap-2 select-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FFC700] animate-pulse shadow-[0_0_8px_#FFC700]" />
+              System_Telemetry_Logs
+            </h2>
+            
+            <div className="grid grid-cols-1 gap-4">
+              {/* Telemetry 1: Streak */}
+              <div className="bg-[#0A0A0A]/40 border border-[#2D2D2D] p-4 rounded-lg flex items-center justify-between relative overflow-hidden group hover:border-[#FFD400]/40 transition-all">
+                <div className="space-y-1">
+                  <span className="font-mono-label text-[9px] text-outline uppercase block">Current XP Streak</span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="font-mono text-xl text-primary font-bold">{currentStreak}</span>
+                    <span className="font-mono-label text-[8px] text-outline uppercase font-semibold">Days Active</span>
+                  </div>
+                </div>
+                <div className="w-20 bg-[#1A1A1A] h-1 rounded-full overflow-hidden shrink-0">
+                  <div className="h-full bg-primary" style={{ width: `${Math.min(100, (currentStreak / 30) * 100)}%` }} />
+                </div>
               </div>
-              <span className="material-symbols-outlined text-error opacity-60 text-lg">warning</span>
-            </div>
-            <p className="font-body-sm text-[10px] text-on-surface-variant leading-relaxed">
-              Success rate is lowest on memory matching. Focus on sliding window or linked list patterns.
-            </p>
-          </motion.div>
 
-          {/* Peak Activity */}
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-5 rounded-xl border-l-4 border-l-secondary transition-all duration-300 hover:bg-[#181818]/92"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <p className="font-mono-label text-[10px] text-outline uppercase mb-0.5">Peak Activity Day</p>
-                <h3 className="font-headline-md text-sm text-on-surface">{peakActivity.toUpperCase()}</h3>
+              {/* Telemetry 2: Weakest Node */}
+              <div className="bg-[#0A0A0A]/40 border border-[#2D2D2D] p-4 rounded-lg flex items-center justify-between group hover:border-[#FFD400]/40 border-l-2 border-l-error transition-all">
+                <div className="space-y-1">
+                  <span className="font-mono-label text-[9px] text-outline uppercase block">Weakest DSA Node</span>
+                  <span className="font-mono text-xs font-bold text-white uppercase tracking-wide">{weakest}</span>
+                </div>
+                <span className="material-symbols-outlined text-error opacity-60 text-base shrink-0">warning</span>
               </div>
-              <span className="material-symbols-outlined text-secondary opacity-60 text-lg">bolt</span>
+
+              {/* Telemetry 3: Peak Activity */}
+              <div className="bg-[#0A0A0A]/40 border border-[#2D2D2D] p-4 rounded-lg flex items-center justify-between group hover:border-[#FFD400]/40 border-l-2 border-l-secondary transition-all">
+                <div className="space-y-1">
+                  <span className="font-mono-label text-[9px] text-outline uppercase block">Peak Activity Cycle</span>
+                  <span className="font-mono text-xs font-bold text-white uppercase tracking-wide">{peakActivity}</span>
+                </div>
+                <span className="material-symbols-outlined text-secondary opacity-60 text-base shrink-0">bolt</span>
+              </div>
             </div>
-            <p className="font-body-sm text-[10px] text-on-surface-variant leading-relaxed">
-              High density solves logged during the evening cycles. Execution rate is optimal.
-            </p>
           </motion.div>
         </div>
       </div>

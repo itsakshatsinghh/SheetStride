@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, ExternalLink, Loader2, BookOpen, History, Sparkles, 
-  Clock, AlertTriangle, CheckCircle2, ChevronRight, Save, Play, RefreshCw, ArrowLeft 
+  Clock, AlertTriangle, CheckCircle2, ChevronRight, Save, Play, RefreshCw, ArrowLeft, Lock
 } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
@@ -143,14 +143,31 @@ export function QuestionDetailDrawer() {
       setIsLoading(true);
       try {
         // 1. Fetch user progress
-        const { data: progressData } = await supabase
+        const { data: progressList, error: progressErr } = await supabase
           .from("user_progress")
           .select("*")
           .eq("user_id", userId)
-          .eq("question_id", qId)
-          .maybeSingle();
+          .eq("question_id", qId);
 
-        setProgress(progressData);
+        if (progressErr) throw progressErr;
+
+        if (progressList && progressList.length > 0) {
+          // If there are duplicate progress rows, clean them up self-healingly!
+          if (progressList.length > 1) {
+            console.warn(`Detected ${progressList.length} duplicate progress rows for question ${qId}. Cleaning up...`);
+            const keepRow = progressList[0];
+            const extraIds = progressList.slice(1).map(r => r.id);
+            await supabase
+              .from("user_progress")
+              .delete()
+              .in("id", extraIds);
+            setProgress(keepRow);
+          } else {
+            setProgress(progressList[0]);
+          }
+        } else {
+          setProgress(null);
+        }
 
         // 2. Fetch notebook entries
         const { data: notebookData } = await supabase
@@ -241,7 +258,7 @@ export function QuestionDetailDrawer() {
 
   // Submit Reflection (First solve)
   const handleSubmitReflection = async () => {
-    if (!user || !qId) return;
+    if (!user || !qId || isSaving) return;
     const userId = user.id;
     setIsSaving(true);
     
@@ -268,6 +285,7 @@ export function QuestionDetailDrawer() {
       const { error: progressError } = await supabase
         .from("user_progress")
         .upsert({
+          id: progress?.id, // Use existing progress ID if present to avoid duplication
           user_id: userId,
           question_id: qId,
           completed: true,
@@ -303,7 +321,11 @@ export function QuestionDetailDrawer() {
           user_id: userId,
           question_id: qId,
           biggest_takeaway: takeaway,
-          note_to_self: noteToSelf,
+          note_to_self: "",
+          brute_force: "",
+          optimization: "",
+          pattern_strategy: "",
+          dry_run: "",
           updated_at: completedAt
         });
 
@@ -330,7 +352,7 @@ export function QuestionDetailDrawer() {
 
   // Submit Review Assessment (Spaced revision)
   const handleSubmitReview = async () => {
-    if (!user || !qId || !feedback) return;
+    if (!user || !qId || !feedback || isSaving) return;
     const userId = user.id;
     setIsSaving(true);
 
@@ -407,7 +429,11 @@ export function QuestionDetailDrawer() {
           user_id: userId,
           question_id: qId,
           biggest_takeaway: takeaway,
-          note_to_self: noteToSelf,
+          note_to_self: "",
+          brute_force: "",
+          optimization: "",
+          pattern_strategy: "",
+          dry_run: "",
           updated_at: nowStr
         });
 
@@ -427,6 +453,84 @@ export function QuestionDetailDrawer() {
     }
   };
 
+  // Mark as Premium (Completes without scheduling revisions)
+  const handleMarkPremium = async () => {
+    if (!user || !qId || isSaving) return;
+    const userId = user.id;
+    setIsSaving(true);
+
+    try {
+      const nowStr = new Date().toISOString();
+
+      // 1. Mark as completed in user_progress, but next_revision_due = null
+      const upsertPayload = {
+        id: progress?.id,
+        user_id: userId,
+        question_id: qId,
+        completed: true,
+        "completed-at": "1970-01-01T00:00:00.000Z",
+        current_interval_days: null,
+        next_revision_due: null,
+        revision_count: 0,
+        last_revised_at: null
+      };
+
+      const { error: progressError } = await supabase
+        .from("user_progress")
+        .upsert(upsertPayload);
+
+      if (progressError) {
+        console.error("Progress upsert failed in handleMarkPremium:", progressError);
+        throw progressError;
+      }
+
+      // 2. Log entry to reflection history
+      const { error: logError } = await supabase
+        .from("user_reflection_log")
+        .insert({
+          user_id: userId,
+          question_id: qId,
+          attempt_number: 1,
+          reflection_source: "initial_solve",
+          confidence: "comfortable",
+          pattern_recognition: "immediate",
+          mistake_types: ["Premium Skip"],
+          created_at: nowStr
+        });
+
+      if (logError) throw logError;
+
+      // 3. Update notebook takeaway notes
+      const { error: notebookError } = await supabase
+        .from("user_notebooks")
+        .upsert({
+          user_id: userId,
+          question_id: qId,
+          biggest_takeaway: "Marked as LeetCode Premium problem. Skipped revision scheduling.",
+          note_to_self: "",
+          brute_force: "",
+          optimization: "",
+          pattern_strategy: "",
+          dry_run: "",
+          updated_at: nowStr
+        });
+
+      if (notebookError) throw notebookError;
+
+      // Trigger completion animations
+      setSuccessMsg("MARKED AS PREMIUM: REVISION SKIPPED");
+      window.dispatchEvent(new Event("question-solved"));
+
+      setTimeout(() => {
+        setIsOpen(false);
+      }, 1500);
+    } catch (err) {
+      console.error("Failed to complete premium skip:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Save Notebook (Mutable structured study journal)
   const handleSaveNotebook = async () => {
     if (!user || !qId) return;
@@ -440,11 +544,11 @@ export function QuestionDetailDrawer() {
           user_id: userId,
           question_id: qId,
           biggest_takeaway: takeaway,
-          note_to_self: noteToSelf,
-          brute_force: bruteForce,
-          optimization: optimization,
-          pattern_strategy: patternStrategy,
-          dry_run: dryRun,
+          note_to_self: "",
+          brute_force: "",
+          optimization: "",
+          pattern_strategy: "",
+          dry_run: "",
           updated_at: new Date().toISOString()
         });
 
@@ -729,6 +833,16 @@ export function QuestionDetailDrawer() {
                           LOG YOUR SUBMISSION
                           <ChevronRight className="w-4 h-4" />
                         </button>
+                        {!progress?.completed && (
+                          <button
+                            onClick={handleMarkPremium}
+                            disabled={isSaving}
+                            className="w-full bg-red-500/10 border border-red-500/30 hover:border-red-500 text-red-400 hover:text-red-300 font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer text-sm font-headline"
+                          >
+                            <Lock className="w-4 h-4" />
+                            MARK AS PREMIUM PROBLEM (SKIP REVISIONS)
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -825,25 +939,14 @@ export function QuestionDetailDrawer() {
                       {/* Takeaways & Future Warnings */}
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <label className="block font-mono text-[10px] text-outline uppercase font-bold tracking-wider">
-                            4. Biggest Takeaway
+                          <label className="block font-mono text-[10px] text-outline uppercase font-bold tracking-wider select-none">
+                            4. Approach Strategy
                           </label>
                           <textarea
                             value={takeaway}
                             onChange={(e) => setTakeaway(e.target.value)}
-                            placeholder="What was the key algorithmic trick or blueprint of this problem?"
-                            className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-[#FFC700]/30 min-h-[70px] leading-relaxed custom-scrollbar font-body-sm"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="block font-mono text-[10px] text-outline uppercase font-bold tracking-wider">
-                            5. Note for Future Self (Warning)
-                          </label>
-                          <textarea
-                            value={noteToSelf}
-                            onChange={(e) => setNoteToSelf(e.target.value)}
-                            placeholder="What off-by-one or special edge case should you verify next time?"
-                            className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-[#FFC700]/30 min-h-[70px] leading-relaxed custom-scrollbar font-body-sm"
+                            placeholder="Describe the optimal solution approach, pattern strategy, or code flow..."
+                            className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-[#FFC700]/30 min-h-[90px] leading-relaxed custom-scrollbar font-body-sm"
                           />
                         </div>
                       </div>
@@ -981,10 +1084,15 @@ export function QuestionDetailDrawer() {
                         <button
                           onClick={handleSubmitReview}
                           disabled={isSaving || !feedback}
-                          className="w-full bg-[#FFC700] hover:bg-[#FFE14D] disabled:bg-disabled disabled:cursor-not-allowed text-[#000000] font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer text-sm"
+                          className={cn(
+                            "w-full font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm",
+                            (!feedback || isSaving)
+                              ? "bg-disabled/40 text-text/40 cursor-not-allowed border border-border"
+                              : "bg-[#FFC700] hover:bg-[#FFE14D] text-[#000000] cursor-pointer"
+                          )}
                         >
                           {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                          SUBMIT REVIEW ASSESSMENT
+                          {!feedback ? "SELECT REVISION FEELING TO SUBMIT" : "SUBMIT REVIEW ASSESSMENT"}
                         </button>
                       </div>
                     </div>
@@ -1005,7 +1113,7 @@ export function QuestionDetailDrawer() {
                           )}
                         >
                           <BookOpen className="w-3.5 h-3.5" />
-                          Study Wiki
+                          My Approach
                         </button>
                         <button
                           onClick={() => setActiveTab("history")}
@@ -1021,87 +1129,20 @@ export function QuestionDetailDrawer() {
                         </button>
                       </div>
 
-                      {/* Tab Content: Study Wiki */}
+                      {/* Tab Content: My Approach */}
                       {activeTab === "wiki" && (
                         <div className="space-y-5">
                           {/* Core notes */}
                           <div className="space-y-2">
-                            <label className="block font-mono text-[10px] text-outline uppercase font-bold tracking-wider">
-                              Biggest Takeaway
+                            <label className="block font-mono text-[10px] text-outline uppercase font-bold tracking-wider select-none">
+                              Approach Strategy
                             </label>
                             <textarea
                               value={takeaway}
                               onChange={(e) => setTakeaway(e.target.value)}
-                              placeholder="Key concept/trick to remember..."
-                              className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3 text-xs text-text focus:outline-none min-h-[50px] leading-relaxed custom-scrollbar font-body-sm"
+                              placeholder="Describe the optimal solution approach, pattern strategy, or code flow..."
+                              className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-[#FFC700]/30 min-h-[200px] leading-relaxed custom-scrollbar font-body-sm"
                             />
-                          </div>
-
-                          <div className="space-y-2">
-                            <label className="block font-mono text-[10px] text-outline uppercase font-bold tracking-wider">
-                              Note to Future Self
-                            </label>
-                            <textarea
-                              value={noteToSelf}
-                              onChange={(e) => setNoteToSelf(e.target.value)}
-                              placeholder="Off-by-one or special cases to avoid..."
-                              className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3 text-xs text-text focus:outline-none min-h-[50px] leading-relaxed custom-scrollbar font-body-sm"
-                            />
-                          </div>
-
-                          {/* Extended interview sections */}
-                          <div className="bg-[#101011] border border-border p-4 rounded-xl space-y-4">
-                            <div className="font-mono text-[10px] text-[#FFC700] uppercase font-bold tracking-wider select-none">
-                              Structured Interview Notebook
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <label className="block font-mono text-[9px] text-outline uppercase font-bold tracking-wider">
-                                1. Brute Force Approach
-                              </label>
-                              <textarea
-                                value={bruteForce}
-                                onChange={(e) => setBruteForce(e.target.value)}
-                                placeholder="How would you explain the naive O(N^2) approach verbally?"
-                                className="w-full bg-[#080809] border border-border focus:border-[#FFC700] rounded-lg p-2.5 text-xs text-text focus:outline-none min-h-[50px] leading-relaxed custom-scrollbar font-body-sm"
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="block font-mono text-[9px] text-outline uppercase font-bold tracking-wider">
-                                2. Optimization Transition
-                              </label>
-                              <textarea
-                                value={optimization}
-                                onChange={(e) => setOptimization(e.target.value)}
-                                placeholder="What is the optimization path? e.g. Sorting, Hash Map, DP?"
-                                className="w-full bg-[#080809] border border-border focus:border-[#FFC700] rounded-lg p-2.5 text-xs text-text focus:outline-none min-h-[50px] leading-relaxed custom-scrollbar font-body-sm"
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="block font-mono text-[9px] text-outline uppercase font-bold tracking-wider">
-                                3. Pattern & Strategy
-                              </label>
-                              <textarea
-                                value={patternStrategy}
-                                onChange={(e) => setPatternStrategy(e.target.value)}
-                                placeholder="Why does the pattern apply? What is the mathematical proof/insight?"
-                                className="w-full bg-[#080809] border border-border focus:border-[#FFC700] rounded-lg p-2.5 text-xs text-text focus:outline-none min-h-[50px] leading-relaxed custom-scrollbar font-body-sm"
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="block font-mono text-[9px] text-outline uppercase font-bold tracking-wider">
-                                4. Sample Dry Run
-                              </label>
-                              <textarea
-                                value={dryRun}
-                                onChange={(e) => setDryRun(e.target.value)}
-                                placeholder="Walk through a single trace example (e.g. tracking index updates)"
-                                className="w-full bg-[#080809] border border-border focus:border-[#FFC700] rounded-lg p-2.5 text-xs text-text focus:outline-none min-h-[50px] leading-relaxed custom-scrollbar font-body-sm"
-                              />
-                            </div>
                           </div>
 
                           {/* Save action */}
@@ -1112,7 +1153,7 @@ export function QuestionDetailDrawer() {
                               className="w-full bg-[#FFC700] hover:bg-[#FFE14D] disabled:bg-disabled disabled:cursor-not-allowed text-[#000000] font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer text-sm"
                             >
                               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                              SAVE STUDY JOURNAL
+                              SAVE APPROACH STRATEGY
                             </button>
                           </div>
                         </div>

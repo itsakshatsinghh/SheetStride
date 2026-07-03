@@ -86,15 +86,18 @@ export function CalendarHUD() {
           if (!newSolvesMap[localDate]) {
             newSolvesMap[localDate] = [];
           }
-          newSolvesMap[localDate].push({
-            id: qDetails.ID,
-            title: qDetails.Title,
-            difficulty: qDetails.Difficulty,
-            link: qDetails.Link,
-            topics: qDetails.Topics,
-            type: "solve",
-            date: localDate
-          });
+          const alreadyExists = newSolvesMap[localDate].some((item: any) => item.id === qDetails.ID);
+          if (!alreadyExists) {
+            newSolvesMap[localDate].push({
+              id: qDetails.ID,
+              title: qDetails.Title,
+              difficulty: qDetails.Difficulty,
+              link: qDetails.Link,
+              topics: qDetails.Topics,
+              type: "solve",
+              date: localDate
+            });
+          }
         }
 
         // Map upcoming/past scheduled revisions
@@ -103,15 +106,18 @@ export function CalendarHUD() {
           if (!newRevisionsMap[localDate]) {
             newRevisionsMap[localDate] = [];
           }
-          newRevisionsMap[localDate].push({
-            id: qDetails.ID,
-            title: qDetails.Title,
-            difficulty: qDetails.Difficulty,
-            link: qDetails.Link,
-            topics: qDetails.Topics,
-            type: "revision",
-            date: localDate
-          });
+          const alreadyExists = newRevisionsMap[localDate].some((item: any) => item.id === qDetails.ID);
+          if (!alreadyExists) {
+            newRevisionsMap[localDate].push({
+              id: qDetails.ID,
+              title: qDetails.Title,
+              difficulty: qDetails.Difficulty,
+              link: qDetails.Link,
+              topics: qDetails.Topics,
+              type: "revision",
+              date: localDate
+            });
+          }
         }
       });
 
