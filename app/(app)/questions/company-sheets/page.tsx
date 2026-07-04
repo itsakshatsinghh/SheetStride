@@ -80,7 +80,7 @@ export default function CompanySheetsPage() {
   return (
     <AppShell className="max-w-container-max mx-auto px-gutter py-6" gridBackground>
       {/* Breadcrumb HUD */}
-      <Breadcrumbs items={[{ label: "Company Sheets" }]} />
+      <Breadcrumbs items={[{ label: "Questions", href: "/questions" }, { label: "Company Sheets" }]} />
 
       {/* Header Block */}
       <header className="mb-10 relative overflow-hidden">

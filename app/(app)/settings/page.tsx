@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { cn, sanitizeSocialInput } from "@/lib/utils";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -320,6 +321,7 @@ export default function SettingsPage() {
 
   return (
     <AppShell className="max-w-[1120px] mx-auto px-gutter space-y-stack-lg" gridBackground>
+      <Breadcrumbs items={[{ label: "Settings" }]} />
       {/* Title Header */}
       <section className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end pt-6">
         <div>

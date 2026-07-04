@@ -272,7 +272,7 @@ export default function SheetstrideCorePage() {
   return (
     <AppShell className="max-w-container-max mx-auto px-gutter py-6" gridBackground>
       {/* Breadcrumbs */}
-      <Breadcrumbs items={[{ label: "SheetStride Core" }]} />
+      <Breadcrumbs items={[{ label: "Questions", href: "/questions" }, { label: "SheetStride Core" }]} />
 
       {/* Page Header */}
       <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 pt-2">

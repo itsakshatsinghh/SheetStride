@@ -8,6 +8,8 @@ import { AppShell } from "@/components/app/shell";
 import { PatternDetails } from "@/lib/pattern-atlas/types/pattern";
 import { PatternDetailClient } from "./pattern-detail-client";
 
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
@@ -20,28 +22,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const filePath = path.join(process.cwd(), "lib", "pattern-atlas", "generated", `${slug}.json`);
 
   if (!fs.existsSync(filePath)) {
-    return { title: "Pattern Not Found | SheetStride" };
+    return {
+      title: "Pattern Blueprint Not Found | SheetStride",
+    };
   }
 
   try {
-    const pattern: PatternDetails = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    const raw = fs.readFileSync(filePath, "utf-8");
+    const json = JSON.parse(raw) as PatternDetails;
     return {
-      title: `${pattern.pattern_name} Coding Pattern: Visuals & Complexity | SheetStride`,
-      description: pattern.overview.substring(0, 155) + "...",
-      keywords: pattern.recognition_signals,
+      title: `${json.pattern_name}: Algorithmic Blueprint | SheetStride`,
+      description: json.overview || `Master the ${json.pattern_name} pattern for software engineering interviews.`,
     };
   } catch {
-    return { title: "Pattern Details | SheetStride" };
+    return {
+      title: "Pattern Blueprint Details | SheetStride",
+    };
   }
 }
 
 export async function generateStaticParams() {
-  const dir = path.join(process.cwd(), "lib", "pattern-atlas", "generated");
-  if (!fs.existsSync(dir)) return [];
-  const files = fs.readdirSync(dir).filter(f => f.endsWith(".json") && f !== "atlas-index.json");
-  return files.map((f) => ({
-    slug: f.replace(".json", ""),
-  }));
+  const generatedDir = path.join(process.cwd(), "lib", "pattern-atlas", "generated");
+  if (!fs.existsSync(generatedDir)) return [];
+
+  const files = fs.readdirSync(generatedDir);
+  return files
+    .filter((f) => f.endsWith(".json") && f !== "atlas-index.json")
+    .map((f) => ({
+      slug: f.replace(".json", ""),
+    }));
 }
 
 export default async function PatternDetailPage({ params }: PageProps) {
@@ -55,13 +64,13 @@ export default async function PatternDetailPage({ params }: PageProps) {
 
   let pattern: PatternDetails;
   try {
-    pattern = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    const content = fs.readFileSync(filePath, "utf-8");
+    pattern = JSON.parse(content);
   } catch (err) {
-    console.error("Failed to parse pattern JSON:", err);
+    console.error("Failed to parse pattern detail JSON:", err);
     notFound();
   }
 
-  // Map search schema to match expected checklist components
   const mappedQuestions = pattern.question_ladder.map((q, index) => ({
     Sheet_order: index + 1,
     question_id: q.question_id || (9999 + index),
@@ -73,16 +82,15 @@ export default async function PatternDetailPage({ params }: PageProps) {
     is_reference_only: !q.question_id
   }));
 
+  const breadcrumbItems = [
+    { label: "Home", href: "/" },
+    { label: "Patterns", href: "/patterns" },
+    { label: pattern.pattern_name }
+  ];
+
   return (
     <AppShell className="max-w-container-max mx-auto px-gutter py-6" gridBackground>
-      {/* Breadcrumbs HUD */}
-      <nav className="flex items-center gap-2 mb-6 text-on-surface-variant font-mono-label text-mono-label uppercase tracking-widest text-[11px] overflow-x-auto whitespace-nowrap select-none">
-        <Link href="/" className="hover:text-primary transition-colors">HOME</Link>
-        <ChevronRight className="h-3 w-3 text-outline/40 flex-shrink-0" />
-        <Link href="/patterns" className="hover:text-primary transition-colors">PATTERN_ATLAS</Link>
-        <ChevronRight className="h-3 w-3 text-outline/40 flex-shrink-0" />
-        <span className="text-on-surface">{pattern.pattern_name.toUpperCase()}</span>
-      </nav>
+      <Breadcrumbs items={breadcrumbItems} />
 
       {/* Hero Header */}
       <header className="mb-10 relative overflow-hidden bg-[#111111]/40 border border-outline-variant/20 p-6 rounded-xl backdrop-blur-md">

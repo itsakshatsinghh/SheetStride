@@ -123,7 +123,7 @@ export function Topbar() {
         { href: "/dashboard", label: "Dashboard" },
         { href: "/questions", label: "Questions" },
         { href: "/progress", label: "Progress" },
-        { href: "/patterns", label: "Pattern Atlas" },
+        { href: "/patterns", label: "Patterns" },
         { href: "/profile", label: "Profile" },
         { href: "/settings", label: "Settings" }
       ]

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Layers, Award, Tag, CheckCircle, AlertCircle, ArrowRight, ShieldAlert, Cpu, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -152,8 +153,17 @@ export function PatternDetailClient({
               {/* Main Column */}
               <div className="lg:col-span-2 space-y-8">
                 {/* Overview */}
-                <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl relative overflow-hidden">
-                  <h2 className="font-mono text-outline uppercase tracking-widest text-[11px] mb-4">01 // OVERVIEW</h2>
+                <section className="bg-[#111111] border border-outline-variant/30 p-6 rounded-xl relative overflow-hidden space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">01 // OVERVIEW</h2>
+                    <Link
+                      href={`/training-ground?drill_pattern=${pattern.slug}`}
+                      className="px-3 py-1 bg-primary/10 hover:bg-primary/20 border border-primary/25 hover:border-primary/50 rounded text-primary text-[10px] uppercase font-mono tracking-wider flex items-center gap-1.5 transition-all"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      Train this Pattern
+                    </Link>
+                  </div>
                   <div className="font-body text-text leading-relaxed text-sm">
                     {renderFormattedText(pattern.overview)}
                   </div>

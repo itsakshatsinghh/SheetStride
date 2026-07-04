@@ -346,7 +346,7 @@ function QuestionsList() {
   return (
     <AppShell className="max-w-container-max mx-auto px-gutter" gridBackground>
       {/* Breadcrumbs */}
-      <Breadcrumbs items={[{ label: "LeetCode Universe" }]} />
+      <Breadcrumbs items={[{ label: "Questions", href: "/questions" }, { label: "LeetCode Universe" }]} />
 
       {/* Header section with Stats widgets */}
       <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-6 pt-2">

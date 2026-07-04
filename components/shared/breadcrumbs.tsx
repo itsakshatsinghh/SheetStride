@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 
 interface BreadcrumbItem {
   label: string;
@@ -10,22 +7,24 @@ interface BreadcrumbItem {
 
 export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
   return (
-    <nav className="flex items-center gap-2 mb-8 font-mono-label text-mono-label uppercase text-outline">
-      <Link href="/questions" className="hover:text-primary transition-colors">
-        Questions
-      </Link>
-      {items.map((item, index) => (
-        <span key={index} className="flex items-center gap-2">
-          <ChevronRight className="w-3.5 h-3.5 text-outline" />
-          {item.href ? (
-            <Link href={item.href} className="hover:text-primary transition-colors">
-              {item.label}
-            </Link>
-          ) : (
-            <span className="text-on-surface">{item.label}</span>
-          )}
-        </span>
-      ))}
+    <nav className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest select-none text-outline/65 mb-6">
+      {items.map((item, idx) => {
+        const isLast = idx === items.length - 1;
+        return (
+          <div key={idx} className="flex items-center gap-2">
+            {item.href && !isLast ? (
+              <Link href={item.href} className="hover:text-primary transition-colors text-outline">
+                {item.label}
+              </Link>
+            ) : (
+              <span className={isLast ? "text-text font-bold" : ""}>
+                {item.label}
+              </span>
+            )}
+            {!isLast && <span className="text-outline/30 font-light">&gt;</span>}
+          </div>
+        );
+      })}
     </nav>
   );
 }

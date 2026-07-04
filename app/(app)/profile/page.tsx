@@ -9,6 +9,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { cn, sanitizeSocialInput, fetchWithCache } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 
 interface SolvedQuestion {
   ID: number;
@@ -381,6 +382,7 @@ export default function ProfilePage() {
 
   return (
     <AppShell className="space-y-stack-lg max-w-container-max mx-auto px-gutter" gridBackground>
+      <Breadcrumbs items={[{ label: "Profile" }]} />
       
       {/* Profile Header Section */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-stack-lg">

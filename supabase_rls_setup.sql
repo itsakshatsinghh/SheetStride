@@ -125,3 +125,36 @@ USING (true);
 -- ====================================================================
 -- RLS verification: Run 'SELECT * FROM pg_policies;' to check active policies.
 -- ====================================================================
+
+-- ====================================================================
+-- TRAINING GROUND MIGRATIONS (XP and Drill History Logs)
+-- ====================================================================
+
+-- 1. Add XP tracking column to user profile metadata
+ALTER TABLE public.profiles 
+ADD COLUMN IF NOT EXISTS xp INTEGER DEFAULT 0 CHECK (xp >= 0);
+
+-- 2. Drill History table for confusion matrices and progress tracking
+CREATE TABLE IF NOT EXISTS public.drill_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    question_id INTEGER REFERENCES public.questions("ID") ON DELETE CASCADE,
+    selected_pattern VARCHAR(100) NOT NULL,
+    correct_pattern VARCHAR(100) NOT NULL,
+    selected_signal VARCHAR(255) NOT NULL,
+    reflection_chip VARCHAR(100),
+    reflection_text TEXT,
+    is_correct BOOLEAN GENERATED ALWAYS AS (selected_pattern = correct_pattern) STORED,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE public.drill_history ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to manage their own drill history
+DROP POLICY IF EXISTS "Users can manage their own drill history" ON public.drill_history;
+CREATE POLICY "Users can manage their own drill history" 
+ON public.drill_history FOR ALL 
+TO authenticated 
+USING (auth.uid() = user_id);
+
