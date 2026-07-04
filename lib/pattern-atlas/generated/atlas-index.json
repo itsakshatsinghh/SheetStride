@@ -6,16 +6,39 @@
       "difficulty": "Beginner",
       "family_name": "Pointers",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Linear Data Types: The problem explicitly features an Array, String, or Contiguous Linked List.",
+        "Contiguity Constraint: The problem specifically mandates that the target sequence must be contiguous (e.g., \"contiguous subarray,\" \"continuous block,\" or \"substring\").",
+        "Fixed Bounds: The problem specifies a constant range of size $K$ (e.g., \"maximum average of subarrays of size K\").",
+        "Dynamic Range Limits: The bounds are dictated by a property variable $S$ or character constraint $K$ (e.g., \"sum $\\ge S$,\" \"exactly $K$ distinct characters,\" or \"at most $K$ zero replacements\").",
+        "Extrema Objectives: The problem asks you to discover the longest, shortest, or optimal sub-segment matching a target condition.",
+        "Repeated Subproblems: The naive solution requires iterating over overlapping sub-segments via nested loops ($O(N^2)$).",
+        "Monotonic Incremental Updates: The state metric changes predictably when expanding or shrinking (e.g., adding a positive number strictly increases the sum; removing an item strictly reduces the size).",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Fixed Size**",
+        "**Variable (Maximize)**",
+        "**Variable (Minimize)**"
       ],
       "companies": [],
-      "questions_count": 11
+      "questions_count": 12,
+      "aliases": [
+        "two pointers",
+        "sliding range",
+        "contiguous subarray"
+      ],
+      "data_structures": [
+        "array",
+        "string",
+        "linked list"
+      ],
+      "keywords": [
+        "average",
+        "substring",
+        "min-size",
+        "max-sum"
+      ],
+      "question_ids": []
     },
     {
       "pattern_name": "Two Pointers",
@@ -23,50 +46,114 @@
       "difficulty": "Beginner",
       "family_name": "Pointers",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Sorted Data Structures: The collection is an ordered array, list, or sequence. If unsorted, the pre-processing sorting requirement ($O(N \\log N)$) may unlock the optimization pattern.",
+        "Extreme Traversal Needs: Operations require reading data from outer boundaries inwards, or running a fast and slow reference tracker concurrently.",
+        "Target Multi-Selection: The task requires locating a pair, a triplet, a quadruplet, or a small localized sub-segment that matches a specific threshold condition.",
+        "No Extra Space Mandates: The problem constraints forbid copying data or allocating external cache vectors, requiring in-place alterations (e.g., removing elements or swapping partitions).",
+        "Monotonic Conditions: Evaluating a combination indicates the precise direction needed to find subsequent solutions without requiring a full back-track.",
+        "Overlapping Redundancy: Brute force checks re-examine elements within indices that are algebraically locked or excluded by the data structure's sorting.",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Converging**",
+        "**In-place Sorting**",
+        "**Multi-Loop Anchoring**",
+        "**Reverse Comparison**"
       ],
       "companies": [],
-      "questions_count": 11
+      "questions_count": 12,
+      "aliases": [
+        "converging pointers",
+        "dual pointers",
+        "two-way sweep"
+      ],
+      "data_structures": [
+        "array",
+        "string"
+      ],
+      "keywords": [
+        "sorted",
+        "pair",
+        "triplet",
+        "target-sum",
+        "palindrome"
+      ],
+      "question_ids": []
     },
     {
-      "pattern_name": "Fast & Slow pointers",
+      "pattern_name": "Fast & Slow Pointers",
       "slug": "fast-slow-pointers",
       "difficulty": "Intermediate",
       "family_name": "Pointers",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Node-Based Traversal Structures: The underlying data collection is a Linked List, Unsorted Array with index-based redirection pointers, or state-transition paths.",
+        "Cyclic Links: The problem description mentions potential loops, cycle detection, or circular wrapping behavior (e.g., \"circular array,\" \"numbers repeating in a loop\").",
+        "Strict Constant Space Constraints: The problem specifies that you must determine connectivity or cycles using $O(1)$ auxiliary space without allocating a cache set.",
+        "Fractional Range Targeting: Finding precise structural midpoints, quarter-points, or specific offset elements in a single sequential read iteration.",
+        "Implicit Mathematical Loops: Iterative state transitions where a value repeatedly generates a deterministic sequence of numbers that either converges to a target or traps execution in a recurring loop (e.g., calculating digit squares).",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Cycle Detection**",
+        "**Cycle Length**",
+        "**Midpoint Isolation**",
+        "**Implicit Cycles**"
       ],
       "companies": [],
-      "questions_count": 7
+      "questions_count": 7,
+      "aliases": [
+        "hare and tortoise",
+        "cycle detection"
+      ],
+      "data_structures": [
+        "linked list",
+        "array"
+      ],
+      "keywords": [
+        "loop",
+        "cycle",
+        "middle",
+        "start-node",
+        "happy-number"
+      ],
+      "question_ids": []
     },
     {
-      "pattern_name": "Pattern 4  Merge Intervals",
-      "slug": "pattern-4-merge-intervals",
+      "pattern_name": "Merge Intervals",
+      "slug": "merge-intervals",
       "difficulty": "Intermediate",
-      "family_name": "Algorithms",
+      "family_name": "Intervals",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Interval-Based Pairs: The input parameters feature pairs of integers representing boundaries (e.g., `[start, end]`, `[arrival, departure]`, `[low, high]`).",
+        "Unordered Segment Maps: The intervals arrive out of order, or the problem description specifies that the underlying schedule is pre-sorted exclusively by one boundary.",
+        "Mutual Exclusion Goals: The problem asks you to discover overlapping intersections, combine overlapping structures into unified ranges, or identify open gaps.",
+        "Overlapping Verification: Detecting if a new scheduling entry conflicts with any existing coordinates.",
+        "Resource Optimization Requirements: Finding the minimum number of parallel slots needed to house simultaneous events (e.g., meeting rooms or server execution pipelines).",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Standard Merge**",
+        "**Direct Insertion**",
+        "**Double Pointer Scan**",
+        "**Heap-Driven Allocator**"
       ],
       "companies": [],
-      "questions_count": 6
+      "questions_count": 7,
+      "aliases": [
+        "overlapping intervals",
+        "interval intersection"
+      ],
+      "data_structures": [
+        "array",
+        "interval"
+      ],
+      "keywords": [
+        "insert",
+        "merge",
+        "meeting-rooms",
+        "free-time"
+      ],
+      "question_ids": []
     },
     {
       "pattern_name": "Cyclic Sort",
@@ -74,67 +161,116 @@
       "difficulty": "Intermediate",
       "family_name": "Sorting",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Contiguous Integer Arrays: The elements arrive inside an unsorted array or sequence.",
+        "Closed-Range Guarantees: The problem explicitly specifies that the data items are bound within a finite range, typically stated as $[1, n]$ or $[0, n]$.",
+        "Absolute Auxiliary Memory Caps: The problem requires processing, sorting, or searching the array in-place using strict $O(1)$ constant space.",
+        "Identity Anomaly Detection: The question explicitly targets identifying missing items, duplicate records, hidden pairs, or out-of-order values.",
+        "Unbounded Values with Positive Targets: The problem requests the \"first missing positive number\" on an unmapped array. This implies you should artificially clip the search lens to the array's own index boundaries $[1, n]$ and treat anything outside that window as background noise.",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Strict Continuous**",
+        "**Zero Baseline**",
+        "**Duplicate Trap**",
+        "**Unbounded Positives**"
       ],
       "companies": [],
-      "questions_count": 8
+      "questions_count": 8,
+      "aliases": [
+        "in-place sort",
+        "index mapping"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "keywords": [
+        "missing-number",
+        "duplicates",
+        "corrupted",
+        "range"
+      ],
+      "question_ids": []
     },
     {
-      "pattern_name": "In-place Reversal of a LinkedList",
-      "slug": "in-place-reversal-of-a-linkedlist",
+      "pattern_name": "In-Place Reversal of a Linked List",
+      "slug": "in-place-reversal-of-a-linked-list",
       "difficulty": "Intermediate",
       "family_name": "LinkedLists",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Singly Linked Configurations: The problem domain features an unindexed node chain linked by unique `next` pointer targets.",
+        "Link Reorientation Demands: The requirements dictate changing the sequencing or reversing the orientation of the elements (e.g., \"reverse sections,\" \"reorder nodes\").",
+        "Absolute Constant Memory Limits: The problem explicitly forbids the allocation of extra arrays, hashes, or node matrices ($O(1)$ Auxiliary Space constraint).",
+        "In-Place Modification Clauses: Constraints explicitly require modifying the node configurations in-place by updating the pre-existing reference mappings rather than allocating fresh node objects.",
+        "Structural Subsequence Folding: Rearranging alternate chunks of a list, grouping blocks by a metric factor $K$, or sliding structural tail windows around onto the head to execute a rotation.",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Complete Reverse**",
+        "**Sub-list Reverse**",
+        "**K-Group Loop**",
+        "**Alternating K-Group**",
+        "**Circular Rotation**"
       ],
       "companies": [],
-      "questions_count": 5
+      "questions_count": 5,
+      "aliases": [],
+      "data_structures": [],
+      "keywords": [],
+      "question_ids": []
     },
     {
-      "pattern_name": "Tree Breadth First Search",
-      "slug": "tree-breadth-first-search",
+      "pattern_name": "Tree Breadth First Search (BFS)",
+      "slug": "tree-breadth-first-search-bfs",
       "difficulty": "Intermediate",
       "family_name": "Trees",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Hierarchical Node Layouts: The underlying input collection features connected instances of `TreeNode` references containing branches.",
+        "Level-Order Requirements: The problem prompt explicitly requests layer configurations (e.g., \"level by level,\" \"horizontal rows,\" \"layer arrays\").",
+        "Shortest Path / Proximity Search: Finding the absolute minimum distance from the root to any leaf node.",
+        "Cross-Sibling Connections: Requirements forcing elements located on the exact same layer to interact with each other (e.g., linking right side pointers).",
+        "Alternating Generation Scans: Traversing alternating layers from left-to-right and right-to-left (Zigzag format).",
+        "Per-Tier Summarization: Requests targeting aggregated statistics compiled per level (e.g., maximum sum value per layer, level averages array).",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Standard BFS**",
+        "**Reverse Layer**",
+        "**Zigzag Scan**",
+        "**Successor Hunt**",
+        "**View Extractor**"
       ],
       "companies": [],
-      "questions_count": 9
+      "questions_count": 11,
+      "aliases": [],
+      "data_structures": [],
+      "keywords": [],
+      "question_ids": []
     },
     {
       "pattern_name": "Tree Depth First Search (DFS)",
       "slug": "tree-depth-first-search-dfs",
       "difficulty": "Intermediate",
-      "family_name": "Algorithms",
+      "family_name": "Trees",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Hierarchical Node Links: The data structure consists of branched node entities containing standard `left` and `right` child references.",
+        "Vertical Path Requirements: The problem requirements specifically target deep, continuous combinations (e.g., \"root-to-leaf path,\" \"continuous sequence,\" \"ancestor-to-descendant lines\").",
+        "Complete Path Generation: Building or returning an explicit list of all full sequence variations that fit a constraint.",
+        "Backtracking Operations: Requirements that mandate clearing or undoing structural path choices when a terminal leaf node fails a constraint.",
+        "Bottom-Up State Synthesis: Problems requiring child nodes to fully compute and return values up to their parent anchors before a final calculation can execute (e.g., computing tree diameters or maximum path sums).",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Top-Down Decision**",
+        "**Path Generation**",
+        "**Numeric Accumulation**",
+        "**Bottom-Up Merge**"
       ],
       "companies": [],
-      "questions_count": 7
+      "questions_count": 8,
+      "aliases": [],
+      "data_structures": [],
+      "keywords": [],
+      "question_ids": []
     },
     {
       "pattern_name": "Two Heaps",
@@ -142,16 +278,36 @@
       "difficulty": "Intermediate",
       "family_name": "Heaps",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Dynamic Streams: The input data arrives continuously as a stream, or is dynamically updated (insertions/deletions).",
+        "Partitioned Data Needs: The problem requires dividing elements into two distinct categories (e.g., smaller numbers vs. larger numbers, available capital vs. profitable projects).",
+        "Extrema/Median Queries: The task explicitly asks for the median of a stream, sliding window medians, or boundary values.",
+        "Logarithmic Constraints: The system expects insertions or updates to run in $O(\\log N)$ time, and queries to run in $O(1)$ or near-constant time.",
+        "Greedy Multi-Phase Matching: Problems where you must evaluate candidates by one criterion (e.g., capital requirements) but select them based on a different criterion (e.g., maximum profit), requiring sorted order along two axes.",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Median of Stream**",
+        "**Sliding Window Median**",
+        "**Maximize Capital**",
+        "**Next Interval**"
       ],
       "companies": [],
-      "questions_count": 4
+      "questions_count": 5,
+      "aliases": [
+        "min-max heap",
+        "split heap"
+      ],
+      "data_structures": [
+        "heap",
+        "priority queue"
+      ],
+      "keywords": [
+        "median",
+        "sliding-median",
+        "stream",
+        "next-interval"
+      ],
+      "question_ids": []
     },
     {
       "pattern_name": "Subsets",
@@ -159,16 +315,37 @@
       "difficulty": "Intermediate",
       "family_name": "Backtracking",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Set, Array, or String Inputs: The problem presents a group of discrete, independent items.",
+        "Combinatorial Outputs: The problem asks to return all subsets, permutations, or combinations.",
+        "Exponential Target Size: The total expected solutions scale exponentially ($2^N$ subsets, $N!$ permutations).",
+        "Distinct Combinations Mandate: The problem asks to skip duplicate groupings when input elements are not unique.",
+        "Parenthesization Options: Generating all ways to add brackets to math expressions or creating generalized abbreviations of a string.",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Power Set**",
+        "**Subset with Duplicates**",
+        "**Permutations**",
+        "**Letter Case Permutation**",
+        "**Valid Parentheses**"
       ],
       "companies": [],
-      "questions_count": 9
+      "questions_count": 9,
+      "aliases": [
+        "power set",
+        "permutations",
+        "backtracking"
+      ],
+      "data_structures": [
+        "array",
+        "string"
+      ],
+      "keywords": [
+        "abbreviations",
+        "parentheses",
+        "case-combinations"
+      ],
+      "question_ids": []
     },
     {
       "pattern_name": "Modified Binary Search",
@@ -176,16 +353,40 @@
       "difficulty": "Intermediate",
       "family_name": "Binary Search",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Sorted Inputs: The collection is an array, list, or matrix sorted ascending, descending, or circularly.",
+        "Rotated/Mountain Arrays: The array is sorted but rotated around a pivot, or rises and then falls (bitonic/mountain array).",
+        "Unknown Size Streams: The size of the dataset is not defined or is infinite.",
+        "Logarithmic Time Bounds: The problem requires a runtime of $O(\\log N)$ or better.",
+        "In-Place Space Limits: The problem mandates $O(1)$ constant space, forbidding heap allocations or tracking tables.",
+        "Ceiling, Floor, or Range Search: Finding the closest smaller/larger elements, or range limits (`first` and `last` occurrence indices).",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Order-Agnostic**",
+        "**Ceiling / Floor**",
+        "**Circular Next**",
+        "**Infinite Search**",
+        "**Bitonic Peak**",
+        "**Rotated Search**"
       ],
       "companies": [],
-      "questions_count": 10
+      "questions_count": 8,
+      "aliases": [
+        "bisection search",
+        "logarithmic search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "keywords": [
+        "rotated",
+        "sorted",
+        "infinite",
+        "peak",
+        "bitonic",
+        "bounds"
+      ],
+      "question_ids": []
     },
     {
       "pattern_name": "Bitwise XOR",
@@ -193,16 +394,36 @@
       "difficulty": "Intermediate",
       "family_name": "Bitwise",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Integer Sequences: The inputs are arrays, streams, or matrices containing non-negative integers.",
+        "Paired Elements: The problem states that elements appear in pairs, duplicates, or ranges, except for one or two unique items.",
+        "Constant Space Caps: The problem mandates an auxiliary space complexity of $O(1)$.",
+        "Overflow Limitations: The data limits are too large for standard integer addition without causing overflow.",
+        "Binary Complementing: Problems that require flipping binary values, mirroring images, or reversing bit grids.",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Missing Number**",
+        "**Single Number**",
+        "**Two Single Numbers**",
+        "**Complement**",
+        "**Image Flipping**"
       ],
       "companies": [],
-      "questions_count": 4
+      "questions_count": 5,
+      "aliases": [
+        "xor operation",
+        "bit manipulation"
+      ],
+      "data_structures": [
+        "integer"
+      ],
+      "keywords": [
+        "missing",
+        "single-number",
+        "complement",
+        "flip"
+      ],
+      "question_ids": []
     },
     {
       "pattern_name": "Top 'K' Elements",
@@ -210,67 +431,150 @@
       "difficulty": "Intermediate",
       "family_name": "Heaps",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Unsorted Arrays or Streams: The input elements arrive out of order, or are generated dynamically.",
+        "Frequency Counting: The problem involves finding elements based on how often they occur.",
+        "The \"K\" Target: The problem explicitly asks for the largest, smallest, closest, or most frequent $K$ elements.",
+        "Sub-Sorting Bounds: The expected time complexity is $O(N \\log K)$, which is better than standard $O(N \\log N)$ sorting.",
+        "String Reorganization: Rearranging characters so that duplicate letters are separated by at least $K$ spaces, or scheduling tasks with cooldown gaps.",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**K Largest Elements**",
+        "**K Closest Points**",
+        "**Connect Ropes**",
+        "**K Frequent Elements**",
+        "**K-Distance Apart**",
+        "**Task Scheduler**",
+        "**Frequency Stack**"
       ],
       "companies": [],
-      "questions_count": 14
+      "questions_count": 10,
+      "aliases": [
+        "k-largest",
+        "heap filter"
+      ],
+      "data_structures": [
+        "heap",
+        "priority queue"
+      ],
+      "keywords": [
+        "frequency",
+        "closest",
+        "k-frequent",
+        "scheduling"
+      ],
+      "question_ids": []
     },
     {
-      "pattern_name": "K-way merge",
+      "pattern_name": "K-way Merge",
       "slug": "k-way-merge",
       "difficulty": "Intermediate",
       "family_name": "Heaps",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Multiple Sorted Lists: The problem features $K$ pre-sorted arrays, linked lists, or rows of a matrix.",
+        "Merged Output: The goal is to traverse, merge, or find specific elements (like the $K\\text{th}$ smallest) across all lists.",
+        "Logarithmic Comparison Goals: The target runtime is $O(N \\log K)$ with an auxiliary space cap of $O(K)$.",
+        "In-Place Priority: The problem requires retrieving values sequentially without fully sorting the combined array.",
+        "Smallest Ranges: Finding the tightest range containing at least one element from each of the $K$ lists.",
+        "Sorted Matrix Queries: Locating the $K\\text{th}$ smallest element in a matrix where both rows and columns are sorted.",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Merge Sorted Lists**",
+        "**Kth Smallest in M Lists**",
+        "**Kth Smallest in Matrix**",
+        "**Smallest Range**",
+        "**Largest Pairs Sum**"
       ],
       "companies": [],
-      "questions_count": 6
+      "questions_count": 4,
+      "aliases": [
+        "multi-way merge",
+        "sorted streams merge"
+      ],
+      "data_structures": [
+        "heap",
+        "priority queue",
+        "linked list"
+      ],
+      "keywords": [
+        "k-sorted",
+        "matrix-binary-search",
+        "smallest-range"
+      ],
+      "question_ids": []
     },
     {
-      "pattern_name": "0-1 Knapsack (Dynamic Programming)",
-      "slug": "0-1-knapsack-dynamic-programming",
+      "pattern_name": "-1 Knapsack (Dynamic Programming)",
+      "slug": "-1-knapsack-dynamic-programming",
       "difficulty": "Intermediate",
       "family_name": "Dynamic Programming",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Finite Items with Dual Constraints: You are given a set of items, each characterized by two parameters (e.g., profit/weight, cost/value, sum/size).",
+        "Binary Choices: You must make a binary decision (include or exclude) for each item. No fractional items or infinite supplies are allowed.",
+        "Global Capacity Bound: The total weights of the selected items must not exceed a maximum capacity limit $C$.",
+        "Extrema Objectives: The goal is to maximize profit, minimize difference, or count combinations that match a sum.",
+        "Subset Sum Matching: Partitioning arrays into subsets with equal sums, minimizing subset differences, or finding target sums using plus/minus signs.",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**0-1 Knapsack**",
+        "**Equal Subset Partition**",
+        "**Subset Sum**",
+        "**Minimum Difference**",
+        "**Count of Subset Sum**",
+        "**Target Sum**"
       ],
       "companies": [],
-      "questions_count": 6
+      "questions_count": 3,
+      "aliases": [],
+      "data_structures": [],
+      "keywords": [],
+      "question_ids": []
     },
     {
-      "pattern_name": "🔎 Pattern 16 Topological Sort (Graph)",
-      "slug": "pattern-16-topological-sort-graph",
+      "pattern_name": "Topological Sort (Graph)",
+      "slug": "topological-sort-graph",
       "difficulty": "Intermediate",
-      "family_name": "Algorithms",
+      "family_name": "Graphs",
       "recognition_signals": [
-        "array of contiguous elements",
-        "minimum size subarray",
-        "sliding range constraints"
+        "Directed Graph Inputs: The problem defines vertices linked by directed, unidirectional arrows (e.g., prerequisite pairs, dependencies).",
+        "DAG Properties: The graph must be acyclic (no loops) for a topological sort to exist.",
+        "Ordering Requirements: The task requires finding a sequence where some elements must happen before others.",
+        "Linear Time Bounds: The system expects dependencies to be resolved in $O(V + E)$ time.",
+        "Lexicographical Rule Extraction: Determining alphabet sorting orders from adjacent words in an alien dictionary.",
+        "Sequence Validation: Checking if a unique path can be reconstructed from a set of subsequence rules.",
+        "Tree Leaf Pruning: Finding centroids of an undirected tree by iteratively removing leaf nodes (Minimum Height Trees).",
+        "--"
       ],
       "variants": [
-        "Fixed-size Range",
-        "Variable-size Range"
+        "**Topological Sort**",
+        "**Course Schedule**",
+        "**Course Schedule II**",
+        "**All Topological Sorts**",
+        "**Alien Dictionary**",
+        "**Sequence Reconstruction**",
+        "**Minimum Height Trees**"
       ],
       "companies": [],
-      "questions_count": 7
+      "questions_count": 5,
+      "aliases": [
+        "kahn's algorithm",
+        "dependency resolution",
+        "dag sort"
+      ],
+      "data_structures": [
+        "graph",
+        "queue",
+        "hash map"
+      ],
+      "keywords": [
+        "scheduling",
+        "prerequisites",
+        "alien-dictionary",
+        "mht"
+      ],
+      "question_ids": []
     }
   ]
 }

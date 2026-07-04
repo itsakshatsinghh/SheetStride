@@ -26,11 +26,16 @@ This snapshot represents the current status of features, models, and integration
     *   **Submission Calendars:** distinguishability cyber yellow borders and background tints for solved vs. revision events. Includes dynamic formatting that displays `"PREMIUM"` for premium-skipped question logs.
 *   **Client-Side Caching Layer:** Persistent browser-level caching using `fetchWithCache` across Questions Hub, Profile, Progress Analytics, LeetCode descriptions (24hr TTL), and LeetCode Universe (complete with automatic cache invalidation via custom solve event bus). Dashboard data loading and LeetCode profile sync stats load completely live on every entry/solve event to eliminate sync delays.
 *   **Skeleton Loading UI:** Layout-matched, shimmering dark-mode skeletons integrated across all dynamic hydration pages (Dashboard, Progress Analytics, Questions Hub, LeetCode Universe, SheetStride Core Index, Topic, Pattern detail pages, Company Sheets Index, details, Profile, and Submission Calendar HUD / description drawer) to minimize layout shifts (CLS) and improve perceived performance.
-*   **Pattern Atlas Foundation:** Built the offline Git-backed ingestion pipeline (`scripts/compile-patterns.ts`), Zod validation schemas (`lib/pattern-atlas/schemas/pattern.schema.ts`), TypeScript models, index generation tools, and dynamic API preview routing (`/api/patterns/preview`). Fully integrated the high-fidelity UI page routing at `/patterns` and `/patterns/[slug]` using optimized static compilation (SSG), mapped the dynamic question checklists to the Supabase solve bus, and added the navigation links to the Topbar HUD between Progress and Profile.
+*   **Pattern Atlas (Phase 2):** Fully implemented the premium interactive learning directory:
+    *   **Compiler Pipeline Alignment:** Refactored `compiler.ts` to dynamically parse titles, H2 overview headers, signals, mental models, optimization steps, and variants directly from the raw markdown documents. Supports bulleted lists of problems under `## Representative Problems`.
+    *   **Logical Section Organization:** Detail pages split into tabbed sections (**LEARN**, **PRACTICE**, **MASTER**) with Framer Motion transitions.
+    *   **Interactive Visualizer:** Metadata-driven playback panel (`PatternVisualizer`) supporting step execution, autoplay loops, sliders, and type-based state simulation (Array pointers, cycles, traversal, heaps).
+    *   **Curriculum progression graph:** Displays horizontal node progression charts for the current pattern path.
+    *   **Reference Only Questions:** Disables solve checkoffs and database writes for unmapped reference problems, rendering a "Reference Only" status.
+    *   **Card Search & Progress:** Extended search filters to query aliases, variants, data structures, and keywords. Renders solved counts, completion %, confidence, and revision due dates for authenticated users.
 
 ### 🟡 In Progress
-*   **Detailed Pattern Handbooks:** Complete C++ template parsing is active, but expanded pseudocode blueprints and custom code highlight presets for other languages (Python, Java) are ongoing.
-
+*   **None:** All target roadmap features are completed.
 
 ### ❌ Not Started / Locked
 *   **NeetCode 150 Sheet Integration:** Placeholder card created in Questions Hub; integration is locked pending roadmap expansion.
@@ -45,7 +50,7 @@ This snapshot represents the current status of features, models, and integration
 | :--- | :--- | :--- | :--- |
 | **Auth System** | Login, Auth Context Provider, Middleware protection | Session recovery (sometimes sluggish on OTP verify) | None |
 | **Analytics** | Radial charts, week bars, peak day calculations, heatmap | None | None |
-| **Questions Hub** | SheetStride Core, LeetCode Database, Company Sheets | None | External Sheets (Neetcode/Striver) |
+| **Questions Hub** | SheetStride Core, LeetCode Database, Company Sheets, Pattern Atlas | None | External Sheets (Neetcode/Striver) |
 | **Database** | RLS tables and master public-read policies configured, views, streak calculation function | None | Custom triggers for automated streak updates |
 | **Checkout API** | Razorpay Order Creation and Verification Route Handlers | None | Production payment webhooks |
 | **Caching Layer** | Local caching (`fetchWithCache`) on Questions Hub, Profile, Progress, and LeetCode Universe; invalidate-on-solve triggers; decached real-time query engines on Dashboard and LeetCode stats | None | None |

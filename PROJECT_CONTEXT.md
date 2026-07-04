@@ -199,10 +199,11 @@ Keep these technical quirks in mind during development:
 *   Yellow snowfall backdrop canvas on pitch-black login UI (with amber brand border controls)
 *   Corrected live stats sync proxy routes `/api/leetcode-contests` and live `/cleanUsername/profile` query sanitizers
 *   Postgres manual join helpers on progress retrieval ranges
-*   Pattern Atlas Ingestion Engine & UI Pages (CLI compiler, search indexing, Zod schemas, API preview routes, and `/patterns` and `/patterns/[slug]` layouts)
+*   Pattern Atlas (Phase 2): Complete interactive study portal (tabbed LEARN/PRACTICE/MASTER layouts, custom visualizer steps and play loops, C++ syntax highlights with client token parsing, math and LaTeX formats rendering, simplified practice tables, curriculum progression charts).
+*   Global Database Search: Integrated Ctrl+K search button next to avatar in topbar that queries Supabase questions and opens the detail drawer.
 
 ### 🟡 In Progress
-*   Pattern Handbook Boilerplates (Expanding C++ to Python and Java templates)
+*   None (all milestone tasks complete)
 
 ### ❌ Locked / Not Started
 *   NeetCode 150 Integration (Placeholder cards in Questions Hub)

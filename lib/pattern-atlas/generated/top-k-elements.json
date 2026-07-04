@@ -3,175 +3,180 @@
   "slug": "top-k-elements",
   "difficulty": "Intermediate",
   "family_name": "Heaps",
-  "overview": "Any problem that asks us to find the <b>top/smallest/frequent K</b> elements among a given set falls under this pattern.\n\n<s>The best data structure that comes to mind to keep track of <b>K</b> elements is <s>Heap</s>. This pattern will make use of the <s><b>Heap</b></s> to solve multiple problems dealing with <b>K</b> elements at a time from a set of given elements.</s>\n\n### ❗ NOTE\n\nAlthough this course uses <b>Heaps</b> to solve <b>Top 'K' Elements</b> problems, <b>JavaScript</b> does not have a built in method for <b>Heaps/Priority Queues</b>. It can be very time consuming to implement a <b>Heap class</b> from scratch, especially during an interview. After reviewing the <i>JavaScript</i> solutions on <i>Leetcode</i> the most effecient way to solve a <b>Top 'K' Elements</b> problem is usually with <b>[QuickSort](https://github.com/Chanda-Abdul/leetcode/blob/master/0%20%E2%9D%97Sort%20Algorithms.md#-quick-sort)</b>, <b>[BinarySearch](https://github.com/Chanda-Abdul/leetcode/blob/master/0%20%E2%9D%97Sort%20Algorithms.md#binary-search)</b>, <b>[BucketSort](https://initjs.org/bucket-sort-in-javascript-dc040b8f0058)</b>, <b>[Greedy Algorithms](https://github.com/Chanda-Abdul/Grokking-Algorithm-Book-Notes/blob/main/8.%20Greedy%20Algoritms.md)</b>, or <b>[HashMaps](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)</b>. For more information take a look at these\n\n- [js heap implementation](https://dandkim.com/js-heap-implementation/)\n- [implementing heaps in javascript](https://blog.bitsrc.io/implementing-heaps-in-javascript-c3fbf1cb2e65)\n- [heap data structure in javascript](https://learnersbucket.com/tutorials/array/heap-data-structure-in-javascript/)",
+  "overview": "The Top 'K' Elements pattern is a sorting and filtering design template used to find, track, or sort the $K$ largest, smallest, or most frequent elements in a large dataset. Instead of sorting the entire dataset of size $N$—which takes $O(N \\log N)$ time—this pattern maintains a running heap (priority queue) of size $K$. By comparing incoming elements against the root of the heap, we can dynamically evict elements that fall out of the top bounds. This reduces the time complexity to $O(N \\log K)$ and requires only $O(K)$ auxiliary space.",
   "recognition_signals": [
-    "array of contiguous elements",
-    "minimum size subarray",
-    "sliding range constraints"
+    "Unsorted Arrays or Streams: The input elements arrive out of order, or are generated dynamically.",
+    "Frequency Counting: The problem involves finding elements based on how often they occur.",
+    "The \"K\" Target: The problem explicitly asks for the largest, smallest, closest, or most frequent $K$ elements.",
+    "Sub-Sorting Bounds: The expected time complexity is $O(N \\log K)$, which is better than standard $O(N \\log N)$ sorting.",
+    "String Reorganization: Rearranging characters so that duplicate letters are separated by at least $K$ spaces, or scheduling tasks with cooldown gaps.",
+    "--"
   ],
   "mental_model": {
-    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
-    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+    "analogy": "Imagine a 10-place gaming leaderboard or a VIP concert security queue.",
+    "description": "Imagine a **10-place gaming leaderboard** or a **VIP concert security queue**.\n\nTo maintain the list of the top 10 highest scorers, you do not need to record and sort the scores of all one million players who play the game. You only need a board with 10 slots. The player with the lowest score on the board sits at slot 10. When a new player finishes, you compare their score with slot 10. If the new score is lower, you discard it. If it is higher, you remove slot 10, insert the new player, and let them bubble up to their correct position. The vast majority of scores are discarded instantly."
   },
   "brute_force_journey": {
-    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
-    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
-    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+    "brute_force_description": "The brute force approach to finding the top $K$ largest elements is to sort the array in descending order and return the first $K$ elements.",
+    "inefficiency_observation": "Overlapping subsegments perform duplicate evaluations of identical elements.",
+    "optimization_concept": "```\n  Brute Force\n  [Sort the entire array of size N to access the top K elements -> O(N log N)]\n       ↓\n  Observation\n  [We only need to track the top K elements, not sort the remaining N - K items]\n       ↓\n  Optimization\n  [Build a Min-Heap of size K; replace the root if a larger element is found]\n       ↓\n  Final Pattern\n  [Logarithmic updates in a bounded priority queue of size K -> O(N log K)]\n```\n\n---"
   },
   "visualization_metadata": {
-    "type": "array-pointers",
+    "type": "heap-relations",
     "initial_state": {
-      "array": [
-        1,
-        3,
-        2,
-        6,
-        -1,
-        4
-      ],
-      "window_size": 3
+      "max_heap": [],
+      "min_heap": []
     },
     "animation_steps": [
       {
-        "action": "Initialize",
-        "description": "Initialize left and right boundaries at index 0.",
+        "action": "Scan Element",
+        "description": "Process element 8. Push onto Min-Heap. Heap size = 1.",
         "state": {
-          "left": 0,
-          "right": 0
+          "active_val": 8
         }
       },
       {
-        "action": "Expand",
-        "description": "Move right pointer to expand the range.",
+        "action": "Scan Element",
+        "description": "Process element 2. Push onto Min-Heap. Heap size = 2 (exceeds K=1).",
         "state": {
-          "left": 0,
-          "right": 2
+          "active_val": 2
         }
       },
       {
-        "action": "Shrink",
-        "description": "Slide the window forward: shift left boundary.",
+        "action": "Pop Minimum",
+        "description": "Min-Heap size > K. Pop minimum element (2). Top elements remaining: [8].",
         "state": {
-          "left": 1,
-          "right": 3
+          "active_val": 8
         }
       }
     ]
   },
   "polyglot_boilerplates": {
-    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
-    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
-    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+    "cpp": "#include <vector>\n#include <queue>\n\nusing namespace std;\n\nclass TopKTemplate {\npublic:\n    // Generic Min-Heap template to find the K largest elements\n    vector<int> findKLargestElements(const vector<int>& nums, int k) {\n        // Min-heap declaration\n        priority_queue<int, vector<int>, greater<int>> minHeap;\n\n        // Push first K elements onto the heap\n        for (int i = 0; i < k; ++i) {\n            if (i < nums.size()) {\n                minHeap.push(nums[i]);\n            }\n        }\n\n        // For the remaining elements, push only if larger than the root\n        for (int i = k; i < nums.size(); ++i) {\n            if (nums[i] > minHeap.top()) {\n                minHeap.pop();\n                minHeap.push(nums[i]);\n            }\n        }\n\n        // Extract elements from the heap\n        vector<int> result;\n        while (!minHeap.empty()) {\n            result.push_back(minHeap.top());\n            minHeap.pop();\n        }\n\n        return result;\n    }\n};",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n}"
   },
   "variants": [
     {
-      "name": "Fixed-size Range",
-      "description": "The sliding bounds maintain a constant diameter throughout execution."
+      "name": "**K Largest Elements**",
+      "description": "Min-Heap (Push if `element > heap.top()`)"
     },
     {
-      "name": "Variable-size Range",
-      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+      "name": "**K Closest Points**",
+      "description": "Max-Heap (Sort by distance; push if `dist < heap.top()`)"
+    },
+    {
+      "name": "**Connect Ropes**",
+      "description": "Min-Heap (Pop two smallest elements, sum them, and push back.)"
+    },
+    {
+      "name": "**K Frequent Elements**",
+      "description": "Min-Heap (Track frequencies in Map; sort heap by frequency.)"
+    },
+    {
+      "name": "**K-Distance Apart**",
+      "description": "Max-Heap (Reorganize string; use cooldown queue to re-add elements.)"
+    },
+    {
+      "name": "**Task Scheduler**",
+      "description": "Max-Heap (Run highest frequency task first; decrement and queue cooldown.)"
+    },
+    {
+      "name": "**Frequency Stack**",
+      "description": "Map + Stack (Store elements in stacks grouped by frequency.)"
     }
   ],
   "common_mistakes": [
     {
-      "mistake_title": "Off-by-One Range Limit",
-      "description": "Failing to validate boundary bounds before checking element values."
+      "mistake_title": "Key Pitfall",
+      "description": "**Incorrect Heap Type Choice:** Using a Max-Heap instead of a Min-Heap when searching for the *largest* $K$ elements. A Min-Heap keeps the smallest of the top $K$ elements at the root, allowing for an instant $O(1)$ comparison to decide if a new element qualifies."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Not checking heap bounds:** Pushing elements without checking if the heap size has exceeded $K$, leading to unbounded memory usage."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Frequency tie-breaking failures:** In frequency stack problems, failing to pop elements in LIFO order when their frequencies are equal."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Task Scheduler idle counts:** Incorrectly calculating cooldown slots, resulting in off-by-one scheduling durations."
     }
   ],
-  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing optimized traversals.",
   "related_patterns": [
-    "two-pointers",
-    "fast-slow-pointers"
+    "heap-sort-priority-queue-basics",
+    "current-pattern",
+    "top-k-elements-bounded-heap-filtering",
+    "two-heaps-double-sided-boundary-tracking",
+    "k-way-merge"
   ],
   "question_ladder": [
     {
-      "title": "Top 'K' Numbers",
+      "title": "Kth Largest Element in an Array",
       "difficulty": "Easy",
-      "link": "",
+      "link": "https://leetcode.com/problems/kth-largest-element-in-an-array/",
       "type": "Introductory"
     },
     {
-      "title": "Kth Smallest Number",
-      "difficulty": "Easy",
-      "link": "https://leetcode.com/problems/kth-largest-element-in-an-array/",
-      "type": "Medium"
-    },
-    {
-      "title": "'K' Closest Points to the Origin",
+      "title": "K Closest Points to Origin",
       "difficulty": "Easy",
       "link": "https://leetcode.com/problems/k-closest-points-to-origin/",
-      "type": "Medium"
+      "type": "Introductory"
     },
     {
-      "title": "Connect Ropes",
-      "difficulty": "Easy",
-      "link": "https://leetcode.com/problems/minimum-cost-to-connect-sticks/",
-      "type": "Medium"
-    },
-    {
-      "title": "\udc69🏽‍🦯 Top 'K' Frequent Numbers",
+      "title": "Top K Frequent Elements",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/top-k-frequent-elements/",
       "type": "Medium"
     },
     {
-      "title": "Frequency Sort",
+      "title": "Sort Characters By Frequency",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/sort-characters-by-frequency/",
       "type": "Medium"
     },
     {
-      "title": "Kth Largest Number in a Stream",
-      "difficulty": "Medium",
-      "link": "https://leetcode.com/problems/kth-largest-element-in-a-stream/",
-      "type": "Medium"
-    },
-    {
-      "title": "'K' Closest Numbers",
+      "title": "Find K Closest Elements",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/find-k-closest-elements/",
       "type": "Medium"
     },
     {
-      "title": "Maximum Distinct Elements",
+      "title": "Least Number of Unique Integers after K Removals",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/least-number-of-unique-integers-after-k-removals/",
       "type": "Medium"
     },
     {
-      "title": "Sum of Elements",
-      "difficulty": "Medium",
-      "link": "",
-      "type": "Medium"
-    },
-    {
-      "title": "Rearrange String",
+      "title": "Reorganize String",
       "difficulty": "Hard",
       "link": "https://leetcode.com/problems/reorganize-string/",
       "type": "Advanced"
     },
     {
-      "title": "🌟 Rearrange String K Distance Apart",
+      "title": "Rearrange String K Distance Apart",
       "difficulty": "Hard",
       "link": "https://leetcode.com/problems/rearrange-string-k-distance-apart/",
       "type": "Advanced"
     },
     {
-      "title": "🌟 🔎 Scheduling Tasks",
+      "title": "Task Scheduler",
       "difficulty": "Hard",
       "link": "https://leetcode.com/problems/task-scheduler/",
       "type": "Advanced"
     },
     {
-      "title": "🌟Frequency Stack",
+      "title": "Maximum Frequency Stack",
       "difficulty": "Hard",
       "link": "https://leetcode.com/problems/maximum-frequency-stack/",
-      "type": "Classic"
+      "type": "Advanced"
     }
   ],
   "cheat_sheet": [
-    "Always verify if the array is sorted.",
-    "Check if contiguous subsegments are required."
+    "Anchor yourself to this rule:",
+    "To find the largest, use a Min-Heap. To find the smallest, use a Max-Heap.",
+    "When organizing strings or scheduling tasks, count frequencies in a hash map first, push counts to a heap, and use a temporary waiting list to respect cooldown limits."
   ]
 }

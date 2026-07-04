@@ -74,6 +74,10 @@ export interface PatternAtlasIndexItem {
   variants: string[];
   companies: string[];
   questions_count: number;
+  aliases: string[];
+  data_structures: string[];
+  keywords: string[];
+  question_ids: number[];
 }
 
 export interface PatternAtlasIndex {

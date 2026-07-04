@@ -72,6 +72,8 @@ Welcome to **SheetStride**. This documentation layer serves as a persistent, hig
 *   **Company Sheets:** Fully implemented (database views created, 463 unique companies mapped, search filtering active, responsive card grids, detail lists with interview frequencies).
 *   **User Streaks/Heatmap:** Configured via Supabase database RPCs (`calculate_user_streaks`) and client local storage backup.
 *   **Revision Engine & Interview Notebook:** Fully implemented with spaced repetition columns on `user_progress`, cognitive reflection logger, study journals, and slidedrawer widgets.
+*   **Pattern Atlas (Phase 2):** Fully implemented directory detailing 16 algorithmic patterns with static compilation, math rendering, high-contrast C++ highlights, simplified practice tables, and multi-step custom visualizer playback animations.
+*   **Global Database Search:** Integrated Ctrl+K search button in Topbar header that queries the Supabase `questions` database and slides open the drawer globally.
 *   **Client-Side Caching Layer:** Persistent browser-level caching using `fetchWithCache` across key hub pages to enable instant transitions.
 
 ---

@@ -3,157 +3,213 @@
   "slug": "sliding-window",
   "difficulty": "Beginner",
   "family_name": "Pointers",
-  "overview": "In many problems dealing with an array (or a <b>LinkedList</b>), we are asked to find or calculate something among all the contiguous subarrays (or sublists) of a given size. For example, take a look at this problem:\n\n### Find Averages of Sub Arrays\nhttps://leetcode.com/problems/maximum-average-subarray-i/\n\n> Given an array, find the average of all contiguous subarrays of size `K` in it.\n\nLets understand this problem with a real input:\n\n`Array: [1, 3, 2, 6, -1, 4, 1, 8, 2], K=5`\n\nA <b>brute-force</b> algorithm will calculate the sum of every 5-element contiguous subarray of the given array and divide the sum by 5 to find the average.\n\n````js\nfunction findAvgOfSubarrays(arr, K) {\n  const results = []\n  \n  for(let i = 0; i < arr.length - K + 1; i++) {\n    let sum = 0\n    \n    for(let j = i; j < i + K; j++) {\n      sum += arr[j]\n    }\n    results.push(sum/K)  \n  }\n  return results\n}\n\n\nfindAvgOfSubarrays([1, 3, 2, 6, -1, 4, 1, 8, 2], 5)\n````\n\n<b>Time complexity: </b> Since for every element of the input array, we are calculating the sum of its next `K` elements, the time complexity of the above algorithm will be `O(N*K)` where `N` is the number of elements in the input array.\n\n#### Can we find a better solution? Do you see any inefficiency in the above approach?\n\nThe inefficiency is that for any two consecutive subarrays of size `5`, the overlapping part (which will contain four elements) will be evaluated twice.\n\nThe efficient way to solve this problem would be to visualize each contiguous subarray as a <i>sliding window</i> of `5` elements. This means that we will slide the window by one element when we move on to the next subarray. To reuse the sum from the previous subarray, we will subtract the element going out of the window and add the element now being included in the <i>sliding window</i>. This will save us from going through the whole subarray to find the sum and, as a result, the algorithm complexity will reduce to `O(N)`.\n\nHere is the algorithm for the <b>Sliding Window</b> approach:\n````js\nfunction findAveragesOfSubarrays(arr, k) {\n  //sliding window approach\n  \n  const results = []\n  let windowSum = 0\n  let windowStart = 0\n  \n  for(let windowEnd = 0; windowEnd < arr.length; windowEnd++) {\n    //add the next element\n    windowSum += arr[windowEnd]\n    \n    //slide the window forward \n    //we don't need to slide if we have not hit the required window size of k\n    \n    if (windowEnd >= k - 1) {\n      //we are **AUTOMATICALLY** returning the window average once we hit the window size of k\n      //and pushing to the output array\n      results.push(windowSum/k)\n      \n      //subtracting the element going out\n      windowSum -= arr[windowStart]\n      \n      //then sliding the window forward\n      windowStart++\n      \n      //adding the element coming in, in the outer/previous loop\n      //and repeating this process until we hit the end of the array\n    } \n  }\n  return results\n}\n\nfindAveragesOfSubarrays([1, 3, 2, 6, -1, 4, 1, 8, 2], 5)//[2.2, 2.8, 2.4, 3.6, 2.8]\n````",
+  "overview": "The Sliding Window pattern is a fundamental algorithmic framework used to perform continuous tracking or aggregation over contiguous segments of a linear data structure, such as arrays, strings, or linked lists. Instead of scanning overlapping subsequences from scratch, this pattern maintains a running state by updating the boundaries of an active \"window\" as it traverses the data. It is primarily utilized to optimize nested-loop brute force solutions, effectively reducing the time complexity from quadratic $O(N^2)$ or cubic $O(N^3)$ to linear $O(N)$.",
   "recognition_signals": [
-    "array of contiguous elements",
-    "minimum size subarray",
-    "sliding range constraints"
+    "Linear Data Types: The problem explicitly features an Array, String, or Contiguous Linked List.",
+    "Contiguity Constraint: The problem specifically mandates that the target sequence must be contiguous (e.g., \"contiguous subarray,\" \"continuous block,\" or \"substring\").",
+    "Fixed Bounds: The problem specifies a constant range of size $K$ (e.g., \"maximum average of subarrays of size K\").",
+    "Dynamic Range Limits: The bounds are dictated by a property variable $S$ or character constraint $K$ (e.g., \"sum $\\ge S$,\" \"exactly $K$ distinct characters,\" or \"at most $K$ zero replacements\").",
+    "Extrema Objectives: The problem asks you to discover the longest, shortest, or optimal sub-segment matching a target condition.",
+    "Repeated Subproblems: The naive solution requires iterating over overlapping sub-segments via nested loops ($O(N^2)$).",
+    "Monotonic Incremental Updates: The state metric changes predictably when expanding or shrinking (e.g., adding a positive number strictly increases the sum; removing an item strictly reduces the size).",
+    "--"
   ],
   "mental_model": {
-    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
-    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+    "analogy": "Imagine dragging a physical viewfinder frame smoothly across a long strip of film.",
+    "description": "Imagine dragging a physical **viewfinder frame** smoothly across a long strip of film.\n\nAs you slide the frame one slot to the right, you do not throw away the entire picture inside the frame and redraw it from scratch. Instead, you simply look at the trailing edge to see what left the frame, and look at the leading edge to see what entered. The vast majority of the image inside the frame remains exactly the same. By focusing exclusively on the changes at the active borders, your brain processes the animation continuously rather than treating each frame as a completely distinct, heavy rendering task."
   },
   "brute_force_journey": {
-    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
-    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
-    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+    "brute_force_description": "The brute force approach maps directly to the nested-loop visualization. An outer loop sets the starting position `i` for every possible sub-segment. An inner loop then spans forward to a target size $K$ or continues until a given condition is violated, tracking the subproblem state from zero every single time.",
+    "inefficiency_observation": "Overlapping subsegments perform duplicate evaluations of identical elements.",
+    "optimization_concept": "```\n  Brute Force\n  [Nested Loops recompute sums over overlapping blocks from scratch each time -> O(N * K)]\n       ↓\n  Observation\n  [Adjacent windows share identical middle elements; only the boundaries change]\n       ↓\n  Optimization\n  [Maintain a running state: subtract the trailing element and add the leading element]\n       ↓\n  Final Pattern\n  [Single linear pass using two pointers (Left/Right) to shift boundaries in O(1) -> O(N)]\n\n```\n\n---"
   },
   "visualization_metadata": {
     "type": "array-pointers",
     "initial_state": {
       "array": [
-        1,
-        3,
         2,
-        6,
-        -1,
-        4
+        1,
+        5,
+        2,
+        3,
+        2
       ],
-      "window_size": 3
+      "target": 7
     },
     "animation_steps": [
       {
         "action": "Initialize",
-        "description": "Initialize left and right boundaries at index 0.",
+        "description": "Initialize left and right window pointers at index 0. Target sum = 7. Current sum = 2.",
         "state": {
           "left": 0,
           "right": 0
         }
       },
       {
-        "action": "Expand",
-        "description": "Move right pointer to expand the range.",
+        "action": "Expand Window",
+        "description": "Expand window right pointer to index 1 (val 1). Current sum = 3 (less than target 7).",
+        "state": {
+          "left": 0,
+          "right": 1
+        }
+      },
+      {
+        "action": "Expand Window",
+        "description": "Expand window right pointer to index 2 (val 5). Current sum = 8 >= target 7. Valid window length = 3.",
         "state": {
           "left": 0,
           "right": 2
         }
       },
       {
-        "action": "Shrink",
-        "description": "Slide the window forward: shift left boundary.",
+        "action": "Shrink Window",
+        "description": "Shrink window by advancing left pointer to index 1. Current sum = 6 (less than target 7).",
         "state": {
           "left": 1,
+          "right": 2
+        }
+      },
+      {
+        "action": "Expand Window",
+        "description": "Expand window right pointer to index 3 (val 2). Current sum = 8 >= target 7. Window length = 3.",
+        "state": {
+          "left": 1,
+          "right": 3
+        }
+      },
+      {
+        "action": "Shrink Window",
+        "description": "Shrink window by advancing left pointer to index 2. Current sum = 7 >= target 7. Found better minimum window length = 2!",
+        "state": {
+          "left": 2,
           "right": 3
         }
       }
     ]
   },
   "polyglot_boilerplates": {
-    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
-    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
-    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+    "cpp": "#include <vector>\n#include <unordered_map>\n#include <algorithm>\n\nusing namespace std;\n\nclass SlidingWindowTemplate {\npublic:\n    // Universal implementation framework for a Variable Window (Maximize Strategy)\n    int longestWindowTemplate(const vector<int>& arr, int constraintLimit) {\n        int n = arr.size();\n        int windowStart = 0;\n        int maxLength = 0;\n        \n        // State tracking container (can be an unordered_map, array, or scalar counter)\n        unordered_map<int, int> stateTracker;\n\n        for (int windowEnd = 0; windowEnd < n; ++windowEnd) {\n            // 1. Inject the incoming element into the active state\n            stateTracker[arr[windowEnd]]++;\n\n            // 2. Evaluate constraint validation. If invalid, contract from the left\n            while (ObjectStateIsInvalid(stateTracker, constraintLimit)) {\n                int leftElement = arr[windowStart];\n                \n                // Eject or decrement tracking parameters\n                stateTracker[leftElement]--;\n                if (stateTracker[leftElement] == 0) {\n                    stateTracker.erase(leftElement); // Avoid zombie keys\n                }\n                \n                // Shift trailing boundary forward\n                windowStart++;\n            }\n\n            // 3. Once state is guaranteed valid, update global tracking parameters\n            int currentWindowLength = windowEnd - windowStart + 1;\n            maxLength = max(maxLength, currentWindowLength);\n        }\n\n        return maxLength;\n    }\n\nprivate:\n    bool ObjectStateIsInvalid(const unordered_map<int, int>& tracker, int limit) {\n        // Place custom verification constraints here (e.g., tracker.size() > limit)\n        return false; \n    }\n};",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n}"
   },
   "variants": [
     {
-      "name": "Fixed-size Range",
-      "description": "The sliding bounds maintain a constant diameter throughout execution."
+      "name": "**Fixed Size**",
+      "description": "Bounded (Constant $K$) (Find global maximum, minimum, or target metric match.)"
     },
     {
-      "name": "Variable-size Range",
-      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+      "name": "**Variable (Maximize)**",
+      "description": "Dynamic Expansion (Discover the maximum possible length matching a threshold constraint.)"
+    },
+    {
+      "name": "**Variable (Minimize)**",
+      "description": "Dynamic Contraction (Discover the tightest possible sub-segment that satisfies a condition.)"
     }
   ],
   "common_mistakes": [
     {
-      "mistake_title": "Off-by-One Range Limit",
-      "description": "Failing to validate boundary bounds before checking element values."
+      "mistake_title": "Key Pitfall",
+      "description": "**Off-by-One Length Calculations:** Beginners frequently write `windowEnd - windowStart` to evaluate size. In a zero-indexed continuous context, the length of an active subarray is always exactly `windowEnd - windowStart + 1`."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Dangling Map Keys (Zombie Elements):** When tracking frequencies in a map during a contraction step, beginners decrement a character count to `0` but fail to erase the key. Methods like `map.size()` or `Object.keys()` will continue counting that key as an active element, throwing off constraint validation loops."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Premature Tracking Updates:** Updating global maximums or minimums *before* evaluating the validation state. In minimization patterns, structural checks must happen inside the validation loop while conditions are guaranteed to be true."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Negative Value Failures:** Attempting to apply standard variable-size sliding windows to arrays containing negative integers. Adding an element no longer guarantees a monotonic increase in sum, breaking the structural contraction rules. These require prefix sums or monotonic deques."
     }
   ],
-  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing optimized traversals.",
   "related_patterns": [
-    "two-pointers",
-    "fast-slow-pointers"
+    "two-pointers-independentopposite",
+    "current-pattern",
+    "sliding-window-two-pointers-moving-in-step",
+    "prefix-sums-for-negative-numbers",
+    "monotonic-queue-deque-sliding-window"
   ],
   "question_ladder": [
     {
-      "title": "Maximum Sum Subarray of Size K",
+      "title": "Maximum Average Subarray I",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/maximum-average-subarray-i/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Largest Subarray Length K",
       "difficulty": "Easy",
       "link": "https://leetcode.com/problems/largest-subarray-length-k/",
       "type": "Introductory"
     },
     {
-      "title": "Smallest Subarray with a given sum",
-      "difficulty": "Easy",
+      "title": "Minimum Size Subarray Sum",
+      "difficulty": "Medium",
       "link": "https://leetcode.com/problems/minimum-size-subarray-sum/",
       "type": "Medium"
     },
     {
-      "title": "Longest Substring with K Distinct Characters",
+      "title": "Longest Substring with At Most K Distinct Characters",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/longest-substring-with-at-most-k-distinct-characters/",
       "type": "Medium"
     },
     {
-      "title": "Fruits into Baskets",
+      "title": "Fruit Into Baskets",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/fruit-into-baskets/",
       "type": "Medium"
     },
     {
-      "title": "No-repeat Substring",
+      "title": "Longest Substring Without Repeating Characters",
       "difficulty": "Hard",
       "link": "https://leetcode.com/problems/longest-substring-without-repeating-characters/",
       "type": "Advanced"
     },
     {
-      "title": "Longest Substring with Same Letters after Replacement",
+      "title": "Longest Repeating Character Replacement",
       "difficulty": "Hard",
       "link": "https://leetcode.com/problems/longest-repeating-character-replacement/",
       "type": "Advanced"
     },
     {
-      "title": "Longest Subarray with Ones after Replacement",
+      "title": "Max Consecutive Ones III",
       "difficulty": "Hard",
       "link": "https://leetcode.com/problems/max-consecutive-ones-iii/",
       "type": "Advanced"
     },
     {
-      "title": "🌟 Permutation in a String",
-      "difficulty": "Hard",
+      "title": "Permutation in String",
+      "difficulty": "Medium",
       "link": "https://leetcode.com/problems/permutation-in-string/",
-      "type": "Advanced"
+      "type": "Classic"
     },
     {
-      "title": "🌟 String Anagrams",
-      "difficulty": "Hard",
+      "title": "Find All Anagrams in a String",
+      "difficulty": "Medium",
       "link": "https://leetcode.com/problems/find-all-anagrams-in-a-string/",
-      "type": "Advanced"
+      "type": "Classic"
     },
     {
-      "title": "🌟 Smallest Window containing Substring",
-      "difficulty": "Hard",
+      "title": "Minimum Window Substring",
+      "difficulty": "Medium",
       "link": "https://leetcode.com/problems/minimum-window-substring/",
-      "type": "Advanced"
+      "type": "Classic"
     },
     {
-      "title": "🌟 Words Concatenation",
+      "title": "Substring with Concatenation of All Words",
       "difficulty": "Hard",
       "link": "https://leetcode.com/problems/substring-with-concatenation-of-all-words/",
-      "type": "Classic"
+      "type": "Advanced"
     }
   ],
   "cheat_sheet": [
-    "Always verify if the array is sorted.",
-    "Check if contiguous subsegments are required."
+    "If you ever get confused about how to coordinate the left and right pointers in an interview, anchor yourself to this universal rule:",
+    "The `for` loop controls expansion. The `while` loop controls contraction.",
+    "Never move both pointers randomly inside the same loop iteration. Let your outer loop blindly pull the right pointer forward to capture new data, and let the inner loop systematically clean up the trailing left border whenever constraints say the window is overloaded.",
+    "If you remember only one thing: Always delete map keys entirely when their counter hits zero. Decrementing to zero is not enough!"
   ]
 }

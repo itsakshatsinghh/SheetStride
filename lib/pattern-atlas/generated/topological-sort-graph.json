@@ -1,0 +1,161 @@
+{
+  "pattern_name": "Topological Sort (Graph)",
+  "slug": "topological-sort-graph",
+  "difficulty": "Intermediate",
+  "family_name": "Graphs",
+  "overview": "The Topological Sort pattern is an algorithmic design template used to find a linear ordering of elements that have unidirectional dependencies on each other. For a directed edge $(U, V)$ from vertex $U$ to vertex $V$, $U$ must appear before $V$ in the final sequence. This pattern is primarily implemented using Kahn's algorithm (a Breadth-First Search-based approach utilizing vertex in-degrees) or a Depth-First Search (DFS) traversal. Topological sorting runs in linear $O(V + E)$ time and is widely applied to task scheduling, compilation ordering, and cycle detection in Directed Acyclic Graphs (DAGs).",
+  "recognition_signals": [
+    "Directed Graph Inputs: The problem defines vertices linked by directed, unidirectional arrows (e.g., prerequisite pairs, dependencies).",
+    "DAG Properties: The graph must be acyclic (no loops) for a topological sort to exist.",
+    "Ordering Requirements: The task requires finding a sequence where some elements must happen before others.",
+    "Linear Time Bounds: The system expects dependencies to be resolved in $O(V + E)$ time.",
+    "Lexicographical Rule Extraction: Determining alphabet sorting orders from adjacent words in an alien dictionary.",
+    "Sequence Validation: Checking if a unique path can be reconstructed from a set of subsequence rules.",
+    "Tree Leaf Pruning: Finding centroids of an undirected tree by iteratively removing leaf nodes (Minimum Height Trees).",
+    "--"
+  ],
+  "mental_model": {
+    "analogy": "Imagine planning a university curriculum or a building construction checklist.",
+    "description": "Imagine **planning a university curriculum** or a **building construction checklist**.\n\nYou cannot take Advanced Databases until you complete Databases, and Databases requires Intro to CS. Intro to CS has 0 prerequisites (it is a source). You complete Intro to CS, which removes it from your checklist. The Databases course now has 0 remaining prerequisites, making it your next available option. You repeat this course-by-course, always picking from the pool of classes that have 0 remaining prerequisites. If at some point you cannot find any course with 0 prerequisites, but you still have courses left to take, you have hit a circular dependency loop (a cycle)."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "The brute force approach generates all permutations of vertices and checks if each permutation satisfies the dependency constraints.",
+    "inefficiency_observation": "Overlapping subsegments perform duplicate evaluations of identical elements.",
+    "optimization_concept": "```\n  Brute Force / Combinatorial Search\n  [Generate all orderings and validate dependencies for each permutation -> O(V! * E)]\n       ↓\n  Observation\n  [We can resolve nodes dynamically by tracking active incoming edge counts (in-degrees)]\n       ↓\n  Kahn's Algorithm (BFS)\n  [Queue nodes with in-degree 0; decrement neighbor in-degrees upon removal]\n       ↓\n  Final Pattern\n  [Linear topological ordering in O(V + E) time and O(V + E) space]\n```\n\n---"
+  },
+  "visualization_metadata": {
+    "type": "tree-traversal",
+    "initial_state": {
+      "root": 0,
+      "left": 1,
+      "right": 2
+    },
+    "animation_steps": [
+      {
+        "action": "Find Sources",
+        "description": "Identify all vertices with in-degree 0. Source node 0 identified, push to queue.",
+        "state": {
+          "active": 0
+        }
+      },
+      {
+        "action": "Process Node 0",
+        "description": "Pop node 0. Add to sorted list: [0]. Decrement in-degree of neighbors (1 and 2).",
+        "state": {
+          "active": 0
+        }
+      },
+      {
+        "action": "Queue Node 1",
+        "description": "In-degree of node 1 becomes 0. Pop from queue, add to sorted list: [0, 1].",
+        "state": {
+          "active": 1
+        }
+      },
+      {
+        "action": "Queue Node 2",
+        "description": "In-degree of node 2 becomes 0. Pop from queue, add to sorted list: [0, 1, 2]. Order complete.",
+        "state": {
+          "active": 2
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "#include <vector>\n#include <queue>\n\nusing namespace std;\n\nclass TopologicalSortTemplate {\npublic:\n    // Kahn's algorithm template for Topological Sorting\n    vector<int> sortGraph(int vertices, const vector<vector<int>>& edges) {\n        vector<int> sortedOrder;\n        if (vertices <= 0) return sortedOrder;\n\n        // Initialize adjacency list and in-degrees\n        vector<int> inDegree(vertices, 0);\n        vector<vector<int>> graph(vertices);\n\n        // Build the graph\n        for (const auto& edge : edges) {\n            int parent = edge[0];\n            int child = edge[1];\n            graph[parent].push_back(child);\n            inDegree[child]++;\n        }\n\n        // Find all initial sources (nodes with 0 in-degree)\n        queue<int> sources;\n        for (int i = 0; i < vertices; ++i) {\n            if (inDegree[i] == 0) {\n                sources.push(i);\n            }\n        }\n\n        // Process elements\n        while (!sources.empty()) {\n            int vertex = sources.front();\n            sources.pop();\n            sortedOrder.push_back(vertex);\n\n            for (int child : graph[vertex]) {\n                inDegree[child]--;\n                if (inDegree[child] == 0) {\n                    sources.push(child);\n                }\n            }\n        }\n\n        // If sortedOrder doesn't contain all vertices, there is a cycle\n        if (sortedOrder.size() != vertices) {\n            return {};\n        }\n\n        return sortedOrder;\n    }\n};",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n}"
+  },
+  "variants": [
+    {
+      "name": "**Topological Sort**",
+      "description": "Standard Kahn's (Return sorted vertex list.)"
+    },
+    {
+      "name": "**Course Schedule**",
+      "description": "Cycle Detection (Return true if `sortedOrder.size() == V`.)"
+    },
+    {
+      "name": "**Course Schedule II**",
+      "description": "Standard Kahn's (Return array of order; return empty on cycle.)"
+    },
+    {
+      "name": "**All Topological Sorts**",
+      "description": "Backtracking DFS (For each active source, recurse, then backtrack in-degrees.)"
+    },
+    {
+      "name": "**Alien Dictionary**",
+      "description": "Dict Character Merge (Compare adjacent words to build directed graph of letters.)"
+    },
+    {
+      "name": "**Sequence Reconstruction**",
+      "description": "Queue Uniqueness (If `sources.size() > 1` at any step, the path is not unique.)"
+    },
+    {
+      "name": "**Minimum Height Trees**",
+      "description": "Leaf Pruning BFS (Prune leaves (`steps == 1`) level-by-level until 1 or 2 remain.)"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Cycle Check Omission:** Failing to verify if the output array length matches the total number of vertices. If they do not match, the graph contains a cycle and the sort is invalid."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Incorrect In-Degree Updates:** Decrementing in-degree counts of children without checking if they reach zero before enqueuing."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Graph Type Mismatch:** Attempting to apply topological sorting to undirected graphs without converting them to trees or establishing edge directions first."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Map key initializations:** In character-based problems (like Alien Dictionary), failing to initialize steps to zero for characters that have no incoming edges, causing key-not-found exceptions."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing optimized traversals.",
+  "related_patterns": [
+    "breadth-first-search-queue-based-grid-traversal",
+    "current-pattern",
+    "topological-sort-dag-dependency-resolution",
+    "dijkstras-shortest-path-weighted-graph-priority-traversal",
+    "depth-first-search-backtracking"
+  ],
+  "question_ladder": [
+    {
+      "title": "Course Schedule",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/course-schedule/",
+      "type": "Medium"
+    },
+    {
+      "title": "Course Schedule II",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/course-schedule-ii/",
+      "type": "Medium"
+    },
+    {
+      "title": "Alien Dictionary",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/alien-dictionary/",
+      "type": "Advanced"
+    },
+    {
+      "title": "Sequence Reconstruction",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/sequence-reconstruction/",
+      "type": "Advanced"
+    },
+    {
+      "title": "Minimum Height Trees",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/minimum-height-trees/",
+      "type": "Advanced"
+    }
+  ],
+  "cheat_sheet": [
+    "Always double-check if your output size matches total vertices: `if (sortedOrder.size() != V) return {};`.",
+    "When solving Sequence Reconstruction, remember that a unique path is only guaranteed if the `sources` queue never contains more than one element at any time. If `sources.size() > 1` at any step, return `false` instantly."
+  ]
+}

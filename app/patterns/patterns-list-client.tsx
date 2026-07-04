@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Search, Tag, Layers, ArrowRight } from "lucide-react";
+import { Search, Layers, ArrowRight, CheckCircle2, AlertCircle, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/providers/auth-provider";
+import { supabase } from "@/lib/supabase";
 
 interface PatternIndexItem {
   pattern_name: string;
@@ -15,13 +17,77 @@ interface PatternIndexItem {
   variants: string[];
   companies: string[];
   questions_count: number;
+  aliases: string[];
+  data_structures: string[];
+  keywords: string[];
+  question_ids: number[];
 }
 
 const DIFFICULTIES = ["All", "Beginner", "Intermediate", "Advanced"];
 
 export function PatternsListClient({ initialPatterns }: { initialPatterns: PatternIndexItem[] }) {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
+
+  // Track solved states & revision due dates locally
+  const [solvedIds, setSolvedIds] = useState<Set<number>>(new Set());
+  const [revisionMap, setRevisionMap] = useState<{ [qId: number]: string | null }>({});
+
+  useEffect(() => {
+    if (!user) return;
+    async function fetchUserProgress() {
+      try {
+        const { data, error } = await supabase
+          .from("user_progress")
+          .select("question_id, next_revision_due, completed");
+        if (!error && data) {
+          const solvedSet = new Set<number>();
+          const revs: { [qId: number]: string | null } = {};
+          data.forEach((row: any) => {
+            if (row.completed) {
+              solvedSet.add(row.question_id);
+            }
+            revs[row.question_id] = row.next_revision_due;
+          });
+          setSolvedIds(solvedSet);
+          setRevisionMap(revs);
+        }
+      } catch (err) {
+        console.error("Failed to load list progress:", err);
+      }
+    }
+    fetchUserProgress();
+    window.addEventListener("question-solved", fetchUserProgress);
+    return () => {
+      window.removeEventListener("question-solved", fetchUserProgress);
+    };
+  }, [user]);
+
+  // Compute revision label for a pattern
+  const getRevisionDueLabel = (qIds: number[]) => {
+    let earliestDate: Date | null = null;
+    for (const qId of qIds) {
+      const due = revisionMap[qId];
+      if (due) {
+        const d = new Date(due);
+        if (!earliestDate || d < earliestDate) {
+          earliestDate = d;
+        }
+      }
+    }
+    if (!earliestDate) return "N/A";
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dueDay = new Date(earliestDate.getFullYear(), earliestDate.getMonth(), earliestDate.getDate());
+    const diffTime = dueDay.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return "Overdue";
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Tomorrow";
+    return earliestDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
 
   const filteredPatterns = initialPatterns.filter((p) => {
     const name = p.pattern_name.toLowerCase();
@@ -29,13 +95,19 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
     const signals = p.recognition_signals.map(s => s.toLowerCase());
     const variants = p.variants.map(v => v.toLowerCase());
     const companies = p.companies.map(c => c.toLowerCase());
+    const aliases = (p.aliases || []).map(a => a.toLowerCase());
+    const dataStructures = (p.data_structures || []).map(d => d.toLowerCase());
+    const keywords = (p.keywords || []).map(k => k.toLowerCase());
     
     const matchesSearch =
       name.includes(search.toLowerCase()) ||
       family.includes(search.toLowerCase()) ||
       signals.some(s => s.includes(search.toLowerCase())) ||
       variants.some(v => v.includes(search.toLowerCase())) ||
-      companies.some(c => c.includes(search.toLowerCase()));
+      companies.some(c => c.includes(search.toLowerCase())) ||
+      aliases.some(a => a.includes(search.toLowerCase())) ||
+      dataStructures.some(d => d.includes(search.toLowerCase())) ||
+      keywords.some(k => k.includes(search.toLowerCase()));
 
     const matchesDifficulty =
       selectedDifficulty === "All" ||
@@ -64,7 +136,7 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant" />
           <input
             type="text"
-            placeholder="FILTER_PATTERNS_BY_NAME_SIGNAL_OR_VARIANT..."
+            placeholder="FILTER BY NAME, SIGNAL, VARIANT OR DATA STRUCTURE..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-[#0A0A0A] border border-outline-variant/30 rounded-lg text-body font-mono text-[13px] text-text tracking-wide placeholder:text-outline/40 focus:outline-none focus:border-primary transition-all focus:ring-1 focus:ring-primary/20"
@@ -93,7 +165,7 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
       <div className="space-y-12">
         {sortedFamilies.length === 0 ? (
           <div className="text-center py-16 border border-dashed border-outline-variant/30 rounded-xl bg-[#111111]/30">
-            <p className="font-mono text-outline uppercase tracking-widest text-[13px]">NO_MATCHING_PATTERNS_FOUND</p>
+            <p className="font-mono text-outline uppercase tracking-widest text-[13px]">NO MATCHING PATTERNS FOUND</p>
           </div>
         ) : (
           sortedFamilies.map((family) => (
@@ -113,7 +185,21 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {groupedPatterns[family].map((pattern) => {
                   const keywords = pattern.recognition_signals.slice(0, 3);
+                  const qIds = pattern.question_ids || [];
+                  const solvedCount = qIds.filter(id => solvedIds.has(id)).length;
+                  const totalCount = pattern.questions_count;
+                  const completionPercentage = totalCount > 0 ? Math.round((solvedCount / totalCount) * 100) : 0;
                   
+                  let confidence = "None";
+                  if (solvedCount > 0) {
+                    const ratio = solvedCount / totalCount;
+                    if (ratio < 0.4) confidence = "Low";
+                    else if (ratio < 0.8) confidence = "Medium";
+                    else confidence = "High";
+                  }
+
+                  const revisionLabel = getRevisionDueLabel(qIds);
+
                   return (
                     <motion.div
                       key={pattern.pattern_name}
@@ -144,10 +230,35 @@ export function PatternsListClient({ initialPatterns }: { initialPatterns: Patte
                         </div>
                       </div>
 
+                      {/* Progress Panel (authenticated only) */}
+                      {user && (
+                        <div className="border-t border-dashed border-outline-variant/10 pt-3.5 pb-4 space-y-2.5">
+                          {/* Progress bar */}
+                          <div className="flex items-center justify-between text-[10px] font-mono uppercase text-outline/65">
+                            <span>Progress: {solvedCount} / {totalCount} Solved</span>
+                            <span className="text-secondary font-bold">{completionPercentage}%</span>
+                          </div>
+                          <div className="h-1 w-full bg-[#1A1A1A] rounded-full overflow-hidden">
+                            <div className="h-full bg-secondary transition-all duration-500" style={{ width: `${completionPercentage}%` }} />
+                          </div>
+
+                          {/* Confidence & Revision Due */}
+                          <div className="flex justify-between text-[9px] font-mono uppercase text-outline/80">
+                            <span className="flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3 text-secondary" />
+                              <span>Confidence: {confidence}</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3 text-primary-strong" />
+                              <span>Revision Due: {revisionLabel}</span>
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Footer Info */}
-                      <div>
-                        {/* Solves tracker counts */}
-                        <div className="flex justify-between items-center border-t border-outline-variant/15 pt-3 mb-4 text-[10px] font-mono uppercase tracking-wider text-outline/80">
+                      <div className="border-t border-outline-variant/15 pt-3">
+                        <div className="flex justify-between items-center mb-3 text-[10px] font-mono uppercase tracking-wider text-outline/80">
                           <div className="flex items-center gap-1">
                             <span>LADDER PATH:</span>
                             <span className="text-primary font-bold">{pattern.questions_count} Exercises</span>

@@ -1,0 +1,183 @@
+{
+  "pattern_name": "Tree Breadth First Search (BFS)",
+  "slug": "tree-breadth-first-search-bfs",
+  "difficulty": "Intermediate",
+  "family_name": "Trees",
+  "overview": "The Tree Breadth First Search (BFS) pattern is a structural traversal framework that explores a tree data structure layer by layer, visiting all nodes at a given depth level before advancing to the nodes at the subsequent depth level. This hierarchical strategy utilizes a First-In, First-Out (FIFO) queue data structure to manage node tracking references. By converting recursive parent-child relations into sequential horizontal processing stages, Tree BFS simplifies level-by-level tracking, distance metrics, and structural side-views into a highly predictable framework.",
+  "recognition_signals": [
+    "Hierarchical Node Layouts: The underlying input collection features connected instances of `TreeNode` references containing branches.",
+    "Level-Order Requirements: The problem prompt explicitly requests layer configurations (e.g., \"level by level,\" \"horizontal rows,\" \"layer arrays\").",
+    "Shortest Path / Proximity Search: Finding the absolute minimum distance from the root to any leaf node.",
+    "Cross-Sibling Connections: Requirements forcing elements located on the exact same layer to interact with each other (e.g., linking right side pointers).",
+    "Alternating Generation Scans: Traversing alternating layers from left-to-right and right-to-left (Zigzag format).",
+    "Per-Tier Summarization: Requests targeting aggregated statistics compiled per level (e.g., maximum sum value per layer, level averages array).",
+    "--"
+  ],
+  "mental_model": {
+    "analogy": "Imagine a ripple expanding outward on a calm water surface after a stone drops at the center, or a localized shockwave sweeping systematically through",
+    "description": "Imagine a ripple expanding outward on a calm water surface after a stone drops at the center, or a localized shockwave sweeping systematically through multi-tiered office floors from top to bottom.\n\nYou begin exclusively on floor $0$ with the root node. Before you are allowed to check anything on the floors below, you must clear every single office on the current floor. As you inspect a room (or node), you look at its escape hatches (the left and right children) and register those downstream targets into your queuing clipboard. Once the rooms on floor $0$ are cleared, you look at your clipboard, check the length of your queue, and lock down your next operational tier. You process that chunk seamlessly without letting future arrivals blend into your active generation slot."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "An unoptimized approach uses a recursive Depth First Search method that tracks an active depth scalar across stack parameters. The system traverses down every vertical line, lookups up the level's respective array bucket inside an external multi-dimensional array list, and manually appends elements based on their depth indices.",
+    "inefficiency_observation": "Overlapping subsegments perform duplicate evaluations of identical elements.",
+    "optimization_concept": "```\n  Brute Force\n  [Run deep recursive vertical probes, relying on a tracking index to map values across rows]\n       ↓\n  Observation\n  [A FIFO queue automatically maintains the generational sequence of child nodes]\n       ↓\n  Optimization\n  [Capture queue.size() at the start of each layer loop to process a generation completely]\n       ↓\n  Final Pattern\n  [Iterate through levels using a single flat tracking loop -> O(N) Time, O(W) Space]\n\n```\n\n---"
+  },
+  "visualization_metadata": {
+    "type": "tree-traversal",
+    "initial_state": {
+      "root": 1,
+      "left": 2,
+      "right": 3
+    },
+    "animation_steps": [
+      {
+        "action": "Visit Root",
+        "description": "Pop root node 1 from queue. Record values at level 0: [1]. Push children 2 and 3.",
+        "state": {
+          "active": 1
+        }
+      },
+      {
+        "action": "Visit Left",
+        "description": "Pop child node 2 from queue. Record value: [1, 2].",
+        "state": {
+          "active": 2
+        }
+      },
+      {
+        "action": "Visit Right",
+        "description": "Pop child node 3 from queue. Record value: [1, 2, 3]. Traversal finished.",
+        "state": {
+          "active": 3
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "#include <vector>\n#include <queue>\n#include <algorithm>\n\nusing namespace std;\n\n// Standard binary tree node definition\nstruct TreeNode {\n    int val;\n    TreeNode* left;\n    TreeNode* right;\n    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}\n};\n\nclass TreeBFSTemplate {\npublic:\n    // Core structural framework for level-by-level processing\n    vector<vector<int>> levelOrderTraversal(TreeNode* root) {\n        if (root == nullptr) {\n            return {};\n        }\n\n        vector<vector<int>> resultLevels;\n        queue<TreeNode*> nodeQueue;\n        \n        // 1. Seed your tracking engine with the root node reference\n        nodeQueue.push(root);\n\n        while (!nodeQueue.empty()) {\n            // 2. Lock down the exact headcount of the active layer generation\n            int levelSize = nodeQueue.size();\n            vector<int> currentLevelNodes;\n\n            // 3. Exhaust the active layer generation completely\n            for (int i = 0; i < levelSize; ++i) {\n                TreeNode* currentNode = nodeQueue.front();\n                nodeQueue.pop();\n\n                // Record node values or update structural tracking parameters\n                currentLevelNodes.push_back(currentNode->val);\n\n                // 4. Inject child node references safely using explicit null guards\n                if (currentNode->left != nullptr) {\n                    nodeQueue.push(currentNode->left);\n                }\n                if (currentNode->right != nullptr) {\n                    nodeQueue.push(currentNode->right);\n                }\n            }\n\n            // Commit the finalized level row to your output structure\n            resultLevels.push_back(currentLevelNodes);\n        }\n\n        return resultLevels;\n    }\n};",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n}"
+  },
+  "variants": [
+    {
+      "name": "**Standard BFS**",
+      "description": "Append to row back (Store each node's value sequentially left-to-right.)"
+    },
+    {
+      "name": "**Reverse Layer**",
+      "description": "Insert to results front (Prepend or reverse the outer result row structure.)"
+    },
+    {
+      "name": "**Zigzag Scan**",
+      "description": "Flip row insertion side (Alternate between appending or prepending values to the row array based on a direction flag.)"
+    },
+    {
+      "name": "**Successor Hunt**",
+      "description": "Immediate follow-up (Break out of the loop the instant your search target matches the active element.)"
+    },
+    {
+      "name": "**View Extractor**",
+      "description": "Filter by boundary index (Record values only when the current tracking index matches an edge boundary.)"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Dynamic Queue Size Checks:** Writing loop thresholds using changing references like `for (int i = 0; i < q.size(); ++i)`. Because children are actively pushed into the queue *inside* the loop, `q.size()` expands dynamically, mixing generations and breaking the level order tracking pattern. Always lock down the size into a local variable like `levelSize = q.size()` first."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Missing Null Child Pointer Guards:** Pushing child pointers directly into the queue without verifying if they are null (`nullptr`). This injects invalid memory locations into the search pipeline, causing crash states or throwing off count trackers."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Incorrect Leaf Nodes Validation:** For minimization problems (such as Minimum Depth), updating your global tracking parameters or executing early returns without confirming that a node is a true leaf (`curr->left == nullptr && curr->right == nullptr`)."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Memory Out-of-Bounds Exceptions on Level Tracking:** Initializing tracking scalars (like level maximum totals or averages) using `0` when nodes can store negative values. Use `INT_MIN` for safe extrema testing initialization boundaries."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing optimized traversals.",
+  "related_patterns": [
+    "queue-operations-tree-architectures",
+    "current-pattern",
+    "tree-breadth-first-search-generational-queue-isolation",
+    "tree-depth-first-search-vertical-traversal-stack",
+    "graph-breadth-first-search-bfs-matrix-visited-tracking-hashes"
+  ],
+  "question_ladder": [
+    {
+      "title": "Binary Tree Level Order Traversal",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/binary-tree-level-order-traversal/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Binary Tree Level Order Traversal II",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/binary-tree-level-order-traversal-ii/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Average of Levels in Binary Tree",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/average-of-levels-in-binary-tree/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Minimum Depth of Binary Tree",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/minimum-depth-of-binary-tree/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Maximum Depth of Binary Tree",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/maximum-depth-of-binary-tree/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Level Order Successor Discovery",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com",
+      "type": "Introductory"
+    },
+    {
+      "title": "Binary Tree Zigzag Level Order Traversal",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/binary-tree-zigzag-level-order-traversal/",
+      "type": "Medium"
+    },
+    {
+      "title": "Maximum Level Sum of a Binary Tree",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/maximum-level-sum-of-a-binary-tree/",
+      "type": "Medium"
+    },
+    {
+      "title": "Populating Next Right Pointers in Each Node",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/populating-next-right-pointers-in-each-node/",
+      "type": "Medium"
+    },
+    {
+      "title": "Populating Next Right Pointers in Each Node II",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/populating-next-right-pointers-in-each-node-ii/",
+      "type": "Medium"
+    },
+    {
+      "title": "Binary Tree Right Side View",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/binary-tree-right-side-view/",
+      "type": "Medium"
+    }
+  ],
+  "cheat_sheet": [
+    "The most critical step in Tree BFS is locking down the level size constraint into a distinct variable before launching the generation loop.",
+    "```cpp",
+    "int levelSize = q.size(); // This is your checkpoint",
+    "Treat `levelSize` as a fixed snapshot of the current level. No matter how many new child elements are pushed into the back of the queue, your loop will only step forward exactly `levelSize` times. This acts as a reliable firewall, keeping subsequent generations from bleeding into your active level processing window."
+  ]
+}

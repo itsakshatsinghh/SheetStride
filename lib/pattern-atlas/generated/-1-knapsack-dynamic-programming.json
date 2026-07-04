@@ -1,0 +1,142 @@
+{
+  "pattern_name": "-1 Knapsack (Dynamic Programming)",
+  "slug": "-1-knapsack-dynamic-programming",
+  "difficulty": "Intermediate",
+  "family_name": "Dynamic Programming",
+  "overview": "The 0-1 Knapsack pattern is the foundational archetype of Dynamic Programming (DP). It is used to solve optimization problems where we are presented with a set of items—each having a weight and a profit—and must decide whether to include (`1`) or exclude (`0`) each item to maximize the total profit without exceeding a maximum capacity constraint $C$. By breaking the decision tree into overlapping subproblems and caching intermediate state results, this pattern optimizes the brute-force exponential search ($O(2^N)$) down to pseudo-polynomial $O(N \\cdot C)$ time using either top-down memoization or bottom-up tabulation.",
+  "recognition_signals": [
+    "Finite Items with Dual Constraints: You are given a set of items, each characterized by two parameters (e.g., profit/weight, cost/value, sum/size).",
+    "Binary Choices: You must make a binary decision (include or exclude) for each item. No fractional items or infinite supplies are allowed.",
+    "Global Capacity Bound: The total weights of the selected items must not exceed a maximum capacity limit $C$.",
+    "Extrema Objectives: The goal is to maximize profit, minimize difference, or count combinations that match a sum.",
+    "Subset Sum Matching: Partitioning arrays into subsets with equal sums, minimizing subset differences, or finding target sums using plus/minus signs.",
+    "--"
+  ],
+  "mental_model": {
+    "analogy": "Imagine packing a travel suitcase with a strict weight limit.",
+    "description": "Imagine **packing a travel suitcase with a strict weight limit**.\n\nYou have a selection of items, each with a value (importance) and a weight. Your suitcase can hold a maximum weight capacity $C$. For each item, you make a binary choice: pack it (gain its value, lose its weight in capacity) or leave it behind. To find the absolute best combination, you construct a grid on a sheet of paper. Each row represents the items you have considered so far, and each column represents a suitcase capacity from $0$ to $C$. You fill in the grid box-by-box, using previous answers to decide if adding the current item yields more value than skipping it."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "The brute-force approach recursively branches for every item, evaluating both inclusion and exclusion.",
+    "inefficiency_observation": "Overlapping subsegments perform duplicate evaluations of identical elements.",
+    "optimization_concept": "```\n  Brute Force / Exhaustive Search\n  [Recursively check all subsets of items, leading to duplicate state evaluations -> O(2^N)]\n       ↓\n  Observation\n  [Decisions depend only on (currentIndex, remainingCapacity); subproblems overlap heavily]\n       ↓\n  Memoization (Top-Down DP)\n  [Cache recursive results in a 2D matrix memo[index][capacity] to bypass repeat calculations]\n       ↓\n  Tabulation (Bottom-Up DP)\n  [Build a table dp[index][capacity] iteratively, saving stack space -> O(N * C)]\n       ↓\n  Space Optimization\n  [Only the previous row is needed; optimize to a single row array -> O(C) Space]\n```\n\n---"
+  },
+  "visualization_metadata": {
+    "type": "array-pointers",
+    "initial_state": {
+      "array": [
+        2,
+        3,
+        4
+      ]
+    },
+    "animation_steps": [
+      {
+        "action": "Row 0 (Init)",
+        "description": "Initialize DP table with base cases (0 items or 0 capacity = 0 profit).",
+        "state": {
+          "left": -1,
+          "right": -1
+        }
+      },
+      {
+        "action": "Row 1 (Item 1)",
+        "description": "Evaluate item 1 (weight 2, profit 3). If capacity >= 2, profit is 3.",
+        "state": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Row 2 (Item 2)",
+        "description": "Evaluate item 2 (weight 3, profit 4). Maximum profit calculated by max(include, exclude).",
+        "state": {
+          "left": 0,
+          "right": 1
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "#include <vector>\n#include <algorithm>\n\nusing namespace std;\n\nclass Knapsack1DTemplate {\npublic:\n    // Space-optimized 1D Array 0-1 Knapsack solution\n    int solveKnapsack(const vector<int>& profits, const vector<int>& weights, int capacity) {\n        int n = profits.size();\n        if (capacity <= 0 || n == 0 || weights.size() != n) {\n            return 0;\n        }\n\n        // DP array initialized to 0\n        vector<int> dp(capacity + 1, 0);\n\n        // Populate base case for the first item\n        for (int c = 0; c <= capacity; ++c) {\n            if (weights[0] <= c) {\n                dp[c] = profits[0];\n            }\n        }\n\n        // Process remaining items\n        for (int i = 1; i < n; ++i) {\n            // Traverse capacity backwards to maintain 0-1 constraint\n            for (int c = capacity; c >= weights[i]; --c) {\n                dp[c] = max(dp[c], profits[i] + dp[c - weights[i]]);\n            }\n        }\n\n        return dp[capacity];\n    }\n};",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n}"
+  },
+  "variants": [
+    {
+      "name": "**0-1 Knapsack**",
+      "description": "`max(exclude, profit + include)` (Maximum Profit)"
+    },
+    {
+      "name": "**Equal Subset Partition**",
+      "description": "`exclude \\ (\\)"
+    },
+    {
+      "name": "**Subset Sum**",
+      "description": "`exclude \\ (\\)"
+    },
+    {
+      "name": "**Minimum Difference**",
+      "description": "Determine all achievable sums up to $S/2$. (Minimize $)"
+    },
+    {
+      "name": "**Count of Subset Sum**",
+      "description": "`exclude + include` (Total number of valid subsets.)"
+    },
+    {
+      "name": "**Target Sum**",
+      "description": "Equation: $\\text{Sum1} = (S + \\text{TotalSum})/2$. (Count subsets matching $\\text{Sum1}$.)"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Forward 1D Array Updates:** In the 1D space-optimized version, updating capacity in the forward direction (`0 -> capacity`) allows the current item to be selected multiple times. The loop **must run backwards** (`capacity -> 0`) to preserve the 0-1 constraint."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Odd Sum Partitioning:** Failing to check if the total array sum is odd in equal subset partition problems. If the sum is odd, integers cannot partition equally; return false immediately."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Incorrect Base Case Initialization:** Forgetting to set `dp[0] = 1` or `dp[i][0] = true/1` (since a sum of 0 is always achievable with an empty set)."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Index Out of Bounds:** Not verifying if `c - weight[i]` is non-negative before checking the DP array index."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing optimized traversals.",
+  "related_patterns": [
+    "subsets-iterative-combinatorial-generation",
+    "current-pattern",
+    "0-1-knapsack-dynamic-programming-optimization",
+    "unbounded-knapsack-unlimited-item-choice",
+    "longest-common-subsequence"
+  ],
+  "question_ladder": [
+    {
+      "title": "Partition Equal Subset Sum",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/partition-equal-subset-sum/",
+      "type": "Medium"
+    },
+    {
+      "title": "Target Sum",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/target-sum/",
+      "type": "Medium"
+    },
+    {
+      "title": "Partition Array Into Two Arrays to Minimize Sum Difference",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/partition-array-into-two-arrays-to-minimize-sum-difference/",
+      "type": "Advanced"
+    }
+  ],
+  "cheat_sheet": [
+    "When optimizing to a 1D DP array, always remember the reverse capacity traversal rule:",
+    "`for (int c = capacity; c >= weight[i]; --c)`.",
+    "Iterating backwards prevents using the updated value of the current iteration as a prerequisite, keeping the choice strictly binary (0 or 1). If the sum can be odd, check parity first: `if (totalSum % 2 != 0) return false;`."
+  ]
+}

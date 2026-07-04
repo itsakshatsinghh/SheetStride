@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run compile-patterns -- --skip-db && next build",
     "start": "next start",
     "lint": "next lint",
     "compile-patterns": "npx tsx scripts/compile-patterns.ts"

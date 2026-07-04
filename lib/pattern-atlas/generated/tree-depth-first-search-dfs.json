@@ -2,134 +2,161 @@
   "pattern_name": "Tree Depth First Search (DFS)",
   "slug": "tree-depth-first-search-dfs",
   "difficulty": "Intermediate",
-  "family_name": "Algorithms",
-  "overview": "This pattern is based on the <b>Depth First Search (DFS)</b> technique to traverse a tree.\n\nWe will be using <b>recursion</b> (or we can also use a stack for the iterative approach) to keep track of all the previous (parent) nodes while traversing. This also means that the space complexity of the algorithm will be `O(H)`, where `H` is the maximum height of the tree.",
+  "family_name": "Trees",
+  "overview": "The Tree Depth First Search (DFS) pattern is a structural traversal framework that explores a tree data structure by diving as deep as possible down each branch vertically before backtracking. This approach naturally utilizes the runtime Call Stack (via recursion) or an explicit `std::stack` container to preserve parent state metrics during down-stream runs. By propagating state variables down parent-child link pathways, Tree DFS solves tracking validation, complete pathway generation, and structural node-to-node metrics in linear $O(N)$ time.",
   "recognition_signals": [
-    "array of contiguous elements",
-    "minimum size subarray",
-    "sliding range constraints"
+    "Hierarchical Node Links: The data structure consists of branched node entities containing standard `left` and `right` child references.",
+    "Vertical Path Requirements: The problem requirements specifically target deep, continuous combinations (e.g., \"root-to-leaf path,\" \"continuous sequence,\" \"ancestor-to-descendant lines\").",
+    "Complete Path Generation: Building or returning an explicit list of all full sequence variations that fit a constraint.",
+    "Backtracking Operations: Requirements that mandate clearing or undoing structural path choices when a terminal leaf node fails a constraint.",
+    "Bottom-Up State Synthesis: Problems requiring child nodes to fully compute and return values up to their parent anchors before a final calculation can execute (e.g., computing tree diameters or maximum path sums).",
+    "--"
   ],
   "mental_model": {
-    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
-    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+    "analogy": "Imagine exploring a deep, unfamiliar maze or walking through an ancestral family history chart.",
+    "description": "Imagine exploring a deep, unfamiliar maze or walking through an ancestral family history chart.\n\nInstead of floating in a hot-air balloon to count house rooftops floor-by-floor from above, you enter the front door of the main estate (the root). You choose the leftmost corridor and walk down it continuously, ignoring side doors until you hit a dead-end wall (a leaf node). While walking, you note down every hallway turn onto a single tracing notepad. When you hit the dead-end, you evaluate your tracking page. To explore further, you take a single step back to the nearest junction, erase the last recorded dead-end from your notepad, and immediately explore the next unresolved side passage."
   },
   "brute_force_journey": {
-    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
-    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
-    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+    "brute_force_description": "An unoptimized approach to path evaluation copies the cumulative tracing list entirely at every level jump, or runs a fresh, un-cached top-down verification check from every internal node.",
+    "inefficiency_observation": "Overlapping subsegments perform duplicate evaluations of identical elements.",
+    "optimization_concept": "```\n  Brute Force\n  [Duplicate and pass full path vectors by value down recursive calls -> High Memory Overhead]\n       ↓\n  Observation\n  [A single path can be shared globally across calls if we remove the current node when returning]\n       ↓\n  Optimization\n  [Pass a single path vector by reference, and execute an explicit vector.pop_back() to backtrack]\n       ↓\n  Final Pattern\n  [Perform in-place path mutations on a single forward pass -> O(N) Time, O(H) Space]\n\n```\n\n---"
   },
   "visualization_metadata": {
-    "type": "array-pointers",
+    "type": "tree-traversal",
     "initial_state": {
-      "array": [
-        1,
-        3,
-        2,
-        6,
-        -1,
-        4
-      ],
-      "window_size": 3
+      "root": 1,
+      "left": 2,
+      "right": 3
     },
     "animation_steps": [
       {
-        "action": "Initialize",
-        "description": "Initialize left and right boundaries at index 0.",
+        "action": "Visit Root",
+        "description": "Traverse to root node 1. Push to path stack: [1].",
         "state": {
-          "left": 0,
-          "right": 0
+          "active": 1
         }
       },
       {
-        "action": "Expand",
-        "description": "Move right pointer to expand the range.",
+        "action": "Traverse Left",
+        "description": "Traverse down left branch to node 2. Stack path: [1, 2]. Leaf reached, backtrack.",
         "state": {
-          "left": 0,
-          "right": 2
+          "active": 2
         }
       },
       {
-        "action": "Shrink",
-        "description": "Slide the window forward: shift left boundary.",
+        "action": "Traverse Right",
+        "description": "Traverse down right branch to node 3. Stack path: [1, 3]. Traversal finished.",
         "state": {
-          "left": 1,
-          "right": 3
+          "active": 3
         }
       }
     ]
   },
   "polyglot_boilerplates": {
-    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
-    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
-    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+    "cpp": "#include <vector>\n#include <algorithm>\n\nusing namespace std;\n\n// Standard tree node structure definition\nstruct TreeNode {\n    int val;\n    TreeNode* left;\n    TreeNode* right;\n    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}\n};\n\nclass TreeDFSTemplate {\npublic:\n    // Core framework for top-down path generation with explicit backtracking\n    vector<vector<int>> pathSum(TreeNode* root, int targetSum) {\n        vector<vector<int>> standardPathsList;\n        vector<int> pathTracker;\n        \n        executePathDFS(root, targetSum, pathTracker, standardPathsList);\n        return standardPathsList;\n    }\n\nprivate:\n    void executePathDFS(TreeNode* node, int runningTarget, vector<int>& activePath, vector<vector<int>>& totalPaths) {\n        if (node == nullptr) {\n            return;\n        }\n\n        // 1. Incorporate the active element into the path tracker\n        activePath.push_back(node->val);\n\n        // 2. Validate target parameters when landing on a terminal leaf node\n        if (node->left == nullptr && node->right == nullptr) {\n            if (node->val == runningTarget) {\n                // Target hit -> serialize a copy of the active path sequence\n                totalPaths.push_back(activePath);\n            }\n        } else {\n            // 3. Keep diving down vertical sub-branches, propagating state variables\n            executePathDFS(node->left, runningTarget - node->val, activePath, totalPaths);\n            executePathDFS(node->right, runningTarget - node->val, activePath, totalPaths);\n        }\n\n        // 4. THE BACKTRACKING STEP: Eject the current node before returning up the call stack\n        activePath.pop_back();\n    }\n};",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n}"
   },
   "variants": [
     {
-      "name": "Fixed-size Range",
-      "description": "The sliding bounds maintain a constant diameter throughout execution."
+      "name": "**Top-Down Decision**",
+      "description": "Root $\\rightarrow$ Leaf (Subtract current node value from target parameter.)"
     },
     {
-      "name": "Variable-size Range",
-      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+      "name": "**Path Generation**",
+      "description": "Reference Pass (Push node to path vector, drill down, then execute an explicit pop step to backtrack.)"
+    },
+    {
+      "name": "**Numeric Accumulation**",
+      "description": "Scalar Shifting (Compute values across rows using positional multiplication: `sum = sum * 10 + val`.)"
+    },
+    {
+      "name": "**Bottom-Up Merge**",
+      "description": "Leaf $\\rightarrow$ Root (Fetch values from children first, then compute localized results at the parent.)"
     }
   ],
   "common_mistakes": [
     {
-      "mistake_title": "Off-by-One Range Limit",
-      "description": "Failing to validate boundary bounds before checking element values."
+      "mistake_title": "Key Pitfall",
+      "description": "**Missing Backtracking Pop steps:** Forgetting to call `path.pop_back()` before a recursive helper function exits. This leaves elements from a completed branch inside the global reference vector, corrupting subsequent path calculations."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Early Null Pointer Processing Errors:** Writing validation checks like `if (!node) return (sum == 0);`. If an internal node has only a single child, this check will process the empty branch as a valid path, incorrectly triggering a leaf node status. Always verify leaf nodes using explicit child null tests: `if (!node->left && !node->right)`."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Disrupting Short-Circuit Logic:** Mixing up logical short-circuit behaviors (`||` vs `&&`). For example, in path matching tasks, writing checks that force full execution down both branches when a single valid path is already confirmed."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Ignoring Negative Node Contributions:** Short-circuiting or cutting loops short when a running sum exceeds a target value, assuming it can no longer match. If the tree contains negative node values, a sum that is currently too large can drop back down to match the target exactly later."
     }
   ],
-  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing optimized traversals.",
   "related_patterns": [
-    "two-pointers",
-    "fast-slow-pointers"
+    "recursion-basics-tree-infrastructures",
+    "current-pattern",
+    "tree-depth-first-search-vertical-traversal-stack",
+    "graph-depth-first-search-dfs-tracking-arrays",
+    "backtracking-combinations-subsets-permutations"
   ],
   "question_ladder": [
     {
-      "title": "Binary Tree Path Sum",
+      "title": "Path Sum",
       "difficulty": "Easy",
       "link": "https://leetcode.com/problems/path-sum/",
       "type": "Introductory"
     },
     {
-      "title": "All Paths for a Sum",
+      "title": "Path Sum II",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/path-sum-ii/",
       "type": "Medium"
     },
     {
-      "title": "Sum of Path Numbers",
+      "title": "Binary Tree Paths",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/binary-tree-paths/",
+      "type": "Medium"
+    },
+    {
+      "title": "Sum Root to Leaf Numbers",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/sum-root-to-leaf-numbers/",
       "type": "Medium"
     },
     {
-      "title": "Path With Given Sequence",
+      "title": "Check If a String Is a Valid Sequence from Root to Leaves Path in a Binary Tree",
       "difficulty": "Medium",
-      "link": "",
+      "link": "https://leetcode.com",
       "type": "Medium"
     },
     {
-      "title": "Count Paths for a Sum",
+      "title": "Path Sum III (Sub-path Extraction Count)",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/path-sum-iii/",
       "type": "Medium"
     },
     {
-      "title": "🌟 Tree Diameter",
+      "title": "Diameter of Binary Tree",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/diameter-of-binary-tree/",
       "type": "Medium"
     },
     {
-      "title": "🌟 Path with Maximum Sum",
+      "title": "Binary Tree Maximum Path Sum",
       "difficulty": "Hard",
       "link": "https://leetcode.com/problems/binary-tree-maximum-path-sum/",
-      "type": "Classic"
+      "type": "Advanced"
     }
   ],
   "cheat_sheet": [
-    "Always verify if the array is sorted.",
-    "Check if contiguous subsegments are required."
+    "When writing bottom-up structural algorithms like Tree Diameter or Maximum Path Sum, think of it as a corporate chain of command:",
+    "A parent node cannot compute its own maximum path value until its left and right child managers complete their independent investigations and report back.",
+    "1. Execute the recursive calls first to let the child nodes compute their results.",
+    "2. Once they return their values, calculate the localized maximum at the parent node (`left + right + node->val`).",
+    "3. Update your global tracking variable.",
+    "4. Finally, hand back only the single strongest branch up to your supervisor node: `return max(left, right) + node->val`."
   ]
 }

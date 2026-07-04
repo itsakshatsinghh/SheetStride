@@ -3,139 +3,189 @@
   "slug": "cyclic-sort",
   "difficulty": "Intermediate",
   "family_name": "Sorting",
-  "overview": "This pattern describes an interesting approach to deal with problems involving arrays containing numbers in a given range.\n\n### For example, take the following problem:\n\n> You are given an unsorted array containing numbers taken from the range `1` to `n` The array can have duplicates, which means that some numbers will be missing. Find all the missing numbers.\n\nTo efficiently solve this problem, we can use the fact that the input array contains numbers in the range of `1` to `n`.\nFor example, to efficiently sort the array, we can try placing each number in its correct place, i.e., placing `1` at index `0`, placing `2` at index `1`, and so on. Once we are done with the sorting, we can iterate the array to find all indices that are missing the correct numbers. These will be our required numbers.",
+  "overview": "The Cyclic Sort pattern is a highly specialized, in-place sorting and search framework designed for datasets whose values are strictly bound within a known finite integer range (typically $1$ to $n$, or $0$ to $n$). Instead of comparing elements against each other using traditional scaling operations like partitioning or merging, this pattern maps each element's scalar value directly to its mathematically assigned index address. By treating the input array as both the data source and the tracking map, Cyclic Sort resolves alignment and missing-element problems in purely linear $O(n)$ time while utilizing zero additional memory.",
   "recognition_signals": [
-    "array of contiguous elements",
-    "minimum size subarray",
-    "sliding range constraints"
+    "Contiguous Integer Arrays: The elements arrive inside an unsorted array or sequence.",
+    "Closed-Range Guarantees: The problem explicitly specifies that the data items are bound within a finite range, typically stated as $[1, n]$ or $[0, n]$.",
+    "Absolute Auxiliary Memory Caps: The problem requires processing, sorting, or searching the array in-place using strict $O(1)$ constant space.",
+    "Identity Anomaly Detection: The question explicitly targets identifying missing items, duplicate records, hidden pairs, or out-of-order values.",
+    "Unbounded Values with Positive Targets: The problem requests the \"first missing positive number\" on an unmapped array. This implies you should artificially clip the search lens to the array's own index boundaries $[1, n]$ and treat anything outside that window as background noise.",
+    "--"
   ],
   "mental_model": {
-    "analogy": "A dynamic viewport sliding over elements, adjusting bounds as constraints shift.",
-    "description": "Imagine a transparent window overlaid on a sequence of items. The window expands to include new inputs, and shrinks from the tail to exclude invalidated ones."
+    "analogy": "Imagine an elementary school classroom containing $n$ desks, where each desk is labeled sequentially with a seat number from $1$ to $n$.",
+    "description": "Imagine an elementary school classroom containing $n$ desks, where each desk is labeled sequentially with a seat number from $1$ to $n$.\n\nInitially, the students enter the room and sit down at random desks out of order. Instead of making all the students stand up, line up, and execute a heavy sorting march, the teacher leaves the first student at desk $0$ in place and looks at their assigned name tag number. If that student's tag reads \"$5$,\" the teacher has that student tap the shoulder of whoever is currently sitting at desk $4$. The two students swap seats. The student who was displaced now stands at desk $0$, and the teacher repeats the checking loop. This chain reaction continues until a student holding tag \"$1$\" lands at desk $0$. Only then does the teacher step forward to desk $1$ to resolve the next cluster."
   },
   "brute_force_journey": {
-    "brute_force_description": "Iterate through all possible subsegments, recalculating properties from scratch on every step.",
-    "inefficiency_observation": "Overlapping bounds evaluate identical elements multiple times, resulting in quadratic runtimes.",
-    "optimization_concept": "Reuse metrics from overlapping segments by adjusting boundaries (adding entry element, subtracting exit element)."
+    "brute_force_description": "The unoptimized approach to finding missing or duplicate range elements uses an external hash map or frequency array to record item counts. Alternatively, it sorts the array using an $O(n \\log n)$ quick sort routine before checking adjacent indices for missing gaps or duplicate collisions.",
+    "inefficiency_observation": "Overlapping subsegments perform duplicate evaluations of identical elements.",
+    "optimization_concept": "```\n  Brute Force\n  [Allocate a lookup cache or run an O(n log n) comparison sort to expose irregularities]\n       ↓\n  Observation\n  [Value range boundaries match index slots perfectly; value 'v' strictly maps to index 'v-1']\n       ↓\n  Optimization\n  [Swap the active element directly into its true home index slot using a targeted loop]\n       ↓\n  Final Pattern\n  [Sort and evaluate range elements in-place with a single scan -> O(n) Time, O(1) Space]\n\n```\n\n---"
   },
   "visualization_metadata": {
     "type": "array-pointers",
     "initial_state": {
       "array": [
-        1,
         3,
-        2,
-        6,
-        -1,
-        4
-      ],
-      "window_size": 3
+        1,
+        5,
+        4,
+        2
+      ]
     },
     "animation_steps": [
       {
-        "action": "Initialize",
-        "description": "Initialize left and right boundaries at index 0.",
+        "action": "Inspect",
+        "description": "Value 3 at index 0 is not in its correct position (should be at index 2). Swap index 0 and 2.",
         "state": {
           "left": 0,
           "right": 0
         }
       },
       {
-        "action": "Expand",
-        "description": "Move right pointer to expand the range.",
+        "action": "Swap",
+        "description": "Perform swap: array becomes [5, 1, 3, 4, 2].",
         "state": {
           "left": 0,
           "right": 2
         }
       },
       {
-        "action": "Shrink",
-        "description": "Slide the window forward: shift left boundary.",
+        "action": "Inspect",
+        "description": "Value 5 at index 0 is not in its correct position (should be at index 4). Swap index 0 and 4.",
         "state": {
-          "left": 1,
-          "right": 3
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Swap",
+        "description": "Perform swap: array becomes [2, 1, 3, 4, 5].",
+        "state": {
+          "left": 0,
+          "right": 4
+        }
+      },
+      {
+        "action": "Inspect",
+        "description": "Value 2 at index 0 is not in its correct position (should be at index 1). Swap index 0 and 1.",
+        "state": {
+          "left": 0,
+          "right": 0
+        }
+      },
+      {
+        "action": "Swap",
+        "description": "Perform swap: array becomes [1, 2, 3, 4, 5]. Sorted!",
+        "state": {
+          "left": 0,
+          "right": 1
         }
       }
     ]
   },
   "polyglot_boilerplates": {
-    "cpp": "// C++ Template\nvoid solvePattern(vector<int>& nums) {\n    int start = 0;\n    for(int end = 0; end < nums.size(); ++end) {\n        // logic\n    }\n}",
-    "python": "# Python Template\ndef solve_pattern(nums):\n    start = 0\n    for end in range(len(nums)):\n        # logic\n        pass",
-    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n    int start = 0;\n    for(int end = 0; end < nums.length; ++end) {\n        // logic\n    }\n}"
+    "cpp": "#include <vector>\n#include <algorithm>\n\nusing namespace std;\n\nclass CyclicSortTemplate {\npublic:\n    // Core structural loop for 1-indexed range sorting [1, n]\n    void sortRange(vector<int>& nums) {\n        int i = 0;\n        int n = nums.size();\n        \n        while (i < n) {\n            // Calculate the zero-indexed home slot for the current element\n            int correctIndex = nums[i] - 1;\n            \n            // Boundary Guard: Ensure the value fits inside the array range \n            // and is not already resting at its correct home slot\n            if (nums[i] > 0 && nums[i] <= n && nums[i] != nums[correctIndex]) {\n                // In-place swap moves the active value to its permanent slot\n                swap(nums[i], nums[correctIndex]);\n                // CRITICAL: Do not increment 'i' here; evaluate the incoming element\n            } else {\n                // Element is either in bounds and sorted, a duplicate, or an out-of-bounds outlier\n                i++;\n            }\n        }\n    }\n};",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n}"
   },
   "variants": [
     {
-      "name": "Fixed-size Range",
-      "description": "The sliding bounds maintain a constant diameter throughout execution."
+      "name": "**Strict Continuous**",
+      "description": "$1$ to $n$ (`nums[i] != nums[nums[i]-1]`)"
     },
     {
-      "name": "Variable-size Range",
-      "description": "The bounds expand or shrink dynamically to satisfy complex constraints."
+      "name": "**Zero Baseline**",
+      "description": "$0$ to $n$ (`nums[i] < n && nums[i] != nums[nums[i]]`)"
+    },
+    {
+      "name": "**Duplicate Trap**",
+      "description": "$1$ to $n$ (With repeats) (`nums[i] != nums[nums[i]-1]`)"
+    },
+    {
+      "name": "**Unbounded Positives**",
+      "description": "Any Integer Range (`nums[i] > 0 && nums[i] <= n`)"
     }
   ],
   "common_mistakes": [
     {
-      "mistake_title": "Off-by-One Range Limit",
-      "description": "Failing to validate boundary bounds before checking element values."
+      "mistake_title": "Key Pitfall",
+      "description": "**Infinite Execution Loops:** Advancing the tracking index pointer `i++` immediately after a swap step. If the newly swapped item is also out of place, it will be skipped entirely, breaking the sort tracking loop and causing downstream detection errors."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Missing Out-of-Bounds Guards:** Neglecting range-bounding wrappers (e.g., failing to check `nums[i] < nums.size()`) when dealing with array values that can exceed index boundaries. This triggers out-of-bounds memory read faults."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Index Off-by-One Mismatches:** Mixing up the indexing rules for 1-based ranges (`correctIndex = nums[i] - 1`) and 0-based ranges (`correctIndex = nums[i]`)."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Unprotected Self-Mapping Checks:** Writing pointer update checks using changing array references like `nums[i] != nums[nums[i]-1]` *after* mutating value states within the same expression block. Cache indices cleanly into local variables first."
     }
   ],
-  "interview_perspective": "Highly popular in FAANG/HFT rounds testing sliding/pointer array manipulation.",
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing optimized traversals.",
   "related_patterns": [
-    "two-pointers",
-    "fast-slow-pointers"
+    "in-place-swaps-traversal-loops",
+    "current-pattern",
+    "cyclic-sort-direct-scalar-value-mapping",
+    "fast-slow-pointers-for-modification-blocked-duplicate-loops",
+    "in-place-reversal-of-a-linked-list"
   ],
   "question_ladder": [
     {
-      "title": "Cyclic Sort",
+      "title": "Cyclic Sort Algorithm (In-Place Alignment)",
       "difficulty": "Easy",
-      "link": "",
+      "link": "https://leetcode.com",
       "type": "Introductory"
     },
     {
-      "title": "Find the Missing Number",
+      "title": "Missing Number",
       "difficulty": "Easy",
       "link": "https://leetcode.com/problems/missing-number/",
-      "type": "Medium"
+      "type": "Introductory"
     },
     {
-      "title": "Find all Missing Numbers",
+      "title": "Find All Numbers Disappeared in an Array",
       "difficulty": "Easy",
       "link": "https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/",
-      "type": "Medium"
+      "type": "Introductory"
     },
     {
       "title": "Find the Duplicate Number",
       "difficulty": "Easy",
       "link": "https://leetcode.com/problems/find-the-duplicate-number/",
-      "type": "Medium"
+      "type": "Introductory"
     },
     {
-      "title": "Find all Duplicate Numbers",
+      "title": "Find All Duplicates in an Array",
       "difficulty": "Easy",
       "link": "https://leetcode.com/problems/find-all-duplicates-in-an-array/",
-      "type": "Medium"
+      "type": "Introductory"
     },
     {
-      "title": "🌟 Find the Corrupt Pair",
+      "title": "Set Mismatch (Find Corrupt Pair)",
       "difficulty": "Easy",
-      "link": "",
-      "type": "Medium"
+      "link": "https://leetcode.com/problems/set-mismatch/",
+      "type": "Introductory"
     },
     {
-      "title": "🌟 Find the Smallest Missing Positive Number",
+      "title": "First Missing Positive",
       "difficulty": "Medium",
       "link": "https://leetcode.com/problems/first-missing-positive/",
       "type": "Medium"
     },
     {
-      "title": "🌟 Find the First K Missing Positive Numbers",
+      "title": "Kth Missing Positive Number",
       "difficulty": "Hard",
       "link": "https://leetcode.com/problems/kth-missing-positive-number/",
-      "type": "Classic"
+      "type": "Advanced"
     }
   ],
   "cheat_sheet": [
-    "Always verify if the array is sorted.",
-    "Check if contiguous subsegments are required."
+    "When tracking swaps in Cyclic Sort, never let the pointer advance until you are absolutely certain that the item currently landing at index `i` is fully resolved. Treat index `i` as an active processing terminal.",
+    "If the item is a valid range integer and its true home index is occupied by a different number, swap them.",
+    "If the item is out of bounds, or if its home slot is already occupied by an identical duplicate value, you cannot proceed with sorting.",
+    "Only when one of these terminal conditions is met can you safely step your pointer forward (`i++`). Remember: Every successful swap puts an element in its permanent home forever."
   ]
 }

@@ -1,0 +1,162 @@
+{
+  "pattern_name": "Merge Intervals",
+  "slug": "merge-intervals",
+  "difficulty": "Intermediate",
+  "family_name": "Intervals",
+  "overview": "The Merge Intervals pattern is a powerful algorithmic framework designed to resolve problems involving overlapping, contiguous blocks of data, typically represented by a start time and an end time. This technique centers on identifying relationships between intersecting bounding elements. It is utilized to consolidate continuous timelines, optimize resource scheduling, and eliminate intervals containing redundant geometric scopes. By arranging multi-dimensional tracking anchors sequentially, this pattern compresses complex range intersections down to linear $O(N)$ scanning bounds after sorting.",
+  "recognition_signals": [
+    "Interval-Based Pairs: The input parameters feature pairs of integers representing boundaries (e.g., `[start, end]`, `[arrival, departure]`, `[low, high]`).",
+    "Unordered Segment Maps: The intervals arrive out of order, or the problem description specifies that the underlying schedule is pre-sorted exclusively by one boundary.",
+    "Mutual Exclusion Goals: The problem asks you to discover overlapping intersections, combine overlapping structures into unified ranges, or identify open gaps.",
+    "Overlapping Verification: Detecting if a new scheduling entry conflicts with any existing coordinates.",
+    "Resource Optimization Requirements: Finding the minimum number of parallel slots needed to house simultaneous events (e.g., meeting rooms or server execution pipelines).",
+    "--"
+  ],
+  "mental_model": {
+    "analogy": "Imagine sliding physical window blinds or laying down heavy, colored chalk tracks along a yardstick marker line.",
+    "description": "Imagine sliding physical window blinds or laying down heavy, colored chalk tracks along a yardstick marker line.\n\nIf you randomly drop multiple overlapping chalk segments across different regions of the scale, determining their cumulative covered tracking paths is confusing. However, if you start drawing tracks from left to right according to their entry coordinates, the layout becomes clear. As you lay down a track, if the next line's start marker falls behind your current wet-chalk boundary, you can simply merge them into a single track by stretching your marker out to the furthest end boundary. If a line starts completely past your marker, you declare the previous line finalized and launch a fresh segment."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "The unoptimized approach cross-references each line element against all others in the array using nested loops. When it finds overlapping boundaries, it merges them in-place and removes the redundant element from the tracking collection.",
+    "inefficiency_observation": "Overlapping subsegments perform duplicate evaluations of identical elements.",
+    "optimization_concept": "```\n  Brute Force\n  [Nested loops compare all arbitrary intervals, merging and shifting elements -> O(N^2)]\n       ↓\n  Observation\n  [Sorting intervals by start time reduces relational checks to adjacent items only]\n       ↓\n  Optimization\n  [If the current start time <= the previous end time, simply update the previous end time]\n       ↓\n  Final Pattern\n  [Sort and scan sequentially, merging overlapping segments in a single pass -> O(N log N)]\n\n```\n\n---"
+  },
+  "visualization_metadata": {
+    "type": "array-pointers",
+    "initial_state": {
+      "array": [
+        1,
+        3,
+        2,
+        6,
+        8,
+        10
+      ]
+    },
+    "animation_steps": [
+      {
+        "action": "Compare",
+        "description": "Compare interval [1, 3] and interval [2, 6]. Overlap detected since 2 <= 3.",
+        "state": {
+          "left": 0,
+          "right": 3
+        }
+      },
+      {
+        "action": "Merge",
+        "description": "Merge intervals into single combined interval: [1, 6].",
+        "state": {
+          "left": 0,
+          "right": 3
+        }
+      },
+      {
+        "action": "Compare Next",
+        "description": "Compare merged interval [1, 6] with next interval [8, 10]. No overlap.",
+        "state": {
+          "left": 4,
+          "right": 5
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "#include <vector>\n#include <algorithm>\n\nusing namespace std;\n\nclass MergeIntervalsTemplate {\npublic:\n    // Core structural model for sequential interval consolidation\n    vector<vector<int>> merge(vector<vector<int>>& intervals) {\n        if (intervals.size() <= 1) {\n            return intervals;\n        }\n\n        // 1. Sort elements by start times\n        sort(intervals.begin(), intervals.end(), [](const vector<int>& a, const vector<int>& b) {\n            return a[0] < b[0];\n        });\n\n        vector<vector<int>> mergedIntervals;\n        \n        // 2. Initialize tracking using the first interval segment\n        int currentStart = intervals[0][0];\n        int currentEnd = intervals[0][1];\n\n        for (size_t i = 1; i < intervals.size(); ++i) {\n            // Check for overlap between current tracking range and next interval\n            if (intervals[i][0] <= currentEnd) {\n                // Overlap found -> expand the tracking boundary\n                currentEnd = max(currentEnd, intervals[i][1]);\n            } else {\n                // Disjoint intervals -> commit completed range and start a new track\n                mergedIntervals.push_back({currentStart, currentEnd});\n                currentStart = intervals[i][0];\n                currentEnd = intervals[i][1];\n            }\n        }\n\n        // Commit the final active interval\n        mergedIntervals.push_back({currentStart, currentEnd});\n        \n        return mergedIntervals;\n    }\n};",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n}"
+  },
+  "variants": [
+    {
+      "name": "**Standard Merge**",
+      "description": "Unsorted Array (Single linear scan updating the trailing endpoint.)"
+    },
+    {
+      "name": "**Direct Insertion**",
+      "description": "Pre-Sorted Streams (Multi-phase `while` loop execution (Skip $\\rightarrow$ Merge $\\rightarrow$ Collect).)"
+    },
+    {
+      "name": "**Double Pointer Scan**",
+      "description": "Two Disjoint Lists (Dual cursors traversing lists simultaneously based on earliest end-times.)"
+    },
+    {
+      "name": "**Heap-Driven Allocator**",
+      "description": "Bounded Chronological (Min-heap tracks active schedules sorted by end-times.)"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Incorrect Sort Criteria:** Sorting by `endTime` instead of `startTime` for standard merging tasks. Sorting by end times obscures the sequence of entry origins, breaking the single-pass adjacent verification loop."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Missing Equal Bounds Equality Guards:** Writing `current.start < back.end` instead of the inclusive `current.start <= back.end`. Intervals that touch at their boundaries (e.g., `[1, 4]` and `[4, 5]`) overlap and must be merged."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Heap Key Synchronization Failure:** In heap tracking contexts, failing to update heap structures dynamically when changing active window parameters, which can desynchronize the sorting key."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Premature Array Deletion Splicing:** Modifying vector sizes mid-loop using methods like `vector.erase()`. This forces an $O(N)$ memory copy overhead on every deletion, converting a linear pass into a quadratic bottleneck. Build a new vector instead."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing optimized traversals.",
+  "related_patterns": [
+    "custom-sorting-linear-scans",
+    "current-pattern",
+    "merge-intervals-boundary-synchronization",
+    "greedy-scheduling-frameworks",
+    "heap-priority-queue-management"
+  ],
+  "question_ladder": [
+    {
+      "title": "Meeting Rooms",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/meeting-rooms/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Merge Intervals",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/merge-intervals/",
+      "type": "Medium"
+    },
+    {
+      "title": "Insert Interval",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/insert-interval/",
+      "type": "Medium"
+    },
+    {
+      "title": "Interval List Intersections",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/interval-list-intersections/",
+      "type": "Medium"
+    },
+    {
+      "title": "Meeting Rooms II",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/meeting-rooms-ii/",
+      "type": "Advanced"
+    },
+    {
+      "title": "Car Pooling",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/car-pooling/",
+      "type": "Advanced"
+    },
+    {
+      "title": "Employee Free Time",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/employee-free-time/",
+      "type": "Advanced"
+    }
+  ],
+  "cheat_sheet": [
+    "For advanced variance problems like Minimum Meeting Rooms, you can bypass a min-heap entirely using the Chronological Coordinate Flattening technique:",
+    "Instead of keeping intervals grouped as pairs, split each interval into two independent events: an Arrival (+1) and a Departure (-1).",
+    "Put all events into a single array, sort them primarily by time, and walk through them sequentially while maintaining a running total. A departure event immediately drops your room count, while an arrival bumps it up. Your global maximum along this single pass is your answer.",
+    "Essential Sort Constraint: If an arrival and departure happen at the identical timestamp, sort the departure first so you don't overcount parallel rooms."
+  ]
+}

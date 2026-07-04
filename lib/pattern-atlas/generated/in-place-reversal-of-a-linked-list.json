@@ -1,0 +1,164 @@
+{
+  "pattern_name": "In-Place Reversal of a Linked List",
+  "slug": "in-place-reversal-of-a-linked-list",
+  "difficulty": "Intermediate",
+  "family_name": "LinkedLists",
+  "overview": "The In-Place Reversal of a Linked List pattern is a foundational structural framework designed to reverse the directional link references between nodes without modifying their underlying data or allocating external container memory. Instead of copying data or constructing a new sequence from scratch, this pattern systematically updates each node's `next` pointer to point to its structural predecessor. By re-linking the nodes iteratively using local cross-referenced tracking pointers, it reduces processing bottlenecks to linear $O(N)$ runtime limits while maintaining strict constant $O(1)$ space efficiency.",
+  "recognition_signals": [
+    "Singly Linked Configurations: The problem domain features an unindexed node chain linked by unique `next` pointer targets.",
+    "Link Reorientation Demands: The requirements dictate changing the sequencing or reversing the orientation of the elements (e.g., \"reverse sections,\" \"reorder nodes\").",
+    "Absolute Constant Memory Limits: The problem explicitly forbids the allocation of extra arrays, hashes, or node matrices ($O(1)$ Auxiliary Space constraint).",
+    "In-Place Modification Clauses: Constraints explicitly require modifying the node configurations in-place by updating the pre-existing reference mappings rather than allocating fresh node objects.",
+    "Structural Subsequence Folding: Rearranging alternate chunks of a list, grouping blocks by a metric factor $K$, or sliding structural tail windows around onto the head to execute a rotation.",
+    "--"
+  ],
+  "mental_model": {
+    "analogy": "Imagine a line of people holding hands, where each person uses their right hand to touch the right shoulder of the person standing directly in front o",
+    "description": "Imagine a line of people holding hands, where each person uses their right hand to touch the right shoulder of the person standing directly in front of them, looking down the line from head to tail.\n\nTo invert the orientation of this chain without making anyone step out of line, you instruct the leader to drop their forward hand hold and extend it backward to catch the space behind them. Before they turn around, they must tap the next person down the line to signal them to become the active pivot. The transformation ripples through the line, link by link. Each person caches the absolute coordinate of who was standing behind them, detaches their forward grip, pivots their pointer arrow backward, and transitions the active focus down the line until the entire chain is mirrored."
+  },
+  "brute_force_journey": {
+    "brute_force_description": "The unoptimized methodology relies on caching node states inside a data structure. A linear scan records references into a dynamic sequence vector, which is then traversed in reverse order to stitch the node links back together.",
+    "inefficiency_observation": "Overlapping subsegments perform duplicate evaluations of identical elements.",
+    "optimization_concept": "```\n  Brute Force\n  [Cache node addresses into an external vector and re-link backward -> O(N) Space]\n       ↓\n  Observation\n  [We only need to know the immediate neighbor states to rewrite a node's directional arrow]\n       ↓\n  Optimization\n  [Use three rolling pointers to cache the next target before inverting the current node's path]\n       ↓\n  Final Pattern\n  [Invert links sequentially in a single pass -> O(N) Time, O(1) Constant Space]\n\n```\n\n---"
+  },
+  "visualization_metadata": {
+    "type": "linkedlist-cycle",
+    "initial_state": {
+      "nodes": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cycle_pos": -1
+    },
+    "animation_steps": [
+      {
+        "action": "Initialize",
+        "description": "Set prev = NULL, curr = Head (node 1).",
+        "state": {
+          "slow": -1,
+          "fast": 0
+        }
+      },
+      {
+        "action": "Reverse 1",
+        "description": "Reverse pointer of node 1 to point to prev (NULL). Move prev to node 1, curr to node 2.",
+        "state": {
+          "slow": 0,
+          "fast": 1
+        }
+      },
+      {
+        "action": "Reverse 2",
+        "description": "Reverse pointer of node 2 to point to node 1. Move prev to node 2, curr to node 3.",
+        "state": {
+          "slow": 1,
+          "fast": 2
+        }
+      },
+      {
+        "action": "Reverse 3",
+        "description": "Reverse pointer of node 3 to point to node 2. Move prev to node 3, curr to node 4.",
+        "state": {
+          "slow": 2,
+          "fast": 3
+        }
+      }
+    ]
+  },
+  "polyglot_boilerplates": {
+    "cpp": "#include <iostream>\n\nstruct ListNode {\n    int val;\n    ListNode* next;\n    ListNode(int x) : val(x), next(nullptr) {}\n};\n\nclass LinkedSublistReversal {\npublic:\n    // Core structural implementation for bounded section inversion\n    ListNode* reverseBetween(ListNode* head, int p, int q) {\n        if (!head || p == q) {\n            return head;\n        }\n\n        ListNode* curr = head;\n        ListNode* prev = nullptr;\n        int index = 1;\n\n        // Phase 1: Advance pointers until reaching the sub-list entry point\n        while (curr != nullptr && index < p) {\n            prev = curr;\n            curr = curr->next;\n            index++;\n        }\n\n        // Isolate your two upstream boundary connection points\n        ListNode* lastNodeOfFirstPart = prev;\n        ListNode* lastNodeOfSubList = curr;\n\n        // Phase 2: Invert the links within the active window [p, q]\n        ListNode* nextNode = nullptr;\n        while (curr != nullptr && index <= q) {\n            nextNode = curr->next;\n            curr->next = prev; // Invert reference mapping direction\n            prev = curr;       // Advance trailing tracker\n            curr = nextNode;   // Advance leading tracker\n            index++;\n        }\n\n        // Phase 3: Stitch the inverted sub-list back into the main chain\n        if (lastNodeOfFirstPart != nullptr) {\n            lastNodeOfFirstPart->next = prev; // Connect prefix chain to sub-list head\n        } else {\n            head = prev; // Sub-list started at index 1 -> update global entry point\n        }\n\n        lastNodeOfSubList->next = curr; // Connect sub-list tail to suffix chain\n\n        return head;\n    }\n};",
+    "python": "# Python Template\ndef solve_pattern(nums):\n    pass",
+    "java": "// Java Template\npublic void solvePattern(int[] nums) {\n}"
+  },
+  "variants": [
+    {
+      "name": "**Complete Reverse**",
+      "description": "Entire sequence ($1$ to $N$) (Return the final non-null tracking head pointer.)"
+    },
+    {
+      "name": "**Sub-list Reverse**",
+      "description": "Bounded index section ($P$ to $Q$) (Anchor the section's edge borders using cross-referenced prefix/suffix pointers.)"
+    },
+    {
+      "name": "**K-Group Loop**",
+      "description": "Repeating blocks of size $K$ (Dynamically join the tail of the previously inverted segment to the head of the current block.)"
+    },
+    {
+      "name": "**Alternating K-Group**",
+      "description": "Alternating blocks of size $K$ (Alternate between an active inversion loop and a plain linear forward hop loop.)"
+    },
+    {
+      "name": "**Circular Rotation**",
+      "description": "Bounded tail window (Link the original tail to the original head, slice the chain at index $N-K-1$, and establish a new tail.)"
+    }
+  ],
+  "common_mistakes": [
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Losing the Downstream Link (Memory Orphanage):** Overwriting `curr->next` *before* caching its original destination address into a local variable (`nextNode`). This severs your connection to the rest of the list, orphaning the downstream nodes in memory."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Incorrect Connection Bounding for Sub-lists:** Neglecting to handle the edge case where the sub-list inversion window starts exactly at the head node (`P = 1`). Failing to update the system's global `head` reference directly causes the list to lose its entry point."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Off-by-One Group Termination Checks:** Miscalculating boundary parameters when tracking $K$-sized segments, which can cause the loop to process fewer nodes than specified or run into null-pointer exceptions."
+    },
+    {
+      "mistake_title": "Key Pitfall",
+      "description": "**Forgetting to Terminate the Tail Boundary:** Failing to clear the final node's `next` reference to `nullptr` during list parsing, which can introduce infinite cycles into the reconstructed sequence."
+    }
+  ],
+  "interview_perspective": "Highly popular in FAANG/HFT rounds testing optimized traversals.",
+  "related_patterns": [
+    "linked-list-basics-fast-slow-pointers",
+    "current-pattern",
+    "in-place-reversal-of-a-linked-list",
+    "palindrome-linked-list-validation-using-reversal-subroutines",
+    "tree-depth-first-search-dfs-pointer-conversions"
+  ],
+  "question_ladder": [
+    {
+      "title": "Reverse Linked List",
+      "difficulty": "Easy",
+      "link": "https://leetcode.com/problems/reverse-linked-list/",
+      "type": "Introductory"
+    },
+    {
+      "title": "Reverse Linked List II (Sub-list Reversal)",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/reverse-linked-list-ii/",
+      "type": "Medium"
+    },
+    {
+      "title": "Reverse Nodes in Even Length Groups",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/reverse-nodes-in-even-length-groups/",
+      "type": "Medium"
+    },
+    {
+      "title": "Rotate List (Circular Shifting)",
+      "difficulty": "Medium",
+      "link": "https://leetcode.com/problems/rotate-list/",
+      "type": "Medium"
+    },
+    {
+      "title": "Reverse Nodes in k-Group",
+      "difficulty": "Hard",
+      "link": "https://leetcode.com/problems/reverse-nodes-in-k-group/",
+      "type": "Advanced"
+    }
+  ],
+  "cheat_sheet": [
+    "When reversing a sub-list or a $K$-group segment, you aren't just inverting the internal arrows; you have to stitch that sub-list back into the main chain. To handle this cleanly without pointer bugs, always capture four fixed bookend anchors before running your inversion step:",
+    "1. `lastNodeOfFirstPart`: The node immediately preceding the sub-list window.",
+    "2. `firstNodeOfSubList`: The node that starts the sub-list window (which will become its tail after inversion).",
+    "Once your inversion loop completes:",
+    "Connect `lastNodeOfFirstPart->next` to the newly resolved head of the sub-list (`prev`).",
+    "Connect `firstNodeOfSubList->next` to the remaining downstream tail sequence (`curr`).",
+    "Ground yourself to these four reference points, and you will never mix up your connections."
+  ]
+}
