@@ -63,6 +63,9 @@ SheetStride is designed as a hybrid Progressive Web App:
     *   `questions/sheetstride-core/page.tsx` - Algorithmic patterns curriculum path.
     *   `questions/company-sheets/page.tsx` - Directory of 463 target companies.
     *   `questions/company-sheets/[slug]/page.tsx` - Checklist of interview questions for a selected company, sorted by occurrence frequency.
+    *   `training-ground/page.tsx` - Challenges and daily workout calendar dashboard workspace.
+*   `app/patterns/page.tsx` - Patterns index page displaying options for Pattern Atlas and Challenges Hub.
+*   `app/patterns/atlas/page.tsx` - In-app listing of all 16 algorithmic patterns.
 *   `app/patterns/[slug]/page.tsx` - SEO dynamic template loading pattern definitions and boilerplate code templates.
 *   `app/topics/[topic]/page.tsx` - Category view compiling questions tagged under specific computer science topics.
 
@@ -97,9 +100,10 @@ The database runs on Supabase (PostgreSQL) and exposes these core relations, vie
 4.  **`user_progress`:** Tracks problem completions (user_id UUID referencing auth.users, question_id INT, completed boolean, completed-at timestamp).
 5.  **`sheet_questions`:** Maps questions to SheetStride Core roadmap modules (Sheet_order, question_id, question_name, Pattern_name, topic_name).
 6.  **`pattern_metadata`:** Holds algorithm descriptions, complexity requirements, and template boilerplate code (pattern_name, topic_name, core_idea, recognition_keywords, tc, sc, difficulty, cpp_template).
+7.  **`drill_history`:** Logs pattern-recognition drill performance details (id UUID, user_id UUID, question_id INT, selected_pattern, correct_pattern, selected_signal, reflection_chip, reflection_text, is_correct, created_at).
 
 ### Row-Level Security (RLS) Policies
-*   **User Tracking:** `user_progress` and `profiles` tables have RLS enabled and restrict read/write access strictly to the owner (`auth.uid() = user_id`).
+*   **User Tracking:** `user_progress`, `profiles`, and `drill_history` tables have RLS enabled and restrict read/write access strictly to the owner (`auth.uid() = user_id`).
 *   **Master Curriculum:** `questions`, `companies`, `company_questions`, `sheet_questions`, and `pattern_metadata` tables have RLS enabled and allow public SELECT access to all roles (both `anon` and `authenticated`) while restricting insertions/modifications.
 
 

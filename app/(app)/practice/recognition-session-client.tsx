@@ -5,7 +5,7 @@ import { Loader2, ArrowRight, CheckCircle, AlertCircle, RefreshCw, XCircle } fro
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
-interface DrillsClientProps {
+interface RecognitionSessionClientProps {
   onClose: () => void;
   preSelectedPattern?: string;
   onXPUpdate: () => void;
@@ -126,7 +126,7 @@ const FALLBACK_QUESTIONS = [
   { question_id: 210, title: "Course Schedule II", difficulty: "Medium", link: "https://leetcode.com/problems/course-schedule-ii/", pattern_name: "Topological Sort (Graph)" }
 ];
 
-export function DrillsClient({ onClose, preSelectedPattern, onXPUpdate }: DrillsClientProps) {
+export function RecognitionSessionClient({ onClose, preSelectedPattern, onXPUpdate }: RecognitionSessionClientProps) {
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<"read" | "clue" | "pattern" | "reflect" | "result">("read");
 
@@ -344,7 +344,7 @@ export function DrillsClient({ onClose, preSelectedPattern, onXPUpdate }: Drills
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <span className="font-mono text-xs text-outline uppercase tracking-wider">Loading drill simulator...</span>
+        <span className="font-mono text-xs text-outline uppercase tracking-wider">Loading recognition session...</span>
       </div>
     );
   }
@@ -355,7 +355,7 @@ export function DrillsClient({ onClose, preSelectedPattern, onXPUpdate }: Drills
       <div className="bg-[#090909] border-b border-[#222] px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <RefreshCw className="h-4 w-4 text-primary animate-spin" style={{ animationDuration: "10s" }} />
-          <h2 className="font-mono text-xs uppercase tracking-widest text-text">RECOGNITION SIMULATOR</h2>
+          <h2 className="font-mono text-xs uppercase tracking-widest text-text">RECOGNITION SESSION</h2>
         </div>
         <button
           onClick={onClose}
@@ -600,7 +600,7 @@ export function DrillsClient({ onClose, preSelectedPattern, onXPUpdate }: Drills
                 onClick={saveDrillResult}
                 className="px-4 py-2 bg-primary hover:bg-primary-strong text-black font-mono text-xs font-bold uppercase tracking-wider rounded flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
-                {savingLog ? "Logging Drill..." : "Reveal Answer"} <ArrowRight className="h-3.5 w-3.5" />
+                {savingLog ? "Logging Session..." : "Reveal Answer"} <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
@@ -664,7 +664,7 @@ export function DrillsClient({ onClose, preSelectedPattern, onXPUpdate }: Drills
                 onClick={() => selectRandomQuestion(questionsPool)}
                 className="px-4 py-2 bg-primary hover:bg-primary-strong text-black font-mono text-xs font-bold uppercase tracking-wider rounded flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                Next Drill <ArrowRight className="h-3.5 w-3.5" />
+                Next Question <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>

@@ -7,8 +7,8 @@ import { Loader2, Sparkles, Brain, History, ArrowRight, ShieldAlert, Award, Lock
 import { AppShell } from "@/components/app/shell";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
-import { DrillsClient } from "./drills-client";
-import { WorkoutClient } from "./workout-client";
+import { RecognitionSessionClient } from "./recognition-session-client";
+import { PracticeSessionClient } from "./practice-session-client";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { cn } from "@/lib/utils";
 
@@ -144,11 +144,11 @@ export default function TrainingGroundPage() {
     if (patternSlug) {
       params.set("drill_pattern", patternSlug);
     }
-    router.push(`/training-ground?${params.toString()}`);
+    router.push(`/practice?${params.toString()}`);
   };
 
   const returnToHub = () => {
-    router.push("/training-ground");
+    router.push("/practice");
   };
 
   const handleXPUpdate = () => {
@@ -168,15 +168,15 @@ export default function TrainingGroundPage() {
       <AppShell>
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
           <ShieldAlert className="h-12 w-12 text-primary animate-pulse" />
-          <h1 className="font-display text-xl text-text uppercase tracking-widest">Training Sector Locked</h1>
+          <h1 className="font-display text-xl text-text uppercase tracking-widest">Practice Sector Locked</h1>
           <p className="font-body text-xs text-outline max-w-sm leading-relaxed">
-            Please log in with your developer operator session credentials to access the Pattern Recognition Drills and Workout Packs.
+            Please log in with your credentials to access the Pattern Recognition Drills and Practice Sets.
           </p>
           <a
             href="/login"
             className="px-5 py-2 border border-primary text-primary hover:bg-primary/10 rounded font-mono text-xs uppercase tracking-widest transition-all"
           >
-            Authenticate Operator
+            Developer Log In
           </a>
         </div>
       </AppShell>
@@ -191,19 +191,17 @@ export default function TrainingGroundPage() {
       )}>
         {/* Header HUD */}
         <div className="flex flex-col gap-4 border-b border-[#222] pb-6">
-          <Breadcrumbs items={[{ label: "Patterns", href: "/patterns" }, { label: "Challenges Hub" }]} />
+          <Breadcrumbs items={[{ label: "Patterns", href: "/patterns" }, { label: "Practice" }]} />
           
           <div className="flex justify-between items-end">
             <div>
               <h1 className="font-display text-2xl text-text uppercase tracking-wider">
-                OPERATIONAL TRAINING CENTER
+                PRACTICE CENTER
               </h1>
             </div>
 
-            <div className="flex items-center gap-3 border border-primary/20 bg-primary/[0.03] px-4 py-2 rounded-lg select-none font-mono">
-              <Award className="h-4 w-4 text-primary" />
-              <span className="text-[10px] text-outline uppercase tracking-wider">Accumulated Score:</span>
-              <span className="text-xs text-primary font-bold">{userXP} XP</span>
+            <div className="text-xs font-mono text-outline select-none border border-border/30 bg-[#0C0C0C] px-3 py-1.5 rounded-lg">
+              XP: <span className="text-primary font-bold">{userXP}</span>
             </div>
           </div>
         </div>
@@ -226,7 +224,7 @@ export default function TrainingGroundPage() {
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.2 }}
             >
-              <DrillsClient
+              <RecognitionSessionClient
                 onClose={returnToHub}
                 preSelectedPattern={preSelectedPattern}
                 onXPUpdate={handleXPUpdate}
@@ -240,7 +238,7 @@ export default function TrainingGroundPage() {
               exit={{ opacity: 0 }}
               className="space-y-8"
             >
-              {/* Daily Workout Panel with Integrated Calendar Grid */}
+              {/* Daily Practice Panel with Integrated Calendar Grid */}
               <div className="border border-[#222]/80 bg-[#111]/90 rounded-2xl p-6 space-y-6">
                 <div className="flex items-center gap-3 border-b border-[#222] pb-4">
                   <div className="h-8 w-8 rounded-lg bg-primary/5 border border-primary/25 flex items-center justify-center">
@@ -248,15 +246,15 @@ export default function TrainingGroundPage() {
                   </div>
                   <div>
                     <h3 className="font-display font-semibold text-sm text-text uppercase tracking-wider">
-                      DAILY TRAINING WORKOUT & SCHEDULE
+                      DAILY PRACTICE SESSION
                     </h3>
                     <p className="font-body text-xs text-outline mt-0.5">
-                      Select date keys to track solve sessions, generate daily packs (resets 5 AM IST), and verify targets.
+                      Select date keys to track solve sessions, generate daily sets (resets 5 AM IST), and verify targets.
                     </p>
                   </div>
                 </div>
 
-                <WorkoutClient onXPUpdate={handleXPUpdate} />
+                <PracticeSessionClient onXPUpdate={handleXPUpdate} />
               </div>
 
               {/* Lower Grid Details */}
@@ -271,17 +269,18 @@ export default function TrainingGroundPage() {
                     <div>
                       <div className="flex items-center justify-between">
                         <Brain className="h-5 w-5 text-primary" />
-                        <span className="font-mono text-[10px] border border-primary/25 text-primary px-1.5 py-0.5 rounded tracking-widest uppercase">SIMULATOR ACTIVE</span>
+                        <span className="font-mono text-[10px] border border-primary/25 text-primary px-1.5 py-0.5 rounded tracking-widest uppercase">SESSION ACTIVE</span>
                       </div>
                       <h3 className="font-display font-semibold text-xs text-text uppercase tracking-wider group-hover:text-primary transition-colors mt-3">
-                        PATTERN RECOGNITION SIMULATOR
+                        PATTERN RECOGNITION PRACTICE
                       </h3>
                       <p className="font-body text-xs text-outline leading-relaxed mt-1.5">
                         Analyze descriptive prompts under zero compile rules, select primary clues, and match approach patterns.
                       </p>
                     </div>
+
                     <div className="flex items-center gap-1 text-[11px] font-mono text-primary uppercase tracking-widest font-semibold mt-3">
-                      Initiate simulator <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                      Launch session <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
 

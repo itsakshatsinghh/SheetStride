@@ -121,9 +121,10 @@ export function Topbar() {
   const navItems = user
     ? [
         { href: "/dashboard", label: "Dashboard" },
+        { href: "/patterns", label: "Learn" },
         { href: "/questions", label: "Questions" },
+        { href: "/practice", label: "Practice" },
         { href: "/progress", label: "Progress" },
-        { href: "/patterns", label: "Patterns" },
         { href: "/profile", label: "Profile" },
         { href: "/settings", label: "Settings" }
       ]
@@ -199,7 +200,7 @@ export function Topbar() {
                 <button 
                   onClick={handleLogout}
                   className="p-2 hover:bg-danger/10 text-on-surface-variant hover:text-danger rounded-xl transition-all cursor-pointer flex items-center justify-center border border-transparent hover:border-danger/20"
-                  title="Logout Session"
+                  title="Logout"
                 >
                   <LogOut className="h-5 w-5" strokeWidth={1.8} />
                 </button>
@@ -210,7 +211,7 @@ export function Topbar() {
                 href="/login"
                 className="px-4 py-1.5 border border-primary text-primary hover:bg-primary/10 rounded-lg font-mono-label text-xs uppercase tracking-widest transition-all hover:shadow-[0_0_15px_rgba(255,212,0,0.2)]"
               >
-                LOGIN_OPERATOR
+                LOG IN
               </Link>
             )}
 
@@ -264,7 +265,7 @@ export function Topbar() {
                     className="py-2 px-4 rounded-lg font-body text-body-lg text-danger hover:bg-danger/10 text-left uppercase flex items-center gap-2"
                   >
                     <LogOut className="h-4 w-4" strokeWidth={1.8} />
-                    <span>Logout Session</span>
+                    <span>Logout</span>
                   </button>
                 )}
               </div>

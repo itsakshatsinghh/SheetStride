@@ -12,6 +12,10 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 17px; /* Universally scale font sizes slightly larger */
+}
+
 html,
 body {
   min-height: 100%;
