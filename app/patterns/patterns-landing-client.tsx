@@ -50,7 +50,7 @@ export function PatternsLandingClient() {
 
           {/* Card 2: Pattern Challenges */}
           <Link
-            href="/training-ground"
+            href="/practice"
             className="group block relative bg-[#090909]/90 backdrop-blur-sm border border-outline-variant/30 hover:border-primary/50 p-10 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_-10px_rgba(255,212,0,0.15)] flex flex-col justify-between h-72"
           >
             <div>
@@ -58,14 +58,14 @@ export function PatternsLandingClient() {
                 <Trophy className="h-6 w-6 text-primary" />
               </div>
               <h2 className="font-display font-bold text-xl md:text-2xl text-text uppercase tracking-wider group-hover:text-primary transition-colors">
-                Pattern Challenges
+                Practice Sessions
               </h2>
               <p className="mt-3 font-body text-sm text-outline leading-relaxed font-medium">
-                Test your algorithmic instincts in the Training Ground. Run rapid-fire clue matching drills or generate custom practice workout packages matching your weakest zones.
+                Practice your algorithmic instincts in the Practice Center. Run pattern recognition sessions or compile daily practice sets targeting specific topics.
               </p>
             </div>
             <div className="flex items-center gap-1.5 text-xs font-mono text-primary uppercase tracking-widest font-bold mt-6">
-              Enter challenges <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              Enter Practice Center <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
         </div>

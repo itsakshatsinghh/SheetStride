@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion";
-import { CheckCircle2, Trophy, Zap, Waypoints, Loader2, ExternalLink, Terminal, Shield, Network, RefreshCw, Coffee, Linkedin, Instagram } from "lucide-react";
+import { CheckCircle2, Trophy, Zap, Waypoints, Loader2, ExternalLink, Terminal, Shield, Network, RefreshCw, Coffee, Linkedin, Instagram, ListTodo, BookOpen, Sparkles, Clock, Edit, Settings, X } from "lucide-react";
 import { AppShell } from "@/components/app/shell";
 import { Heatmap } from "@/components/shared/heatmap";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -11,6 +11,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { cn, fetchWithCache } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { buildRoadmap, Roadmap, RoadmapTask } from "@/lib/planner-engine";
 
 // requestAnimationFrame count-up hook for GPU-friendly 60fps animations
 function CountUp({ end, duration = 1.0, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
@@ -110,6 +111,34 @@ interface SolvedQuestion {
   Topics: string;
 }
 
+
+const AVAILABLE_TOPICS = [
+  "Array",
+  "String",
+  "Hash Table",
+  "Linked List",
+  "Tree",
+  "Graph",
+  "Binary Search",
+  "Dynamic Programming",
+  "Greedy",
+  "Stack",
+  "Queue",
+  "Heap",
+  "Backtracking",
+  "Bit Manipulation"
+];
+
+function getDeterministicPick<T>(arr: T[], seedStr: string): T | null {
+  if (arr.length === 0) return null;
+  let hash = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    hash = seedStr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % arr.length;
+  return arr[index];
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   
@@ -144,10 +173,36 @@ export default function DashboardPage() {
   // Interactive console states
   const [activeTab, setActiveTab] = useState<"revisions" | "proficiency" | "logs" | "diagnostics">("revisions");
   const [diagnosticLogs, setDiagnosticLogs] = useState<string[]>([
-    "SYS_BOOT: Cognitive matrix online.",
-    "DB_CONN: Established in 12ms.",
-    "SECURITY: Integrity checks passed [100%]"
+    "SYS_BOOT: Workspace ready.",
+    "DB_CONN: Established.",
+    "PLANNER: Core decisions compiled."
   ]);
+
+  // Study Planner States
+  const [focusTopics, setFocusTopics] = useState<string[]>([]);
+  const [userXP, setUserXP] = useState(0);
+  const [showFocusModal, setShowFocusModal] = useState(false);
+  const [todaysMission, setTodaysMission] = useState<RoadmapTask[]>([]);
+  const [studyMode, setStudyMode] = useState<"learn" | "balanced" | "review">("balanced");
+  const [dailyLoad, setDailyLoad] = useState<"light" | "balanced" | "intensive">("balanced");
+  const [studyBalance, setStudyBalance] = useState({ learning: 0, practice: 0, review: 0 });
+  const [focusDistribution, setFocusDistribution] = useState<{ topic: string; percentage: number }[]>([]);
+  const [weeklyActivities, setWeeklyActivities] = useState(0);
+  const [weeklyTopTopic, setWeeklyTopTopic] = useState("Trees");
+
+  // Load preferences from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedMode = localStorage.getItem("sheetstride-study-mode");
+      if (savedMode && ["learn", "balanced", "review"].includes(savedMode)) {
+        setStudyMode(savedMode as any);
+      }
+      const savedLoad = localStorage.getItem("sheetstride-daily-load");
+      if (savedLoad && ["light", "balanced", "intensive"].includes(savedLoad)) {
+        setDailyLoad(savedLoad as any);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (activeTab !== "diagnostics") return;
@@ -174,195 +229,41 @@ export default function DashboardPage() {
     try {
       setLoading(true);
 
-      // Fetch all active revisions directly by manually joining questions
-      const { data: progressList, error: progressErr } = await supabase
-        .from("user_progress")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("completed", true)
-        .not("next_revision_due", "is", null)
-        .order("next_revision_due", { ascending: true });
-
-      let revData: any[] = [];
-      if (!progressErr && progressList && progressList.length > 0) {
-        const questionIds = progressList.map((row: any) => row.question_id);
-        const { data: questionsData, error: questionsError } = await supabase
-          .from("questions")
-          .select("ID, Title, Difficulty, Link, Topics")
-          .in("ID", questionIds);
-        
-        if (!questionsError && questionsData) {
-          const questionsMap = new Map(questionsData.map((q: any) => [q.ID, q]));
-          revData = progressList
-            .map((row: any) => {
-              const q = questionsMap.get(row.question_id);
-              if (!q) return null;
-              return {
-                ...row,
-                questions: q
-              };
-            })
-            .filter(Boolean);
-        }
-      }
-
-      const now = new Date();
-      const due = revData.filter((item: any) => new Date(item.next_revision_due) <= now);
-      const upcoming = revData.filter((item: any) => new Date(item.next_revision_due) > now);
-      setRevisionQueue(due);
-      setUpcomingQueue(upcoming);
+      // Determine current preferences (from state or fallback)
+      let currentMode: "learn" | "balanced" | "review" = studyMode;
+      let currentLoad: "light" | "balanced" | "intensive" = dailyLoad;
       
-      // 1. Fetch total counts from database
-      const { count: countAll } = await supabase
-        .from("questions")
-        .select("*", { count: "exact", head: true });
-      if (countAll !== null) setTotalQuestions(countAll);
-
-      // 2. Fetch user's solved questions from user_progress
-      const { data: userProgress, error: progressError } = await supabase
-        .from("user_progress")
-        .select(`
-          question_id,
-          "completed-at"
-        `)
-        .eq("user_id", userId)
-        .order("completed-at", { ascending: true });
-
-      if (progressError) throw progressError;
-
-      let solved: SolvedQuestion[] = [];
-      if (userProgress && userProgress.length > 0) {
-        const questionIds = userProgress.map((row: any) => row.question_id);
-        const { data: questionsData, error: questionsError } = await supabase
-          .from("questions")
-          .select("ID, Title, Difficulty, Topics")
-          .in("ID", questionIds);
-
-        if (!questionsError && questionsData) {
-          const questionsMap = new Map(questionsData.map((q: any) => [q.ID, q]));
-          solved = userProgress
-            .map((row: any) => {
-              const q = questionsMap.get(row.question_id);
-              if (!q) return null;
-              return {
-                ID: q.ID,
-                Title: q.Title,
-                Difficulty: q.Difficulty,
-                Topics: q.Topics
-              };
-            })
-            .filter(Boolean) as SolvedQuestion[];
-        }
+      const metadata = user.user_metadata || {};
+      const savedMode = metadata["sheetstride-study-mode"] || localStorage.getItem("sheetstride-study-mode");
+      if (savedMode && ["learn", "balanced", "review"].includes(savedMode)) {
+        currentMode = savedMode as any;
       }
-      setSolvedList(solved);
-
-      // 3. Compute streaks
-      let currentStreak = 0;
-      let longestStreak = 0;
-      const { data: streakData, error: streakError } = await supabase
-        .rpc("calculate_user_streaks", { target_user_id: userId });
-
-      if (!streakError && streakData && streakData.length > 0) {
-        currentStreak = streakData[0].res_current_streak || 0;
-        longestStreak = streakData[0].res_max_streak || 0;
+      const savedLoad = metadata["sheetstride-daily-load"] || localStorage.getItem("sheetstride-daily-load");
+      if (savedLoad && ["light", "balanced", "intensive"].includes(savedLoad)) {
+        currentLoad = savedLoad as any;
       }
-      setCurrentStreak(currentStreak);
-      setLongestStreak(longestStreak);
 
-      // 4. Calculate weakest topic and fetch Daily Mission question
-      const topicStatsMap: { [key: string]: number } = {};
-      solved.forEach((q) => {
-        if (q.Topics) {
-          q.Topics.split(",").forEach((t) => {
-            const cleanTopic = t.trim();
-            topicStatsMap[cleanTopic] = (topicStatsMap[cleanTopic] || 0) + 1;
-          });
-        }
+      // Compile roadmap contract using isolated engine
+      const roadmap = await buildRoadmap(userId, supabase, {
+        studyMode: currentMode,
+        dailyLoad: currentLoad
       });
 
-      const TOPIC_DENOMINATORS: { [key: string]: number } = {
-        "Array": 500,
-        "String": 300,
-        "Hash Table": 250,
-        "Dynamic Programming": 350,
-        "Tree": 200,
-        "Graph": 150,
-        "Binary Search": 130,
-        "Linked List": 90
-      };
+      // Update state indicators directly from compiled roadmap contract
+      setTodaysMission(roadmap.items);
+      setStudyBalance(roadmap.studyBalance);
+      setWeeklyActivities(roadmap.weeklyActivities);
+      setWeeklyTopTopic(roadmap.weeklyTopTopic);
+      setWeakestTopic(roadmap.weakestTopic);
+      setDailyQuest(roadmap.dailyQuest);
+      setRevisionQueue(roadmap.revisionQueue);
+      setUpcomingQueue(roadmap.upcomingQueue);
+      setCurrentStreak(roadmap.currentStreak);
+      setLongestStreak(roadmap.longestStreak);
+      setUserXP(roadmap.userXP);
+      setFocusTopics(roadmap.focusTopics);
 
-      let computedWeakest = "Array";
-      let lowestRatio = 1.0;
-      Object.entries(TOPIC_DENOMINATORS).forEach(([topic, total]) => {
-        const solvedCount = topicStatsMap[topic] || 0;
-        const ratio = solvedCount / total;
-        if (ratio < lowestRatio) {
-          lowestRatio = ratio;
-          computedWeakest = topic;
-        }
-      });
-      setWeakestTopic(computedWeakest);
-
-      // 5. Fetch official Daily LeetCode Problem from Alfa API
-      let quest = null;
-      try {
-        const res = await fetch("https://alfa-leetcode-api.onrender.com/daily").then(r => r.ok ? r.json() : null);
-        if (res && res.questionTitle) {
-          // Find matching question in database by title
-          const { data: qMatch } = await supabase
-            .from("questions")
-            .select("ID, Title, Difficulty, Link, Topics")
-            .eq("Title", res.questionTitle)
-            .maybeSingle();
-
-          if (qMatch) {
-            quest = qMatch;
-          } else {
-            quest = {
-              ID: 9999, // Fallback ID for non-roadmap daily quest
-              Title: res.questionTitle,
-              Difficulty: res.difficulty || "Medium",
-              Link: res.questionLink,
-              Topics: "LeetCode Daily"
-            };
-          }
-        }
-      } catch (dailyErr) {
-        console.warn("Failed to fetch official daily, falling back:", dailyErr);
-      }
-
-      // If official daily fetching failed or was empty, fall back to weakest topic question
-      if (!quest) {
-        const solvedIdsSet = new Set(solved.map(q => q.ID));
-        const { data: topicQuestions } = await supabase
-          .from("questions")
-          .select("ID, Title, Difficulty, Link, Topics")
-          .ilike("Topics", `%${computedWeakest}%`)
-          .limit(50);
-
-        if (topicQuestions) {
-          quest = topicQuestions.find(q => !solvedIdsSet.has(q.ID));
-        }
-
-        if (!quest) {
-          const { data: generalQuestions } = await supabase
-            .from("general_questions" as any)
-            .select("ID, Title, Difficulty, Link, Topics")
-            .limit(100);
-          if (!generalQuestions) {
-            const { data: altQuestions } = await supabase
-              .from("questions")
-              .select("ID, Title, Difficulty, Link, Topics")
-              .limit(100);
-            quest = altQuestions?.find(q => !solvedIdsSet.has(q.ID));
-          } else {
-            quest = generalQuestions.find(q => !solvedIdsSet.has(q.ID));
-          }
-        }
-      }
-      setDailyQuest(quest);
-
-      // Fetch leetcode username from profiles
+      // If user profile leetcode integration is set up, load LeetCode summary stats
       let leetcodeUser = "";
       try {
         const { data: dbProfile } = await supabase
@@ -370,26 +271,69 @@ export default function DashboardPage() {
           .select("leetcode_username")
           .eq("id", userId)
           .maybeSingle();
-        if (dbProfile?.leetcode_username) {
-          leetcodeUser = dbProfile.leetcode_username;
-        } else {
-          leetcodeUser = user?.user_metadata?.leetcode_username || "";
+        if (dbProfile) {
+          leetcodeUser = dbProfile.leetcode_username || "";
         }
-      } catch (dbErr) {
-        console.warn("DB profiles check failed:", dbErr);
+      } catch (e) {}
+      if (!leetcodeUser) {
         leetcodeUser = user?.user_metadata?.leetcode_username || "";
       }
       setLeetcodeUsername(leetcodeUser);
-
       if (leetcodeUser) {
         await fetchLeetcodeStats(leetcodeUser);
       }
+
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
     } finally {
       setLoading(false);
     }
   }
+
+  const handleSaveFocusTopics = async (updatedTopics: string[]) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ focus_topics: updatedTopics })
+        .eq("id", user.id);
+
+      if (!error) {
+        setFocusTopics(updatedTopics);
+        await loadDashboardData();
+      }
+    } catch (err) {
+      console.error("Failed to save focus topics:", err);
+    }
+  };
+
+  const handleUpdateStudyMode = async (mode: "learn" | "balanced" | "review") => {
+    setStudyMode(mode);
+    localStorage.setItem("sheetstride-study-mode", mode);
+    try {
+      await supabase.auth.updateUser({
+        data: {
+          "sheetstride-study-mode": mode
+        }
+      });
+    } catch (e) {
+      console.warn("Failed to sync study-mode preference to database:", e);
+    }
+  };
+
+  const handleUpdateDailyLoad = async (load: "light" | "balanced" | "intensive") => {
+    setDailyLoad(load);
+    localStorage.setItem("sheetstride-daily-load", load);
+    try {
+      await supabase.auth.updateUser({
+        data: {
+          "sheetstride-daily-load": load
+        }
+      });
+    } catch (e) {
+      console.warn("Failed to sync daily-load preference to database:", e);
+    }
+  };
 
   const fetchLeetcodeStats = async (username: string) => {
     if (!username) return;
@@ -424,6 +368,21 @@ export default function DashboardPage() {
     }
   };
 
+  // Load preferences from Supabase Auth metadata when user session hydrates
+  useEffect(() => {
+    if (user) {
+      const metadata = user.user_metadata || {};
+      const savedMode = metadata["sheetstride-study-mode"];
+      if (savedMode && ["learn", "balanced", "review"].includes(savedMode)) {
+        setStudyMode(savedMode as any);
+      }
+      const savedLoad = metadata["sheetstride-daily-load"];
+      if (savedLoad && ["light", "balanced", "intensive"].includes(savedLoad)) {
+        setDailyLoad(savedLoad as any);
+      }
+    }
+  }, [user]);
+
   useEffect(() => {
     loadDashboardData();
 
@@ -431,7 +390,7 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener("question-solved", loadDashboardData);
     };
-  }, [user]);
+  }, [user, studyMode, dailyLoad]);
 
   const handleToggleDailyMission = async () => {
     if (!user || !dailyQuest) return;
@@ -689,68 +648,313 @@ export default function DashboardPage() {
     show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } }
   };
 
+  const completedTasks = todaysMission.filter(t => t.completed).length;
+  const totalTasks = todaysMission.length || 1;
+  const missionPercent = Math.round((completedTasks / totalTasks) * 100);
+  const isRoadmapComplete = todaysMission.length > 0 && todaysMission.every(t => t.completed);
+
+  const welcomeText = user ? (
+    <>
+      Welcome back, {user?.user_metadata?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "Operator"}.
+      {" "}Your current focus is <span className="text-primary font-bold">{focusTopics[0] || weakestTopic}</span>.
+      {" "}{todaysMission.filter((t) => t.type === "revise").length} review{todaysMission.filter((t) => t.type === "revise").length === 1 ? " is" : "s are"} ready today, along with{" "}
+      {todaysMission.filter((t) => t.type === "solve").length} new practice opportunit{todaysMission.filter((t) => t.type === "solve").length === 1 ? "y" : "ies"}.
+    </>
+  ) : (
+    "Your current roadmap plan is loaded."
+  );
+
+  const renderFocusHealthBlocks = (topic: string) => {
+    const completedCount = solvedList.filter((q) => 
+      (q.Topics && q.Topics.toLowerCase().includes(topic.toLowerCase()))
+    ).length;
+    const targetCount = 20;
+    const filledCount = Math.min(targetCount, completedCount);
+    const emptyCount = Math.max(0, targetCount - filledCount);
+    
+    const blocksStr = "■".repeat(filledCount) + "□".repeat(emptyCount);
+    return {
+      blocks: blocksStr,
+      completed: completedCount,
+      target: targetCount
+    };
+  };
+
   return (
     <AppShell className="space-y-stack-lg max-w-container-max mx-auto px-gutter" gridBackground>
       
+      {/* Interactive Learning Journey Pipeline HUD */}
+      <div className="border border-[#222]/80 bg-[#0C0C0C]/80 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-[11px] select-none shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[14px]">explore</span>
+          <span className="text-outline uppercase tracking-wider font-bold">Journey status:</span>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3 text-outline">
+          {/* Step 1: Learn */}
+          <Link href="/patterns" className="hover:text-primary transition-all flex items-center gap-1 group">
+            <span className="text-secondary">✓</span>
+            <span className="font-bold uppercase tracking-wider group-hover:underline">Learn</span>
+          </Link>
+          
+          <span className="text-[#2D2D2D] select-none">──►</span>
+
+          {/* Step 2: Recognize */}
+          <Link href="/practice" className="hover:text-primary transition-all flex items-center gap-1 group">
+            <span className={cn(completedTasks > 0 ? "text-secondary" : "text-[#555]")}>
+              {completedTasks > 0 ? "✓" : "▶"}
+            </span>
+            <span className={cn("font-bold uppercase tracking-wider group-hover:underline", completedTasks > 0 ? "text-outline" : "text-primary font-extrabold")}>Recognize</span>
+          </Link>
+
+          <span className="text-[#2D2D2D] select-none">──►</span>
+
+          {/* Step 3: Solve */}
+          <a href="#today-roadmap" className="hover:text-primary transition-all flex items-center gap-1 group">
+            <span className={cn(isRoadmapComplete ? "text-secondary" : "text-[#555]")}>
+              {isRoadmapComplete ? "✓" : "▶"}
+            </span>
+            <span className={cn("font-bold uppercase tracking-wider group-hover:underline", isRoadmapComplete ? "text-outline" : "text-primary font-extrabold")}>Solve</span>
+          </a>
+
+          <span className="text-[#2D2D2D] select-none">──►</span>
+
+          {/* Step 4: Reflect */}
+          <button
+            onClick={() => {
+              const solvedTask = todaysMission.find(t => t.completed && t.question);
+              if (solvedTask && solvedTask.question) {
+                window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                  detail: {
+                    questionId: solvedTask.question.ID,
+                    title: solvedTask.question.Title,
+                    difficulty: solvedTask.question.Difficulty,
+                    link: solvedTask.question.Link,
+                    mode: "reflection"
+                  }
+                }));
+              } else {
+                window.dispatchEvent(new CustomEvent("open-notebook-explorer"));
+              }
+            }}
+            className="hover:text-primary transition-all flex items-center gap-1 group cursor-pointer text-outline bg-transparent border-none p-0"
+          >
+            <span className="text-[#555]">○</span>
+            <span className="font-bold uppercase tracking-wider group-hover:underline">Reflect</span>
+          </button>
+
+          <span className="text-[#2D2D2D] select-none">──►</span>
+
+          {/* Step 5: Review */}
+          <a href="#review-section" className="hover:text-primary transition-all flex items-center gap-1 group">
+            <span className="text-[#555]">○</span>
+            <span className="font-bold uppercase tracking-wider group-hover:underline">Review</span>
+          </a>
+        </div>
+      </div>
+
       {/* Hero section */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
         <motion.div 
+          id="today-roadmap"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="lg:col-span-8 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg relative overflow-hidden group transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
+          className="lg:col-span-8 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-lg rounded-lg relative overflow-hidden group transition-all duration-300 hover:bg-[#181818]/92 hover:border-primary/20 hover:-translate-y-[2px]"
         >
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
-            <span className="material-symbols-outlined text-[120px]" style={{ fontVariationSettings: "'FILL' 1" }}>terminal</span>
-          </div>
-
-          <header className="flex justify-between items-start mb-stack-lg">
+          <header className="flex justify-between items-start mb-stack-lg border-b border-[#2D2D2D] pb-3">
             <div>
-              <span className="font-mono-label text-mono-label text-primary uppercase mb-2 block">Mission Hub</span>
-              <h1 className="font-headline-lg text-headline-lg uppercase tracking-tight text-on-surface">
-                MISSION STATUS: <span className="text-secondary">ACTIVE</span>
+              <span className="font-mono-label text-mono-label text-primary uppercase mb-1 block">Study Workspace</span>
+              <h1 className="font-headline-lg text-lg uppercase tracking-tight text-on-surface font-bold">
+                TODAY'S ROADMAP: <span className="text-secondary">{completedTasks}/{totalTasks} COMPLETED</span>
               </h1>
             </div>
-            <div className="text-right select-none hidden sm:block">
-              <span className="font-mono-label text-mono-label text-outline flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs">info</span> System v2.0.0
-              </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowFocusModal(true)}
+                className="p-1.5 hover:bg-white/5 border border-[#222] hover:border-primary/50 text-outline hover:text-primary rounded font-mono text-[10px] uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all"
+              >
+                <Settings className="h-3 w-3" /> Adjust Config
+              </button>
             </div>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-stack-lg relative z-10">
-            <div className="space-y-stack-sm">
-              <p className="font-mono-label text-mono-label text-outline uppercase">Current Track</p>
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
-                  <span className="material-symbols-outlined text-primary">dynamic_form</span>
+          <div className="mb-4 text-xs font-body text-outline leading-relaxed border-b border-[#2D2D2D]/60 pb-3 font-medium">
+            {welcomeText}
+          </div>
+
+          {isRoadmapComplete ? (
+            /* Premium Summary Wrap Up Card */
+            <div className="space-y-6 py-4 select-none">
+              <div className="text-center space-y-2 max-w-md mx-auto">
+                <div className="inline-flex p-3 bg-secondary/10 rounded-full border border-secondary/20 mb-2">
+                  <CheckCircle2 className="h-8 w-8 text-secondary animate-pulse" />
                 </div>
-                <div>
-                  <h3 className="font-headline-md text-headline-md uppercase">Patterns Mastered</h3>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">{solvedCount} solved</p>
+                <h2 className="font-display font-semibold text-base text-secondary uppercase tracking-wider">
+                  Excellent work.
+                </h2>
+                <h3 className="font-headline-md text-sm text-text font-bold uppercase tracking-wider">
+                  Today's roadmap is complete.
+                </h3>
+                <p className="font-body text-xs text-outline leading-relaxed">
+                  Tomorrow's planner will be generated based on today's progress. Your cognitive memory bank is refreshed.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0C0C0C]/60 border border-[#222]/80 p-4 rounded-xl font-mono text-[10px]">
+                <div className="space-y-1">
+                  <span className="text-outline/50 block text-[8px] uppercase tracking-wider font-bold">Questions Solved</span>
+                  <span className="text-text font-bold text-xs">
+                    {todaysMission.filter((t) => t.type === "solve" && t.completed).length} / {todaysMission.filter((t) => t.type === "solve").length}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-outline/50 block text-[8px] uppercase tracking-wider font-bold">Reviews Finished</span>
+                  <span className="text-text font-bold text-xs">
+                    {todaysMission.filter((t) => t.type === "revise" && t.completed).length} / {todaysMission.filter((t) => t.type === "revise").length}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-outline/50 block text-[8px] uppercase tracking-wider font-bold">Drills Run</span>
+                  <span className="text-text font-bold text-xs">
+                    {todaysMission.filter((t) => t.type === "drill" && t.completed).length} / {todaysMission.filter((t) => t.type === "drill").length}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-outline/50 block text-[8px] uppercase tracking-wider font-bold">Active Focus</span>
+                  <span className="text-text font-bold text-xs truncate block max-w-full" title={focusTopics.join(", ") || weakestTopic}>
+                    {focusTopics[0] || weakestTopic}
+                  </span>
                 </div>
               </div>
+
+              <div className="text-center font-mono text-[10px] text-outline/45 uppercase tracking-wider font-bold">
+                You're done for today. See you tomorrow.
+              </div>
             </div>
-            
-            <div className="space-y-stack-sm">
-              <p className="font-mono-label text-mono-label text-outline uppercase">Next Milestone</p>
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-tertiary/10 rounded-lg border border-tertiary/20">
-                  <span className="material-symbols-outlined text-tertiary">military_tech</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-headline-md text-headline-md">Top 1% Global Rank</h3>
-                  <div className="w-full bg-[#181818] h-1.5 mt-2 rounded-full overflow-hidden relative">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progressPercent}%` }}
-                      transition={{ duration: 1.2, ease: "easeOut" }}
-                      className="h-full bg-primary"
-                    />
+          ) : (
+            /* Regular Checklist View */
+            <div className="space-y-3 relative z-10">
+              {todaysMission.map((task) => (
+                <div 
+                  key={task.id}
+                  className={cn(
+                    "p-3 rounded-lg border flex items-center justify-between gap-4 transition-all",
+                    task.completed 
+                      ? "bg-[#061009]/20 border-secondary/20 opacity-75" 
+                      : "bg-[#0C0C0C]/50 border-[#222]/85 hover:border-primary/30"
+                  )}
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <button 
+                      disabled
+                      className={cn(
+                        "h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                        task.completed 
+                          ? "border-secondary bg-secondary/10 text-secondary" 
+                          : "border-[#2D2D2D] text-transparent"
+                      )}
+                    >
+                      <span className="material-symbols-outlined text-[14px] font-bold">check</span>
+                    </button>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={cn(
+                          "text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded font-mono leading-none border",
+                          task.type === "learn" && "bg-blue-500/5 border-blue-500/20 text-blue-400",
+                          task.type === "drill" && "bg-purple-500/5 border-purple-500/20 text-purple-400",
+                          task.type === "solve" && "bg-primary/5 border-primary/20 text-primary",
+                          task.type === "revise" && "bg-orange-500/5 border-orange-500/20 text-orange-400"
+                        )}>
+                          {task.type}
+                        </span>
+                        {task.question?.Difficulty && (
+                          <span className={cn(
+                            "text-[8px] font-bold uppercase font-mono leading-none tracking-wider",
+                            task.question.Difficulty.toLowerCase() === "easy" && "text-emerald-400",
+                            task.question.Difficulty.toLowerCase() === "medium" && "text-primary",
+                            task.question.Difficulty.toLowerCase() === "hard" && "text-danger"
+                          )}>
+                            {task.question.Difficulty}
+                          </span>
+                        )}
+
+                        {/* Interactive Explanation Tooltip indicator */}
+                        <div className="relative group/explain select-none flex items-center">
+                          <span className="material-symbols-outlined text-outline/45 hover:text-primary text-[11px] cursor-pointer">info</span>
+                          <div className="absolute left-1/2 bottom-full mb-1.5 -translate-x-1/2 bg-[#161616] border border-[#2D2D2D] text-outline text-[9px] font-mono p-2 rounded shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover/explain:opacity-100 transition-opacity z-50">
+                            {task.type === "revise" && "Revision Ready // Overdue Spaced Repetition queue"}
+                            {task.type === "solve" && `Matches chosen study focus topic: ${focusTopics[0] || weakestTopic}`}
+                            {task.type === "drill" && "Practice diagnostic session matching weakest pattern zones"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {task.type === "solve" || task.type === "revise" ? (
+                        <button
+                          onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                            detail: {
+                              questionId: task.question?.ID,
+                              title: task.question?.Title,
+                              difficulty: task.question?.Difficulty,
+                              link: task.question?.Link,
+                              mode: task.type === "revise" ? "reflection" : "description"
+                            }
+                          }))}
+                          className={cn(
+                            "text-xs font-semibold text-text hover:text-primary hover:underline transition-all text-left truncate block w-full bg-transparent border-none p-0 cursor-pointer",
+                            task.completed && "line-through text-outline/40 font-normal hover:text-outline/40"
+                          )}
+                        >
+                          {task.label}
+                        </button>
+                      ) : task.type === "drill" ? (
+                        <Link
+                          href={`/practice?mode=drill&drill_pattern=${task.topic?.toLowerCase().replace(/ /g, "-")}`}
+                          className={cn(
+                            "text-xs font-semibold text-text hover:text-primary hover:underline transition-all text-left truncate block w-full",
+                            task.completed && "line-through text-outline/40 font-normal hover:text-outline/40"
+                          )}
+                        >
+                          {task.label}
+                        </Link>
+                      ) : (
+                        <Link
+                          href="/patterns"
+                          className={cn(
+                            "text-xs font-semibold text-text hover:text-primary hover:underline transition-all text-left truncate block w-full",
+                            task.completed && "line-through text-outline/40 font-normal hover:text-outline/40"
+                          )}
+                        >
+                          {task.label}
+                        </Link>
+                      )}
+                    </div>
                   </div>
+
+                  {task.question?.Link && !task.completed && (
+                    <a 
+                      href={task.question.Link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 border border-[#222] hover:border-primary/50 rounded text-outline/65 hover:text-primary transition-colors flex-shrink-0"
+                      title="Solve on LeetCode"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
                 </div>
-              </div>
+              ))}
             </div>
+          )}
+
+          <div className="w-full bg-[#181818] h-1.5 mt-5 rounded-full overflow-hidden relative border border-white/5">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${missionPercent}%` }}
+              transition={{ duration: 1.0, ease: "easeOut" }}
+              className="h-full bg-secondary"
+            />
           </div>
         </motion.div>
 
@@ -759,32 +963,127 @@ export default function DashboardPage() {
           variants={staggerContainer}
           initial="hidden"
           animate="show"
-          className="lg:col-span-4 grid grid-rows-3 gap-stack-md"
+          className="lg:col-span-4 flex flex-col gap-4"
         >
-          {stats.map((stat, i) => (
-            <motion.div 
-              key={stat.label}
-              variants={revealItem}
-              whileHover={{ y: -2, scale: 1.01, borderColor: "#FFD400", boxShadow: "0 0 24px rgba(255,212,0,0.12)" }}
-              className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-stack-md rounded-lg flex items-center justify-between group transition-all"
-            >
-              <div>
-                <p className="font-mono-label text-mono-label text-muted uppercase">{stat.label}</p>
-                <h2 className={cn(
-                  "font-mono-stats text-mono-stats",
-                  stat.tone === "secondary" ? "text-secondary" : stat.tone === "tertiary" ? "text-tertiary" : "text-[#FFD400]"
-                )}>
-                  <CountUp end={stat.value} suffix={stat.suffix} />
-                </h2>
+          {/* Card 1: Focus Health & Targets */}
+          <motion.div 
+            variants={revealItem}
+            onClick={() => setShowFocusModal(true)}
+            whileHover={{ y: -2, scale: 1.01, borderColor: "#FFD400", boxShadow: "0 0 24px rgba(255,212,0,0.12)" }}
+            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-5 rounded-lg group transition-all cursor-pointer space-y-3"
+          >
+            <div className="flex items-center justify-between border-b border-[#2D2D2D] pb-2">
+              <span className="font-mono-label text-mono-label text-muted uppercase">MONTHLY FOCUS HEALTH</span>
+              <span className="material-symbols-outlined text-[16px] text-primary">analytics</span>
+            </div>
+            
+            {focusTopics.length > 0 ? (
+              <div className="space-y-3 font-mono text-[10px]">
+                {focusTopics.slice(0, 2).map((topic) => {
+                  const health = renderFocusHealthBlocks(topic);
+                  return (
+                    <div key={topic} className="space-y-1">
+                      <div className="flex justify-between font-bold text-outline">
+                        <span>{topic.toUpperCase()}</span>
+                        <span>{health.completed} / {health.target} SOLVED</span>
+                      </div>
+                      <div className="text-primary tracking-wider truncate text-xs leading-none">
+                        {health.blocks}
+                      </div>
+                    </div>
+                  );
+                })}
+                <p className="text-[9px] text-outline/50 italic pt-1">Tap to modify monthly focuses.</p>
               </div>
-              <span className={cn(
-                "material-symbols-outlined text-4xl opacity-50 transition-opacity group-hover:opacity-80",
-                stat.tone === "secondary" ? "text-secondary" : stat.tone === "tertiary" ? "text-tertiary" : "text-[#FFD400]"
-              )}>
-                {i === 0 ? "data_exploration" : i === 1 ? "local_fire_department" : "workspace_premium"}
-              </span>
-            </motion.div>
-          ))}
+            ) : (
+              <div className="py-4 text-center font-mono text-[10px] text-outline/45 space-y-2">
+                <div>NO FOCUS TOPICS CONFIGURED</div>
+                <button className="px-3 py-1 bg-primary text-black font-bold uppercase text-[9px] rounded">Set Focus</button>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Card 2: Study Balance Engine Heuristics */}
+          <motion.div 
+            variants={revealItem}
+            whileHover={{ y: -2, scale: 1.01, borderColor: "#FFD400", boxShadow: "0 0 24px rgba(255,212,0,0.12)" }}
+            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-5 rounded-lg transition-all space-y-3"
+          >
+            <div className="flex items-center justify-between border-b border-[#2D2D2D] pb-2">
+              <span className="font-mono-label text-mono-label text-muted uppercase">STUDY BALANCE</span>
+              <span className="material-symbols-outlined text-[16px] text-secondary">donut_large</span>
+            </div>
+            
+            <div className="space-y-2 font-mono text-[9px]">
+              <div className="space-y-1">
+                <div className="flex justify-between text-outline">
+                  <span>LEARN (SOLVES)</span>
+                  <span>{studyBalance.learning}</span>
+                </div>
+                <div className="h-1.5 w-full bg-[#181818] rounded overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${Math.min(100, (studyBalance.learning / 20) * 100)}%` }} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-outline">
+                  <span>PRACTICE (DRILLS)</span>
+                  <span>{studyBalance.practice}</span>
+                </div>
+                <div className="h-1.5 w-full bg-[#181818] rounded overflow-hidden">
+                  <div className="h-full bg-secondary" style={{ width: `${Math.min(100, (studyBalance.practice / 10) * 100)}%` }} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-outline">
+                  <span>RETAIN (REVISIONS)</span>
+                  <span>{studyBalance.review}</span>
+                </div>
+                <div className="h-1.5 w-full bg-[#181818] rounded overflow-hidden">
+                  <div className="h-full bg-tertiary" style={{ width: `${Math.min(100, (studyBalance.review / 20) * 100)}%` }} />
+                </div>
+              </div>
+
+              {/* Dynamic Heuristic Advisory Box */}
+              <div className="bg-[#0C0C0C]/80 border border-[#222]/80 p-2.5 rounded text-[9px] leading-relaxed text-outline/80 mt-2">
+                {studyBalance.learning > 10 && studyBalance.review === 0 ? (
+                  <span className="text-[#FFB347]">
+                    ⚠️ You've focused heavily on new problems. Consider spending some time reviewing previous work this week.
+                  </span>
+                ) : (
+                  <span>
+                    Your study distribution is balanced. Keep up the consistent practice cycles!
+                  </span>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Card 3: Weekly Reflection */}
+          <motion.div 
+            variants={revealItem}
+            whileHover={{ y: -2, scale: 1.01, borderColor: "#FFD400", boxShadow: "0 0 24px rgba(255,212,0,0.12)" }}
+            className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-5 rounded-lg transition-all space-y-3"
+          >
+            <div className="flex items-center justify-between border-b border-[#2D2D2D] pb-2">
+              <span className="font-mono-label text-mono-label text-muted uppercase">THIS WEEK'S REFLECTION</span>
+              <span className="material-symbols-outlined text-[16px] text-tertiary">history_edu</span>
+            </div>
+            
+            <div className="space-y-2 font-mono text-[9px] text-outline leading-relaxed">
+              <div>
+                ● You completed <span className="text-text font-bold">{weeklyActivities}</span> learning activities.
+              </div>
+              <div>
+                ● Focus Topic: <span className="text-primary font-bold">{weeklyTopTopic}</span>.
+              </div>
+              <div>
+                ● Recognition improved in: <span className="text-secondary font-bold">Sliding Window</span>.
+              </div>
+              <div className="border-t border-[#222]/60 pt-2 text-[8px] text-outline/50 uppercase tracking-wider">
+                Keep practicing: <span className="text-primary">Greedy</span>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -825,97 +1124,35 @@ export default function DashboardPage() {
 
       {/* Dynamic Widget Grid (Daily Challenge, Company Curricula, LeetCode Live Stats) */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-        {/* Card 1: Daily LeetCode Challenge */}
+        {/* Card 1: Practice Sessions */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.4 }}
-          className={cn(
-            "border backdrop-blur-[12px] p-6 rounded-xl flex flex-col justify-between transition-all duration-300 min-h-[220px]",
-            isDailyQuestSolved 
-              ? "bg-[#111111]/30 border-[#2D2D2D]/60 opacity-50 grayscale select-none hover:shadow-none" 
-              : "bg-[#111111]/72 border-[#2D2D2D] hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)]"
-          )}
+          className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:bg-[#181818]/92 hover:border-[#FFD400] hover:-translate-y-[2px] hover:shadow-[0_0_24px_rgba(255,212,0,0.12)] min-h-[220px]"
         >
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="font-mono text-[9px] text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 tracking-wider font-bold">DAILY MISSION</span>
+              <span className="font-mono text-[9px] text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 tracking-wider font-bold">PRACTICE CENTER</span>
               <span className="material-symbols-outlined text-primary text-lg">target</span>
             </div>
 
-            {dailyQuest ? (
-              <div className="space-y-3">
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
-                    detail: {
-                      questionId: dailyQuest.ID,
-                      title: dailyQuest.Title,
-                      difficulty: dailyQuest.Difficulty,
-                      link: dailyQuest.Link,
-                      mode: "description"
-                    }
-                  }))}
-                  className="font-headline-md text-sm font-bold text-on-surface hover:text-primary transition-colors cursor-pointer text-left truncate block w-full"
-                >
-                  {dailyQuest.Title}
-                </button>
-                <div className="flex gap-2">
-                  <Badge
-                    tone={
-                      dailyQuest.Difficulty.toLowerCase() === "easy" ? "secondary" :
-                      dailyQuest.Difficulty.toLowerCase() === "medium" ? "tertiary" : "danger"
-                    }
-                  >
-                    {dailyQuest.Difficulty.toUpperCase()}
-                  </Badge>
-                  <span className="text-[9px] text-muted self-center uppercase truncate">{dailyQuest.Topics?.split(",")[0] || "LeetCode"}</span>
-                </div>
-                <p className="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
-                  Solve on LeetCode, then record reflections in your journal notebook.
-                </p>
-              </div>
-            ) : (
-              <div className="py-4 text-center text-muted font-mono text-[10px]">
-                NO ACTIVE DAILY CHALLENGE
-              </div>
-            )}
+            <div className="space-y-3">
+              <h3 className="font-headline-md text-sm font-bold text-on-surface">Practice Studio</h3>
+              <p className="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+                Practice pattern recognition diagnostics or compile customized daily session sets matching your target tracks.
+              </p>
+            </div>
           </div>
 
-          {dailyQuest && (
-            <div className="grid grid-cols-2 gap-2 mt-4 pt-2 border-t border-white/5">
-              {isDailyQuestSolved ? (
-                <div className="col-span-2 text-center py-2 text-emerald-400 font-mono text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 bg-emerald-500/5 border border-emerald-500/10 rounded">
-                  <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                  MISSION ACCOMPLISHED
-                </div>
-              ) : (
-                <>
-                  <a
-                    href={dailyQuest.Link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1 text-black text-[11px] bg-primary px-3 py-2 rounded font-bold cursor-pointer hover:bg-[#FFE14D] transition-all uppercase tracking-wider text-center"
-                  >
-                    SOLVE <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                  <button
-                    onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
-                      detail: {
-                        questionId: dailyQuest.ID,
-                        title: dailyQuest.Title,
-                        difficulty: dailyQuest.Difficulty,
-                        link: dailyQuest.Link,
-                        mode: "priming"
-                      }
-                    }))}
-                    className="flex items-center justify-center gap-1 text-white text-[11px] border border-[#2D2D2D] px-3 py-2 rounded font-bold cursor-pointer hover:bg-white/5 transition-all uppercase tracking-wider text-center"
-                  >
-                    LOG SOLVE
-                  </button>
-                </>
-              )}
-            </div>
-          )}
+          <div className="mt-4 pt-2 border-t border-white/5">
+            <Link
+              href="/practice"
+              className="w-full flex items-center justify-center gap-1.5 text-black text-[11px] bg-[#FFD400] px-3 py-2 rounded font-bold hover:bg-[#FFE14D] transition-all uppercase tracking-wider text-center"
+            >
+              LAUNCH SESSION
+            </Link>
+          </div>
         </motion.div>
 
         {/* Card 2: Company Curriculum Sheets */}
@@ -1050,7 +1287,7 @@ export default function DashboardPage() {
             {/* Header: Tab Triggers with spring-animated layoutId background slider */}
             <div className="flex border-b border-[#2D2D2D] pb-3 mb-6 overflow-x-auto gap-2 select-none custom-scrollbar">
               {[
-                { id: "revisions", label: `REVISION QUEUE (${revisionQueue.length})`, icon: "sync" },
+                { id: "revisions", label: `REVIEW SCHEDULE (${revisionQueue.length})`, icon: "sync" },
                 { id: "proficiency", label: "TOPIC PROFICIENCY", icon: "schema" },
                 { id: "logs", label: "RECENT SOLVES", icon: "history" }
               ].map((tab) => (
@@ -1092,7 +1329,7 @@ export default function DashboardPage() {
                     {/* Due today */}
                     <div>
                       <h3 className="font-mono text-[10px] text-[#FFC700] uppercase font-bold tracking-widest mb-3 border-b border-[#2D2D2D] pb-1.5 flex justify-between items-center select-none">
-                        <span>Due Today ({revisionQueue.length})</span>
+                        <span>Overdue Reviews ({revisionQueue.length})</span>
                         {revisionQueue.length > 0 && <span className="h-2 w-2 rounded-full bg-secondary shadow-[0_0_8px_#4de082] animate-pulse" />}
                       </h3>
                       {revisionQueue.length === 0 ? (
@@ -1160,7 +1397,7 @@ export default function DashboardPage() {
                     {/* Upcoming schedule */}
                     <div>
                       <h3 className="font-mono text-[10px] text-outline uppercase font-bold tracking-widest mb-3 border-b border-[#2D2D2D] pb-1.5 select-none">
-                        Upcoming Schedule ({upcomingQueue.length})
+                        Upcoming Reviews ({upcomingQueue.length})
                       </h3>
                       {upcomingQueue.length === 0 ? (
                         <div className="py-6 text-center text-outline/40 font-body-sm text-xs italic">
@@ -1292,7 +1529,7 @@ export default function DashboardPage() {
           </a>
           <a 
             href="https://instagram.com/iakshattsingh" 
-            target="_blank" 
+                          target="_blank" 
             rel="noopener noreferrer" 
             className="flex items-center gap-1.5 hover:text-primary transition-colors group"
           >
@@ -1302,6 +1539,142 @@ export default function DashboardPage() {
         </div>
       </footer>
 
+
+      {/* Focus Topics Configuration Dialog Modal */}
+      <AnimatePresence>
+        {showFocusModal && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4 font-mono">
+            <div className="absolute inset-0" onClick={() => setShowFocusModal(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-lg bg-[#111111] border border-[#2D2D2D] hover:border-primary/20 rounded-xl overflow-hidden p-6 shadow-2xl space-y-5 z-[101] max-h-[90vh] overflow-y-auto custom-scrollbar"
+            >
+              <div className="flex justify-between items-start border-b border-[#2D2D2D] pb-3">
+                <div>
+                  <h3 className="font-display text-sm font-bold text-text uppercase tracking-wider">Planner Settings</h3>
+                  <p className="font-body text-[10px] text-outline mt-0.5">Customize your target focus, workload capacity, and review heuristics.</p>
+                </div>
+                <button
+                  onClick={() => setShowFocusModal(false)}
+                  className="p-1 hover:bg-white/5 rounded text-outline hover:text-text cursor-pointer transition-colors border-none bg-transparent"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* 1. Monthly Focus Topics */}
+              <div className="space-y-2">
+                <span className="block text-[10px] text-primary uppercase font-bold tracking-wider">1 // Focus Topics</span>
+                <div className="grid grid-cols-2 gap-2 max-h-[140px] overflow-y-auto custom-scrollbar p-1">
+                  {AVAILABLE_TOPICS.map((topic) => {
+                    const isChecked = focusTopics.includes(topic);
+                    return (
+                      <button
+                        key={topic}
+                        onClick={() => {
+                          const updated = isChecked
+                            ? focusTopics.filter((t) => t !== topic)
+                            : [...focusTopics, topic];
+                          handleSaveFocusTopics(updated);
+                        }}
+                        className={cn(
+                          "px-3 py-1.5 border rounded font-mono text-[10px] text-left uppercase transition-all cursor-pointer select-none",
+                          isChecked
+                            ? "bg-primary/5 border-primary text-primary font-bold shadow-[0_0_8px_rgba(255,212,0,0.05)]"
+                            : "bg-[#0C0C0C] border-[#222] text-outline/65 hover:border-outline hover:text-text"
+                        )}
+                      >
+                        {topic}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Study Mode & Preferred Load */}
+              <div className="grid grid-cols-2 gap-4 border-t border-[#2D2D2D]/60 pt-3">
+                <div className="space-y-2">
+                  <span className="block text-[10px] text-primary uppercase font-bold tracking-wider">2 // Study Mode</span>
+                  <div className="flex flex-col gap-1.5">
+                    {([
+                      { id: "learn", label: "Learn (Favors New)" },
+                      { id: "balanced", label: "Balanced" },
+                      { id: "review", label: "Review (Favors SR)" }
+                    ] as const).map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => handleUpdateStudyMode(m.id)}
+                        className={cn(
+                          "px-2.5 py-1.5 border text-left rounded text-[10px] font-bold uppercase transition-all cursor-pointer select-none",
+                          studyMode === m.id
+                            ? "bg-primary/10 border-primary text-primary"
+                            : "bg-[#0C0C0C] border-[#222] text-outline hover:border-outline hover:text-text"
+                        )}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <span className="block text-[10px] text-primary uppercase font-bold tracking-wider">3 // Preferred Load</span>
+                  <div className="flex flex-col gap-1.5">
+                    {([
+                      { id: "light", label: "Light (3 Tasks)" },
+                      { id: "balanced", label: "Balanced (5 Tasks)" },
+                      { id: "intensive", label: "Intensive (8 Tasks)" }
+                    ] as const).map((l) => (
+                      <button
+                        key={l.id}
+                        onClick={() => handleUpdateDailyLoad(l.id)}
+                        className={cn(
+                          "px-2.5 py-1.5 border text-left rounded text-[10px] font-bold uppercase transition-all cursor-pointer select-none",
+                          dailyLoad === l.id
+                            ? "bg-primary/10 border-primary text-primary"
+                            : "bg-[#0C0C0C] border-[#222] text-outline hover:border-outline hover:text-text"
+                        )}
+                      >
+                        {l.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Planner Rules */}
+              <div className="border-t border-[#2D2D2D]/60 pt-3 space-y-2 select-none">
+                <span className="block text-[10px] text-primary uppercase font-bold tracking-wider">4 // Planner Rules</span>
+                <div className="bg-[#0C0C0C]/80 border border-[#222]/80 p-3 rounded-lg space-y-1.5 font-mono text-[9px] text-outline/85 leading-relaxed">
+                  <div className="flex items-center gap-1.5 text-secondary">
+                    <span>✓</span> <span>Prioritize overdue spaced revisions</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-secondary">
+                    <span>✓</span> <span>Align tasks to monthly active focuses</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-secondary">
+                    <span>✓</span> <span>Mix learning, recognition practice, and retention</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-secondary">
+                    <span>✓</span> <span>Cap workload according to load targets</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-3 border-t border-[#2D2D2D]">
+                <button
+                  onClick={() => setShowFocusModal(false)}
+                  className="px-4 py-2 bg-primary hover:bg-primary-strong text-black font-mono text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer border-none"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </AppShell>
   );

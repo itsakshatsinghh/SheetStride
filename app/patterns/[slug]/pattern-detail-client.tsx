@@ -157,11 +157,11 @@ export function PatternDetailClient({
                   <div className="flex justify-between items-center">
                     <h2 className="font-mono text-outline uppercase tracking-widest text-[11px]">01 // OVERVIEW</h2>
                     <Link
-                      href={`/training-ground?drill_pattern=${pattern.slug}`}
+                      href={`/practice?drill_pattern=${pattern.slug}`}
                       className="px-3 py-1 bg-primary/10 hover:bg-primary/20 border border-primary/25 hover:border-primary/50 rounded text-primary text-[10px] uppercase font-mono tracking-wider flex items-center gap-1.5 transition-all"
                     >
                       <Sparkles className="h-3 w-3" />
-                      Train this Pattern
+                      Practice this Pattern
                     </Link>
                   </div>
                   <div className="font-body text-text leading-relaxed text-sm">

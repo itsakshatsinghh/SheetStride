@@ -6,11 +6,11 @@ import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
-interface WorkoutClientProps {
+interface PracticeSessionClientProps {
   onXPUpdate: () => void;
 }
 
-interface WorkoutQuestion {
+interface PracticeQuestion {
   question_id: number;
   title: string;
   difficulty: string;
@@ -19,8 +19,8 @@ interface WorkoutQuestion {
   completed: boolean;
 }
 
-interface WorkoutState {
-  questions: WorkoutQuestion[];
+interface PracticeState {
+  questions: PracticeQuestion[];
   difficulty: string;
   patterns: string[];
   created_at: string;
@@ -87,13 +87,13 @@ const getWorkoutDayKey = (dateObject = new Date()) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
+export function PracticeSessionClient({ onXPUpdate }: PracticeSessionClientProps) {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedDateKey, setSelectedDateKey] = useState("");
   const [todayDateKey, setTodayDateKey] = useState("");
 
-  const [activeWorkout, setActiveWorkout] = useState<WorkoutState | null>(null);
+  const [activeWorkout, setActiveWorkout] = useState<PracticeState | null>(null);
 
   // Setup options
   const [selectedDifficulty, setSelectedDifficulty] = useState<"easy" | "medium" | "hard" | "mixed">("mixed");
@@ -121,8 +121,8 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
     const dates = new Set<string>();
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith("sheetstride-workout-")) {
-        const dateKey = key.replace("sheetstride-workout-", "");
+      if (key && key.startsWith("sheetstride-practice-")) {
+        const dateKey = key.replace("sheetstride-practice-", "");
         dates.add(dateKey);
       }
     }
@@ -130,7 +130,7 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
   };
 
   const loadWorkoutForDate = (dateKey: string) => {
-    const cached = localStorage.getItem(`sheetstride-workout-${dateKey}`);
+    const cached = localStorage.getItem(`sheetstride-practice-${dateKey}`);
     if (cached) {
       try {
         setActiveWorkout(JSON.parse(cached));
@@ -178,7 +178,7 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
           if (stateChanged) {
             const newState = { ...currentWorkout, questions: updatedQuestions };
             setActiveWorkout(newState);
-            localStorage.setItem(`sheetstride-workout-${selectedDateKey}`, JSON.stringify(newState));
+            localStorage.setItem(`sheetstride-practice-${selectedDateKey}`, JSON.stringify(newState));
           }
         }
       } catch (e) {
@@ -199,7 +199,7 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
     };
   }, [selectedDateKey]);
 
-  // Generate Workout Pack
+  // Generate Practice Pack
   const generateWorkoutPack = async () => {
     if (selectedPatterns.length === 0 || selectedDateKey !== todayDateKey) return;
     setGenerating(true);
@@ -274,7 +274,7 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
       const due = filteredPool.filter((q) => dueIds.has(q.question_id));
       const fallback = filteredPool;
 
-      const selection: WorkoutQuestion[] = [];
+      const selection: PracticeQuestion[] = [];
       const selectedIds = new Set<number>();
 
       const tryAdd = (list: any[]) => {
@@ -323,14 +323,14 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
       }
 
       if (selection.length > 0) {
-        const newWorkout: WorkoutState = {
+        const newWorkout: PracticeState = {
           questions: selection,
           difficulty: selectedDifficulty,
           patterns: selectedPatterns,
           created_at: new Date().toISOString()
         };
         setActiveWorkout(newWorkout);
-        localStorage.setItem(`sheetstride-workout-${selectedDateKey}`, JSON.stringify(newWorkout));
+        localStorage.setItem(`sheetstride-practice-${selectedDateKey}`, JSON.stringify(newWorkout));
         updateWorkoutDots();
       }
     } catch (err) {
@@ -340,7 +340,7 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
     }
   };
 
-  const openReflectionDrawer = (q: WorkoutQuestion) => {
+  const openReflectionDrawer = (q: PracticeQuestion) => {
     window.dispatchEvent(new CustomEvent("open-question-drawer", {
       detail: {
         questionId: q.question_id,
@@ -391,7 +391,7 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
           );
           const newState = { ...activeWorkout, questions: updated };
           setActiveWorkout(newState);
-          localStorage.setItem(`sheetstride-workout-${selectedDateKey}`, JSON.stringify(newState));
+          localStorage.setItem(`sheetstride-practice-${selectedDateKey}`, JSON.stringify(newState));
         }
       }
     } catch (e) {
@@ -501,7 +501,7 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <span className="font-mono text-xs text-outline uppercase tracking-wider">Loading workout planner...</span>
+        <span className="font-mono text-xs text-outline uppercase tracking-wider">Loading practice calendar...</span>
       </div>
     );
   }
@@ -513,7 +513,7 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
         <div className="border border-[#222]/80 bg-[#0C0C0C]/80 rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-[#222] pb-3">
             <span className="font-mono text-xs text-outline uppercase tracking-widest flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-primary" /> WORKOUT CALENDAR
+              <Calendar className="h-3.5 w-3.5 text-primary" /> PRACTICE CALENDAR
             </span>
             <div className="flex items-center gap-1.5">
               <button
@@ -552,12 +552,12 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
 
         <div className="border border-[#222]/40 bg-[#090909]/40 p-4 rounded-xl font-mono text-xs text-outline/65 leading-relaxed space-y-1.5 select-none">
           <span className="block font-bold text-outline/80">OPERATOR RULES:</span>
-          <span>● Click past/today dates on the chronometer calendar to load that day's target sheets.</span>
-          <span>● Workout packages are limit-locked to once-a-day, resetting automatically at 5:00 AM IST.</span>
+          <span>● Click past/today dates on the calendar to load that day's practice set.</span>
+          <span>● Practice sessions are limit-locked to once-a-day, resetting automatically at 5:00 AM IST.</span>
         </div>
       </div>
 
-      {/* Right 60% Span Workout Content Column */}
+      {/* Right 60% Span Practice Content Column */}
       <div className="md:col-span-3 space-y-6">
         {!activeWorkout ? (
           // Generator Configuration Setup (Only allowed for today)
@@ -565,7 +565,7 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
             <div className="space-y-6">
               <div>
                 <label className="block font-mono text-xs text-outline uppercase tracking-wider mb-2">
-                  WORKOUT DIFFICULTY PRESET
+                  PRACTICE DIFFICULTY PRESET
                 </label>
                 <div className="grid grid-cols-4 gap-2.5">
                   {(["easy", "medium", "hard", "mixed"] as const).map((diff) => (
@@ -620,11 +620,11 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
                 >
                   {generating ? (
                     <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Assembling Workout...
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Compiling Practice Set...
                     </>
                   ) : (
                     <>
-                      Build daily workout pack <ArrowRight className="h-3.5 w-3.5" />
+                      Compile practice set <ArrowRight className="h-3.5 w-3.5" />
                     </>
                   )}
                 </button>
@@ -632,15 +632,15 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
             </div>
           ) : (
             <div className="border border-outline-variant/10 bg-[#090909]/40 p-8 rounded-xl text-center font-mono text-xs text-outline/40 select-none py-20">
-              No daily workout was generated on this date ({selectedDateKey})
+              No practice session was configured on this date ({selectedDateKey})
             </div>
           )
         ) : (
-          // Active Workout Pack Display
+          // Active Practice Pack Display
           <div className="space-y-6">
             <div className="flex justify-between items-center border-b border-[#1C1C1C] pb-3">
               <span className="font-mono text-xs text-outline uppercase tracking-wider font-bold">
-                DAILY PACK TARGETS (
+                DAILY PRACTICE TARGETS (
                 {activeWorkout.questions.filter((q) => q.completed).length} / 3 SOLVED)
               </span>
               <span className="font-mono text-xs text-outline/45">
@@ -723,10 +723,10 @@ export function WorkoutClient({ onXPUpdate }: WorkoutClientProps) {
               <div className="border border-secondary/30 bg-secondary/[0.04] p-5 rounded-xl text-center space-y-2 select-none shadow-[0_0_15px_rgba(77,224,130,0.03)]">
                 <Award className="h-8 w-8 text-secondary mx-auto animate-bounce" />
                 <h4 className="font-display font-semibold text-sm text-secondary uppercase tracking-wider">
-                  Workout Completed!
+                  Practice Set Complete!
                 </h4>
                 <p className="font-body text-xs text-outline max-w-sm mx-auto leading-relaxed">
-                  You have finished all 3 training tasks and unlocked full workout XP rewards. Your pattern recognition database is refreshed.
+                  You have finished all 3 practice tasks and unlocked full session rewards. Your pattern recognition database is refreshed.
                 </p>
               </div>
             )}

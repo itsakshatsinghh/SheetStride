@@ -33,6 +33,13 @@ This snapshot represents the current status of features, models, and integration
     *   **Curriculum progression graph:** Displays horizontal node progression charts for the current pattern path.
     *   **Reference Only Questions:** Disables solve checkoffs and database writes for unmapped reference problems, rendering a "Reference Only" status.
     *   **Card Search & Progress:** Extended search filters to query aliases, variants, data structures, and keywords. Renders solved counts, completion %, confidence, and revision due dates for authenticated users.
+*   **Training Ground & Challenges Hub (Phase 2 Core):** Fully implemented the interactive algorithmic pattern-recognition workspace:
+    *   **Patterns Index page (`/patterns`):** Cyberpunk dashboard with WebGL matrix animated background (`TerminalShader`), bold headers, and selector card pathways to Pattern Atlas and Challenges Hub.
+    *   **Pattern Recognition Simulator:** Step-by-step game loop (descriptive text decoding, 30-second clocks, primary clues, approach dropdowns, reflection notes) utilizing unescaped HTML parsers and a 60:40 split LeetCode-style screen layout with an operator notes dry-run scratchpad.
+    *   **Interactive Monthly Calendar Tracker:** A full monthly calendar grid in local browser time to track solve sessions. Days with active workouts saved in browser local storage display a dynamic indicator dot.
+    *   **Daily Training Workout Packs:** Cascading generator logic that guarantees exactly 3 questions are generated for the selected date key. Links question items to LeetCode and hooks "Mark Solved" buttons directly to the global Interview Notebook Reflection Drawer.
+    *   **Once-a-Day Generation Boundary:** Restricts workout generation/creation to once per day, resetting exactly at 5:00 AM IST (UTC shifted by +30 minutes). Prevents pack regeneration once today's workout has been generated.
+    *   **Resilient Practice Logs Fallback:** Features combined fetches (remote `drill_history` table + local storage backups `sheetstride-drill-logs`) so logs and recognition insights are loaded instantly even if Supabase schema cache resets.
 
 ### 🟡 In Progress
 *   **None:** All target roadmap features are completed.
