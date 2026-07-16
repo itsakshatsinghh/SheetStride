@@ -1,14 +1,143 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, ExternalLink, Loader2, BookOpen, History, Sparkles, 
-  Clock, AlertTriangle, CheckCircle2, ChevronRight, Save, Play, RefreshCw, ArrowLeft, Lock
+  Clock, AlertTriangle, CheckCircle2, ChevronRight, Save, Play, RefreshCw, ArrowLeft, Lock,
+  Plus, Trash2, ArrowUp, ArrowDown, ChevronDown, ChevronUp, PlayCircle, PauseCircle, SkipForward
 } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { cn, fetchWithCache } from "@/lib/utils";
+import { slugifyPattern } from "@/lib/slugs";
+
+interface ConstructionStep {
+  title: string;
+  reason: string;
+}
+
+interface SolutionBlueprint {
+  understanding: {
+    input: string;
+    output: string;
+    keyObservation: string;
+    hiddenTrick: string;
+  };
+  selection: {
+    patternUsed: string;
+    whyPattern: string;
+    alternatives: string[];
+  };
+  construction_steps: ConstructionStep[];
+  complexities: {
+    timeComplexity: string;
+    timeWhy: string;
+    spaceComplexity: string;
+    spaceWhy: string;
+  };
+  reflection: {
+    biggestMistake: string;
+    futureReminder: string;
+    interviewExplanation: string;
+  };
+}
+
+const COMPLEXITY_OPTIONS = ["O(1)", "O(log N)", "O(N)", "O(N log N)", "O(N^2)", "O(2^N)"];
+
+const PATTERN_TEMPLATES: Record<string, ConstructionStep[]> = {
+  "sliding-window": [
+    { title: "Initialize Window", reason: "Set left = 0, right = 0 pointer bounds." },
+    { title: "Expand Window", reason: "Advance right pointer to include next element." },
+    { title: "Check Invariant", reason: "Verify window state satisfies constraint." },
+    { title: "Shrink Window", reason: "Contract left pointer while constraint is violated." },
+    { title: "Update Result", reason: "Record optimal window size or count." }
+  ],
+  "tree-bfs": [
+    { title: "Initialize Queue", reason: "Push root node to queue to start BFS." },
+    { title: "Level Loop", reason: "Loop while queue is not empty." },
+    { title: "Visit Node", reason: "Process current node values." },
+    { title: "Push Children", reason: "Add child nodes to queue for next level." },
+    { title: "Return", reason: "Return final answer." }
+  ],
+  "dynamic-programming": [
+    { title: "Define DP State", reason: "dp[i] represents optimal result at index i." },
+    { title: "Base Cases", reason: "Set default boundary conditions (e.g. dp[0] = 0)." },
+    { title: "Transition Relation", reason: "Define state transition formula." },
+    { title: "Iteration Order", reason: "Loop to compute states sequentially." },
+    { title: "Return DP Value", reason: "Final answer is stored at last state." }
+  ],
+  "binary-search": [
+    { title: "Initialize Bounds", reason: "Set low = 0, high = n-1." },
+    { title: "Loop Condition", reason: "while low <= high." },
+    { title: "Find Mid", reason: "mid = low + (high - low) / 2." },
+    { title: "Decision Check", reason: "Check target constraint at mid." },
+    { title: "Shrink Space", reason: "Update low = mid + 1 or high = mid - 1." }
+  ],
+  "graph-bfs-dfs": [
+    { title: "Initialize Visited", reason: "Create visited Set or boolean array." },
+    { title: "Setup Stack/Queue", reason: "Create Queue (BFS) or Stack (DFS), push start nodes." },
+    { title: "Traverse Node", reason: "Pop node from stack/queue, mark as visited." },
+    { title: "Push Neighbors", reason: "Loop through unvisited neighbors, push to stack/queue." }
+  ],
+  "heap-priority-queue": [
+    { title: "Initialize Heap", reason: "Create min-heap or max-heap structure." },
+    { title: "Add Elements", reason: "Push input elements or window items to heap." },
+    { title: "Extract Optimal", reason: "Extract min/max elements to maintain constraint." },
+    { title: "Process Item", reason: "Add new values or merge intervals." }
+  ],
+  "union-find": [
+    { title: "Initialize Parents", reason: "parent[i] = i for all elements, setup ranks." },
+    { title: "Find Operation", reason: "Traverse with path compression to find root." },
+    { title: "Union Operation", reason: "Merge sets by rank/size, update parent pointers." },
+    { title: "Check Component", reason: "Verify connectivity or decrement total components." }
+  ]
+};
+
+const DEFAULT_STEPS: ConstructionStep[] = [
+  { title: "Initialize", reason: "Set up initial data structures and base states." },
+  { title: "Process", reason: "Traverse input space, process logic nodes." },
+  { title: "Return", reason: "Return final answer." }
+];
+
+const getTemplateSteps = (pattern: string): ConstructionStep[] => {
+  if (!pattern) return DEFAULT_STEPS;
+  const norm = pattern.toLowerCase();
+  if (norm.includes("sliding window")) return PATTERN_TEMPLATES["sliding-window"];
+  if (norm.includes("bfs") && norm.includes("tree")) return PATTERN_TEMPLATES["tree-bfs"];
+  if (norm.includes("dp") || norm.includes("dynamic programming")) return PATTERN_TEMPLATES["dynamic-programming"];
+  if (norm.includes("binary search")) return PATTERN_TEMPLATES["binary-search"];
+  if (norm.includes("union find") || norm.includes("union-find")) return PATTERN_TEMPLATES["union-find"];
+  if (norm.includes("graph")) return PATTERN_TEMPLATES["graph-bfs-dfs"];
+  if (norm.includes("heap") || norm.includes("priority queue")) return PATTERN_TEMPLATES["heap-priority-queue"];
+  return DEFAULT_STEPS;
+};
+
+const createEmptyBlueprint = (patternUsed = "", noteToSelf = "", takeaway = ""): SolutionBlueprint => ({
+  understanding: {
+    input: "",
+    output: "",
+    keyObservation: "",
+    hiddenTrick: ""
+  },
+  selection: {
+    patternUsed: patternUsed,
+    whyPattern: "",
+    alternatives: []
+  },
+  construction_steps: getTemplateSteps(patternUsed),
+  complexities: {
+    timeComplexity: "O(N)",
+    timeWhy: "",
+    spaceComplexity: "O(1)",
+    spaceWhy: ""
+  },
+  reflection: {
+    biggestMistake: "",
+    futureReminder: noteToSelf,
+    interviewExplanation: takeaway
+  }
+});
 
 function CollapsibleHint({ index, content }: { index: number; content: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,16 +145,46 @@ function CollapsibleHint({ index, content }: { index: number; content: string })
     <div className="border border-[#232325] rounded-lg overflow-hidden bg-[#0A0A0B] select-none">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-2.5 font-mono text-[10px] text-outline hover:text-[#FFC700] hover:bg-[#121214] transition-colors text-left cursor-pointer font-bold uppercase select-none"
+        className="w-full flex items-center justify-between p-2.5 font-mono-label text-mono-label text-outline hover:text-[#FFC700] hover:bg-[#121214] transition-colors text-left cursor-pointer font-bold uppercase select-none"
       >
         <span>Hint {index}</span>
-        <span className="text-[10px]">{isOpen ? "[-]" : "[+]"}</span>
+        <span className="text-badge-sm">{isOpen ? "[-]" : "[+]"}</span>
       </button>
       {isOpen && (
         <div 
-          className="p-3 text-xs text-[#E4E4E7] border-t border-[#1C1C1E] font-body-sm leading-relaxed whitespace-pre-wrap select-text bg-[#070708] leetcode-description-content"
+          className="p-3 text-body-sm text-[#E4E4E7] border-t border-[#1C1C1E] font-body-lg leading-relaxed whitespace-pre-wrap select-text bg-[#070708] leetcode-description-content"
           dangerouslySetInnerHTML={{ __html: content }}
         />
+      )}
+    </div>
+  );
+}
+
+function AccordionSection({ 
+  title, 
+  isExpanded, 
+  onToggle, 
+  children 
+}: { 
+  title: string; 
+  isExpanded: boolean; 
+  onToggle: () => void; 
+  children: React.ReactNode; 
+}) {
+  return (
+    <div className="border border-border rounded-xl overflow-hidden bg-[#0A0A0B] select-none">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-3.5 font-mono-label text-mono-label text-text hover:bg-[#121214] transition-colors text-left font-bold uppercase select-none cursor-pointer"
+      >
+        <span className="tracking-widest">{title}</span>
+        <span>{isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-outline" /> : <ChevronDown className="w-3.5 h-3.5 text-outline" />}</span>
+      </button>
+      {isExpanded && (
+        <div className="p-4 space-y-4 bg-[#09090A]/40 border-t border-border/50">
+          {children}
+        </div>
       )}
     </div>
   );
@@ -77,6 +236,23 @@ export function QuestionDetailDrawer() {
   const [patternStrategy, setPatternStrategy] = useState("");
   const [dryRun, setDryRun] = useState("");
   
+  // V1 Solution Blueprint State
+  const [blueprint, setBlueprint] = useState<SolutionBlueprint>(createEmptyBlueprint());
+  
+  // Accordion Expand States
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    understanding: true,
+    selection: false,
+    construction: true,
+    complexities: false,
+    reflection: true
+  });
+
+  // Replay Deck States
+  const [isReplaying, setIsReplaying] = useState(false);
+  const [replayIndex, setReplayIndex] = useState(0);
+  const [isReplayPaused, setIsReplayPaused] = useState(false);
+
   // Interactive UI messages
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -95,6 +271,19 @@ export function QuestionDetailDrawer() {
     if (!url) return "";
     const match = url.match(/\/problems\/([^/]+)/);
     return match ? match[1] : "";
+  };
+
+  // Toggle Accordion section
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const proceedToSection = (current: string, next: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [current]: false,
+      [next]: true
+    }));
   };
 
   // Listen to open events from other screens
@@ -127,6 +316,17 @@ export function QuestionDetailDrawer() {
       setProblemDescription("");
       setProblemHints([]);
       setLikesDislikes({ likes: 0, dislikes: 0 });
+      setBlueprint(createEmptyBlueprint());
+      setExpandedSections({
+        understanding: true,
+        selection: false,
+        construction: true,
+        complexities: false,
+        reflection: true
+      });
+      setIsReplaying(false);
+      setReplayIndex(0);
+      setIsReplayPaused(false);
       setIsLoading(true);
     };
 
@@ -152,7 +352,6 @@ export function QuestionDetailDrawer() {
         if (progressErr) throw progressErr;
 
         if (progressList && progressList.length > 0) {
-          // If there are duplicate progress rows, clean them up self-healingly!
           if (progressList.length > 1) {
             console.warn(`Detected ${progressList.length} duplicate progress rows for question ${qId}. Cleaning up...`);
             const keepRow = progressList[0];
@@ -169,7 +368,43 @@ export function QuestionDetailDrawer() {
           setProgress(null);
         }
 
-        // 2. Fetch notebook entries
+        // 2. Query mapped pattern and topic from sheet questions
+        let dbPattern = "";
+        let dbTopic = "";
+        try {
+          const { data: sheetQ } = await supabase
+            .from("sheet_questions")
+            .select('"Pattern name", "topic name"')
+            .eq("question ID", qId)
+            .maybeSingle();
+          if (sheetQ) {
+            dbPattern = sheetQ["Pattern name"] || "";
+            dbTopic = sheetQ["topic name"] || "";
+          }
+        } catch (err) {
+          console.error("Error querying sheet_questions:", err);
+        }
+
+        // Query standard complexes from pattern_metadata
+        let standardTC = "";
+        let standardSC = "";
+        if (dbPattern) {
+          try {
+            const { data: patternMeta } = await supabase
+              .from("pattern_metadata")
+              .select("tc, sc")
+              .eq("pattern_name", dbPattern)
+              .maybeSingle();
+            if (patternMeta) {
+              standardTC = patternMeta.tc || "";
+              standardSC = patternMeta.sc || "";
+            }
+          } catch (metaErr) {
+            console.error("Error fetching pattern complexities:", metaErr);
+          }
+        }
+
+        // 3. Fetch notebook entries
         const { data: notebookData } = await supabase
           .from("user_notebooks")
           .select("*")
@@ -185,9 +420,75 @@ export function QuestionDetailDrawer() {
           setOptimization(notebookData.optimization || "");
           setPatternStrategy(notebookData.pattern_strategy || "");
           setDryRun(notebookData.dry_run || "");
+
+          if (notebookData.blueprint) {
+            try {
+              const parsed = typeof notebookData.blueprint === 'string'
+                ? JSON.parse(notebookData.blueprint)
+                : notebookData.blueprint;
+              
+              setBlueprint({
+                understanding: {
+                  input: parsed.understanding?.input || "",
+                  output: parsed.understanding?.output || "",
+                  keyObservation: parsed.understanding?.keyObservation || "",
+                  hiddenTrick: parsed.understanding?.hiddenTrick || notebookData.brute_force || ""
+                },
+                selection: {
+                  patternUsed: parsed.selection?.patternUsed || dbPattern || "",
+                  whyPattern: parsed.selection?.whyPattern || "",
+                  alternatives: parsed.selection?.alternatives || []
+                },
+                construction_steps: parsed.construction_steps || getTemplateSteps(parsed.selection?.patternUsed || dbPattern),
+                complexities: {
+                  timeComplexity: parsed.complexities?.timeComplexity || standardTC || "O(N)",
+                  timeWhy: parsed.complexities?.timeWhy || "",
+                  spaceComplexity: parsed.complexities?.spaceComplexity || standardSC || "O(1)",
+                  spaceWhy: parsed.complexities?.spaceWhy || ""
+                },
+                reflection: {
+                  biggestMistake: parsed.reflection?.biggestMistake || "",
+                  futureReminder: parsed.reflection?.futureReminder || notebookData.note_to_self || "",
+                  interviewExplanation: parsed.reflection?.interviewExplanation || notebookData.biggest_takeaway || ""
+                }
+              });
+            } catch (err) {
+              console.error("Error parsing blueprint JSON:", err);
+              setBlueprint(createEmptyBlueprint(dbPattern || notebookData.pattern_strategy, notebookData.note_to_self, notebookData.biggest_takeaway));
+            }
+          } else {
+            // Backfill legacy takeaways
+            setBlueprint({
+              understanding: {
+                input: "",
+                output: "",
+                keyObservation: "",
+                hiddenTrick: notebookData.brute_force || ""
+              },
+              selection: {
+                patternUsed: dbPattern || notebookData.pattern_strategy || "",
+                whyPattern: "",
+                alternatives: []
+              },
+              construction_steps: getTemplateSteps(dbPattern || notebookData.pattern_strategy),
+              complexities: {
+                timeComplexity: standardTC || "O(N)",
+                timeWhy: "",
+                spaceComplexity: standardSC || "O(1)",
+                spaceWhy: ""
+              },
+              reflection: {
+                biggestMistake: "",
+                futureReminder: notebookData.note_to_self || "",
+                interviewExplanation: notebookData.biggest_takeaway || ""
+              }
+            });
+          }
+        } else {
+          setBlueprint(createEmptyBlueprint(dbPattern, "", ""));
         }
 
-        // 3. Fetch history
+        // 4. Fetch history
         const { data: historyData } = await supabase
           .from("user_reflection_log")
           .select("*")
@@ -197,7 +498,7 @@ export function QuestionDetailDrawer() {
 
         setHistory(historyData || []);
 
-        // 4. Fetch LeetCode description from Alfa API
+        // 5. Fetch LeetCode description from Alfa API
         let currentLink = link;
         if (!currentLink && qId) {
           const { data: qData } = await supabase
@@ -256,6 +557,29 @@ export function QuestionDetailDrawer() {
     }
   };
 
+  // Synchronize dynamic blueprint reflections with separate strings for reflection logs
+  const syncTakeawayWithBlueprint = (takeawayText: string) => {
+    setTakeaway(takeawayText);
+    setBlueprint(prev => ({
+      ...prev,
+      reflection: {
+        ...prev.reflection,
+        interviewExplanation: takeawayText
+      }
+    }));
+  };
+
+  const syncReminderWithBlueprint = (reminderText: string) => {
+    setNoteToSelf(reminderText);
+    setBlueprint(prev => ({
+      ...prev,
+      reflection: {
+        ...prev.reflection,
+        futureReminder: reminderText
+      }
+    }));
+  };
+
   // Submit Reflection (First solve)
   const handleSubmitReflection = async () => {
     if (!user || !qId || isSaving) return;
@@ -281,11 +605,21 @@ export function QuestionDetailDrawer() {
       
       const completedAt = new Date().toISOString();
 
+      // Ensure blueprint reflection notes contain the latest form inputs
+      const finalBlueprint = {
+        ...blueprint,
+        reflection: {
+          ...blueprint.reflection,
+          interviewExplanation: takeaway || blueprint.reflection.interviewExplanation,
+          futureReminder: noteToSelf || blueprint.reflection.futureReminder
+        }
+      };
+
       // 1. Upsert progress entry
       const { error: progressError } = await supabase
         .from("user_progress")
         .upsert({
-          id: progress?.id, // Use existing progress ID if present to avoid duplication
+          id: progress?.id,
           user_id: userId,
           question_id: qId,
           completed: true,
@@ -314,29 +648,28 @@ export function QuestionDetailDrawer() {
 
       if (logError) throw logError;
 
-      // 3. Upsert takeaways to notebook
+      // 3. Upsert takeaways & blueprint to notebook
       const { error: notebookError } = await supabase
         .from("user_notebooks")
         .upsert({
           user_id: userId,
           question_id: qId,
-          biggest_takeaway: takeaway,
-          note_to_self: "",
-          brute_force: "",
+          biggest_takeaway: finalBlueprint.reflection.interviewExplanation,
+          note_to_self: finalBlueprint.reflection.futureReminder,
+          brute_force: finalBlueprint.understanding.hiddenTrick,
           optimization: "",
           pattern_strategy: "",
           dry_run: "",
+          blueprint: finalBlueprint,
           updated_at: completedAt
         });
 
       if (notebookError) throw notebookError;
 
-      // Save local storage cache for immediate offline list sync
       const timestamps = JSON.parse(localStorage.getItem("solved_questions_timestamps") || "{}");
       timestamps[qId] = completedAt;
       localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
 
-      // Trigger micro-success state
       setSuccessMsg(`REVISION SCHEDULED: DUE IN ${finalInterval} DAYS`);
       window.dispatchEvent(new Event("question-solved"));
 
@@ -368,7 +701,6 @@ export function QuestionDetailDrawer() {
         newInterval = Math.max(2, Math.floor(currentInterval * 0.5));
       }
 
-      // Check if this revision is solved early (before the next_revision_due timestamp)
       const now = new Date();
       const existingDueDate = progress?.next_revision_due ? new Date(progress.next_revision_due) : null;
       const isEarlySolve = existingDueDate ? (now < existingDueDate) : false;
@@ -384,7 +716,16 @@ export function QuestionDetailDrawer() {
       const nowStr = new Date().toISOString();
       const nextAttemptNumber = (history?.length || 0) + 1;
 
-      // 1. Update progress fields via upsert for maximum compatibility and primary-key safety
+      const finalBlueprint = {
+        ...blueprint,
+        reflection: {
+          ...blueprint.reflection,
+          interviewExplanation: takeaway || blueprint.reflection.interviewExplanation,
+          futureReminder: noteToSelf || blueprint.reflection.futureReminder
+        }
+      };
+
+      // 1. Update progress fields via upsert
       const upsertPayload = {
         id: progress?.id,
         user_id: userId,
@@ -401,10 +742,7 @@ export function QuestionDetailDrawer() {
         .from("user_progress")
         .upsert(upsertPayload);
 
-      if (progressError) {
-        console.error("Progress upsert failed in handleSubmitReview:", progressError);
-        throw progressError;
-      }
+      if (progressError) throw progressError;
 
       // 2. Log entry to reflection history
       const { error: logError } = await supabase
@@ -422,24 +760,24 @@ export function QuestionDetailDrawer() {
 
       if (logError) throw logError;
 
-      // 3. Update mutable takeaways in notebook
+      // 3. Update mutable takeaways and blueprint
       const { error: notebookError } = await supabase
         .from("user_notebooks")
         .upsert({
           user_id: userId,
           question_id: qId,
-          biggest_takeaway: takeaway,
-          note_to_self: "",
-          brute_force: "",
+          biggest_takeaway: finalBlueprint.reflection.interviewExplanation,
+          note_to_self: finalBlueprint.reflection.futureReminder,
+          brute_force: finalBlueprint.understanding.hiddenTrick,
           optimization: "",
           pattern_strategy: "",
           dry_run: "",
+          blueprint: finalBlueprint,
           updated_at: nowStr
         });
 
       if (notebookError) throw notebookError;
 
-      // Trigger completion animations
       setSuccessMsg(`REVISION UPDATED: NEXT DUE IN ${newInterval} DAYS`);
       window.dispatchEvent(new Event("question-solved"));
 
@@ -462,7 +800,17 @@ export function QuestionDetailDrawer() {
     try {
       const nowStr = new Date().toISOString();
 
-      // 1. Mark as completed in user_progress, but next_revision_due = null
+      const finalBlueprint = {
+        ...blueprint,
+        reflection: {
+          ...blueprint.reflection,
+          biggestMistake: "Premium Skip",
+          futureReminder: "Marked as Premium problem",
+          interviewExplanation: "Marked as LeetCode Premium problem. Skipped revision scheduling."
+        }
+      };
+
+      // 1. Mark as completed in user_progress
       const upsertPayload = {
         id: progress?.id,
         user_id: userId,
@@ -479,10 +827,7 @@ export function QuestionDetailDrawer() {
         .from("user_progress")
         .upsert(upsertPayload);
 
-      if (progressError) {
-        console.error("Progress upsert failed in handleMarkPremium:", progressError);
-        throw progressError;
-      }
+      if (progressError) throw progressError;
 
       // 2. Log entry to reflection history
       const { error: logError } = await supabase
@@ -500,24 +845,24 @@ export function QuestionDetailDrawer() {
 
       if (logError) throw logError;
 
-      // 3. Update notebook takeaway notes
+      // 3. Update notebook takeaway notes & blueprint
       const { error: notebookError } = await supabase
         .from("user_notebooks")
         .upsert({
           user_id: userId,
           question_id: qId,
-          biggest_takeaway: "Marked as LeetCode Premium problem. Skipped revision scheduling.",
-          note_to_self: "",
-          brute_force: "",
+          biggest_takeaway: finalBlueprint.reflection.interviewExplanation,
+          note_to_self: finalBlueprint.reflection.futureReminder,
+          brute_force: finalBlueprint.understanding.hiddenTrick,
           optimization: "",
           pattern_strategy: "",
           dry_run: "",
+          blueprint: finalBlueprint,
           updated_at: nowStr
         });
 
       if (notebookError) throw notebookError;
 
-      // Trigger completion animations
       setSuccessMsg("MARKED AS PREMIUM: REVISION SKIPPED");
       window.dispatchEvent(new Event("question-solved"));
 
@@ -531,7 +876,7 @@ export function QuestionDetailDrawer() {
     }
   };
 
-  // Save Notebook (Mutable structured study journal)
+  // Save Notebook (Mutable structured Solution Blueprint)
   const handleSaveNotebook = async () => {
     if (!user || !qId) return;
     const userId = user.id;
@@ -543,19 +888,28 @@ export function QuestionDetailDrawer() {
         .upsert({
           user_id: userId,
           question_id: qId,
-          biggest_takeaway: takeaway,
-          note_to_self: "",
-          brute_force: "",
+          biggest_takeaway: blueprint.reflection.interviewExplanation,
+          note_to_self: blueprint.reflection.futureReminder,
+          brute_force: blueprint.understanding.hiddenTrick,
           optimization: "",
           pattern_strategy: "",
           dry_run: "",
+          blueprint: blueprint, // Save full JSON blueprint
           updated_at: new Date().toISOString()
         });
 
       if (error) throw error;
 
-      // Temporary success splash
-      setSuccessMsg("STUDY WIKI UPDATED SUCCESS");
+      // Update notebook local state context
+      setNotebook((prev: any) => ({
+        ...prev,
+        blueprint: blueprint,
+        biggest_takeaway: blueprint.reflection.interviewExplanation,
+        note_to_self: blueprint.reflection.futureReminder,
+        brute_force: blueprint.understanding.hiddenTrick
+      }));
+
+      setSuccessMsg("SOLUTION BLUEPRINT SAVED");
       setTimeout(() => {
         setSuccessMsg("");
       }, 1500);
@@ -568,7 +922,210 @@ export function QuestionDetailDrawer() {
 
   // Close helper
   const handleClose = () => {
+    setIsReplaying(false);
     setIsOpen(false);
+  };
+
+  // Blueprint local update utilities
+  const updateBlueprintField = (section: keyof SolutionBlueprint, field: string, val: any) => {
+    setBlueprint(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section] as any,
+        [field]: val
+      }
+    }));
+  };
+
+  const handleMoveStep = (idx: number, direction: "up" | "down") => {
+    const steps = [...blueprint.construction_steps];
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= steps.length) return;
+    // Swap
+    const temp = steps[idx];
+    steps[idx] = steps[targetIdx];
+    steps[targetIdx] = temp;
+    
+    setBlueprint(prev => ({
+      ...prev,
+      construction_steps: steps
+    }));
+  };
+
+  const handleAddStep = () => {
+    setBlueprint(prev => ({
+      ...prev,
+      construction_steps: [
+        ...prev.construction_steps,
+        { title: "New Step", reason: "" }
+      ]
+    }));
+  };
+
+  const handleRemoveStep = (idx: number) => {
+    setBlueprint(prev => ({
+      ...prev,
+      construction_steps: prev.construction_steps.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const handleUpdateStep = (idx: number, field: "title" | "reason", val: string) => {
+    const steps = [...blueprint.construction_steps];
+    steps[idx] = { ...steps[idx], [field]: val };
+    
+    setBlueprint(prev => ({
+      ...prev,
+      construction_steps: steps
+    }));
+  };
+
+  // Build Replay timed slides dynamically
+  const buildReplaySlides = () => {
+    const slides: Array<{ title: string; subtitle: string; content: React.ReactNode }> = [];
+
+    // Slide 1: Understanding
+    slides.push({
+      title: "1. Problem Observation",
+      subtitle: "Inputs, outputs, and the core trick",
+      content: (
+        <div className="space-y-4 text-left select-text">
+          <div className="grid grid-cols-2 gap-3 text-xs font-mono">
+            <div>
+              <span className="text-outline uppercase text-[8px] block font-bold">Input Signature</span>
+              <span className="text-text font-bold bg-[#111112] px-2 py-1 rounded border border-border block overflow-x-auto whitespace-nowrap">
+                {blueprint.understanding.input || "Unspecified"}
+              </span>
+            </div>
+            <div>
+              <span className="text-outline uppercase text-[8px] block font-bold">Output Signature</span>
+              <span className="text-text font-bold bg-[#111112] px-2 py-1 rounded border border-border block overflow-x-auto whitespace-nowrap">
+                {blueprint.understanding.output || "Unspecified"}
+              </span>
+            </div>
+          </div>
+          <div>
+            <span className="text-outline uppercase text-[8px] font-mono block font-bold mb-1">Key Observation</span>
+            <p className="text-xs text-text bg-[#0E0E0F] p-3 rounded border border-border leading-relaxed font-medium min-h-[50px] whitespace-pre-wrap select-text">
+              {blueprint.understanding.keyObservation || "None logged"}
+            </p>
+          </div>
+          {blueprint.understanding.hiddenTrick && (
+            <div className="border border-[#FFC700]/20 bg-[#FFC700]/5 p-3 rounded-lg border-dashed">
+              <span className="text-[#FFC700] uppercase font-mono text-[8px] block font-bold mb-0.5">★ Hidden Memory Trick</span>
+              <p className="text-xs text-text font-medium leading-relaxed select-text">{blueprint.understanding.hiddenTrick}</p>
+            </div>
+          )}
+        </div>
+      )
+    });
+
+    // Slide 2: Selection
+    slides.push({
+      title: "2. Pattern Selection",
+      subtitle: "Why we selected this algorithm strategy",
+      content: (
+        <div className="space-y-4 text-left">
+          <div className="bg-[#111112] p-4 rounded-xl border border-border text-center">
+            <span className="text-[9px] text-outline font-mono block uppercase mb-0.5">Selected Pattern</span>
+            <span className="text-sm text-[#FFC700] font-extrabold uppercase tracking-widest font-mono">
+              {blueprint.selection.patternUsed || "Not Specified"}
+            </span>
+          </div>
+          <div>
+            <span className="text-outline uppercase text-[8px] font-mono block font-bold mb-1">Pattern Rationale</span>
+            <p className="text-xs text-text bg-[#0E0E0F] p-3.5 rounded border border-border leading-relaxed select-text">
+              {blueprint.selection.whyPattern || "No rationale recorded."}
+            </p>
+          </div>
+        </div>
+      )
+    });
+
+    // Slides for construction steps
+    blueprint.construction_steps.forEach((step, idx) => {
+      slides.push({
+        title: `3. Step ${idx + 1} / ${blueprint.construction_steps.length}`,
+        subtitle: step.title,
+        content: (
+          <div className="space-y-4 h-full flex flex-col justify-center py-6 text-center select-text">
+            <div className="inline-block mx-auto px-4 py-1.5 rounded-lg border border-[#FFC700]/20 bg-[#FFC700]/5 text-[#FFC700] font-mono text-xs font-bold uppercase tracking-widest mb-3">
+              {step.title}
+            </div>
+            <div>
+              <span className="text-outline uppercase text-[8px] font-mono block mb-1 font-bold">Execution Step Logic</span>
+              <p className="text-sm text-text font-semibold leading-relaxed max-w-[400px] mx-auto whitespace-pre-wrap select-text">
+                {step.reason || "Perform step operations."}
+              </p>
+            </div>
+          </div>
+        )
+      });
+    });
+
+    // Final Slide: Complexity & Future Reminder
+    slides.push({
+      title: "4. Complexities & Reflections",
+      subtitle: "Performance benchmarks and reminders",
+      content: (
+        <div className="space-y-4 text-left select-text">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#111112] p-3 rounded-lg border border-border">
+              <span className="text-outline uppercase text-[8px] font-mono block font-bold">Time Complexity</span>
+              <span className="text-xs font-bold text-text block mt-0.5 font-mono">{blueprint.complexities.timeComplexity}</span>
+              {blueprint.complexities.timeWhy && (
+                <span className="block text-[9px] text-outline mt-1 leading-normal italic">{blueprint.complexities.timeWhy}</span>
+              )}
+            </div>
+            <div className="bg-[#111112] p-3 rounded-lg border border-border">
+              <span className="text-outline uppercase text-[8px] font-mono block font-bold">Space Complexity</span>
+              <span className="text-xs font-bold text-text block mt-0.5 font-mono">{blueprint.complexities.spaceComplexity}</span>
+              {blueprint.complexities.spaceWhy && (
+                <span className="block text-[9px] text-outline mt-1 leading-normal italic">{blueprint.complexities.spaceWhy}</span>
+              )}
+            </div>
+          </div>
+          <div className="border border-red-500/20 bg-red-500/5 p-3 rounded-lg border-dashed">
+            <span className="text-red-400 uppercase font-mono text-[8px] block font-bold mb-0.5">⚠️ Future Revision Warning</span>
+            <p className="text-xs text-text leading-relaxed font-bold select-text">
+              {blueprint.reflection.futureReminder || "No specific warnings logged."}
+            </p>
+          </div>
+        </div>
+      )
+    });
+
+    return slides;
+  };
+
+  const replaySlides = buildReplaySlides();
+
+  // Replay carousel timed timer hooks
+  useEffect(() => {
+    if (!isReplaying || isReplayPaused) return;
+
+    const interval = setInterval(() => {
+      setReplayIndex(prev => {
+        if (prev >= replaySlides.length - 1) {
+          clearInterval(interval);
+          setIsReplaying(false);
+          return 0;
+        }
+        return prev + 1;
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isReplaying, isReplayPaused, replaySlides.length]);
+
+  const handleStartReplay = () => {
+    setReplayIndex(0);
+    setIsReplayPaused(false);
+    setIsReplaying(true);
+  };
+
+  const handleStopReplay = () => {
+    setIsReplaying(false);
+    setReplayIndex(0);
   };
 
   return (
@@ -595,11 +1152,17 @@ export function QuestionDetailDrawer() {
             {/* Header info */}
             <div className="p-6 border-b border-border bg-[#0E0E0F] flex items-center gap-4 justify-between">
               <div className="flex items-center gap-3">
-                {(openMode === "reflection" || openMode === "review") && (
+                {(openMode === "reflection" || openMode === "review" || isReplaying) && (
                   <button 
-                    onClick={() => setOpenMode("description")}
+                    onClick={() => {
+                      if (isReplaying) {
+                        handleStopReplay();
+                      } else {
+                        setOpenMode("description");
+                      }
+                    }}
                     className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-surface-container-highest hover:text-[#FFC700] transition-colors cursor-pointer select-none"
-                    title="Back to Description"
+                    title="Back"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
@@ -607,16 +1170,17 @@ export function QuestionDetailDrawer() {
                 <div>
                   <div className="flex items-center gap-3 mb-1 select-none">
                     <span className="font-mono text-xs text-[#FFC700] uppercase font-bold tracking-wider">
-                      {openMode === "reflection" && "Solve Reflection"}
-                      {openMode === "review" && "Review Assessment"}
-                      {openMode === "priming" && "Memory Priming"}
-                      {openMode === "notebook" && "Question Workspace"}
-                      {openMode === "description" && "Problem Description"}
+                      {isReplaying && "Cognitive Blueprint Replay"}
+                      {!isReplaying && openMode === "reflection" && "Solve Reflection"}
+                      {!isReplaying && openMode === "review" && "Review Assessment"}
+                      {!isReplaying && openMode === "priming" && "Memory Priming"}
+                      {!isReplaying && openMode === "notebook" && "Solution Blueprint"}
+                      {!isReplaying && openMode === "description" && "Problem Description"}
                     </span>
                     <span className="h-1.5 w-1.5 rounded-full bg-secondary/80 animate-pulse" />
                   </div>
-                  <h3 className="font-headline-md text-lg text-text font-bold leading-tight">{title}</h3>
-                  <div className="flex items-center gap-2 mt-1.5 select-none">
+                  <h3 className="font-headline-md text-base text-text font-bold leading-tight line-clamp-1">{title}</h3>
+                  <div className="flex items-center gap-2 mt-1 select-none">
                     <span className="font-mono text-[10px] text-outline">#{qId}</span>
                     <span className="h-1 w-1 bg-outline-variant/50 rounded-full" />
                     <span className={cn(
@@ -667,6 +1231,100 @@ export function QuestionDetailDrawer() {
                   </div>
                   <span className="font-mono text-[10px] text-outline tracking-wider">SYNCING INTERFACE CONTROLS...</span>
                 </div>
+              ) : isReplaying ? (
+                /* REPLAY BLUEPRINT Timed PowerPoint deck */
+                <div className="h-full flex flex-col justify-between py-2 space-y-6">
+                  {/* Top Slide Segment Indicator Progress bar */}
+                  <div className="space-y-2 select-none">
+                    <div className="flex gap-1.5 h-1.5 w-full bg-[#161618] rounded-full overflow-hidden">
+                      {replaySlides.map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={cn(
+                            "h-full flex-1 transition-all duration-300",
+                            i === replayIndex ? "bg-[#FFC700] scale-y-110 shadow-lg shadow-[#FFC700]/20" : i < replayIndex ? "bg-[#FFC700]/60" : "bg-white/5"
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-mono font-bold text-outline">
+                      <span>SLIDE {replayIndex + 1} OF {replaySlides.length}</span>
+                      {isReplayPaused ? <span className="text-[#FFC700]">AUTO-ADVANCE PAUSED</span> : <span className="animate-pulse">AUTO-ADVANCING (3S)</span>}
+                    </div>
+                  </div>
+
+                  {/* Active Slide panel */}
+                  <div className="flex-1 bg-[#111112] border border-border p-6 rounded-xl flex flex-col justify-between shadow-inner">
+                    <div className="space-y-4">
+                      <div>
+                        <span className="text-[10px] font-mono text-[#FFC700] font-bold block uppercase tracking-widest mb-1">
+                          {replaySlides[replayIndex].title}
+                        </span>
+                        <h4 className="text-base text-text font-bold leading-snug">
+                          {replaySlides[replayIndex].subtitle}
+                        </h4>
+                      </div>
+                      <div className="border-t border-border/40 my-3" />
+                      <div className="py-2">
+                        {replaySlides[replayIndex].content}
+                      </div>
+                    </div>
+                    
+                    <div className="text-center font-mono text-[9px] text-outline select-none mt-4">
+                      SHEETSTRIDE SOLUTION BLUEPRINT PRIMING
+                    </div>
+                  </div>
+
+                  {/* Carousel Controls */}
+                  <div className="flex items-center justify-between gap-3 bg-[#0E0E0F] p-4 rounded-xl border border-border select-none">
+                    <button
+                      onClick={() => {
+                        setIsReplayPaused(true);
+                        setReplayIndex(prev => Math.max(0, prev - 1));
+                      }}
+                      disabled={replayIndex === 0}
+                      className="px-4 py-2 border border-border rounded-lg text-xs font-semibold text-text hover:border-primary disabled:opacity-30 disabled:hover:border-border cursor-pointer transition-colors"
+                    >
+                      PREVIOUS
+                    </button>
+
+                    <button
+                      onClick={() => setIsReplayPaused(!isReplayPaused)}
+                      className="flex items-center gap-1.5 text-xs text-[#FFC700] font-bold border border-[#FFC700]/30 bg-[#FFD400]/5 hover:bg-[#FFD400]/10 px-4 py-2.5 rounded-lg cursor-pointer transition-colors"
+                    >
+                      {isReplayPaused ? (
+                        <>
+                          <PlayCircle className="w-4 h-4 text-[#FFC700]" />
+                          <span>AUTO-PLAY</span>
+                        </>
+                      ) : (
+                        <>
+                          <PauseCircle className="w-4 h-4 text-[#FFC700]" />
+                          <span>PAUSE</span>
+                        </>
+                      )}
+                    </button>
+
+                    {replayIndex < replaySlides.length - 1 ? (
+                      <button
+                        onClick={() => {
+                          setIsReplayPaused(true);
+                          setReplayIndex(prev => prev + 1);
+                        }}
+                        className="px-4 py-2 border border-border rounded-lg text-xs font-semibold text-text hover:border-primary cursor-pointer transition-colors"
+                      >
+                        NEXT
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleStopReplay}
+                        className="px-4 py-2 bg-[#FFC700] hover:bg-[#FFE14D] text-[#000000] rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                      >
+                        FINISH
+                      </button>
+                    )}
+                  </div>
+                </div>
               ) : (
                 <>
                   {/* MODE: MEMORY PRIMING */}
@@ -714,24 +1372,57 @@ export function QuestionDetailDrawer() {
                         )}
                       </div>
 
-                      {/* Memory Notes Card */}
+                      {/* Solution Snapshot Replay Deck launcher */}
                       <div className="bg-[#111112] border border-border p-5 rounded-xl space-y-4">
-                        <div className="flex items-center gap-2 font-mono text-[11px] text-[#FFC700] uppercase font-bold tracking-wider select-none border-b border-border pb-3">
-                          <BookOpen className="w-4 h-4" />
-                          Last Study Takeaways
+                        <div className="flex items-center justify-between font-mono text-[11px] text-[#FFC700] uppercase font-bold tracking-wider select-none border-b border-border pb-3">
+                          <span className="flex items-center gap-2">
+                            <BookOpen className="w-4 h-4" />
+                            Solution Snapshot
+                          </span>
+                          <button
+                            onClick={handleStartReplay}
+                            className="flex items-center gap-1 text-[9px] border border-[#FFD400]/30 hover:border-[#FFD400] bg-[#FFD400]/5 hover:bg-[#FFD400]/10 px-2 py-1 rounded transition-colors cursor-pointer"
+                          >
+                            <PlayCircle className="w-3 h-3 text-[#FFC700]" />
+                            <span>REPLAY TIMELINE</span>
+                          </button>
                         </div>
-                        <div className="space-y-4">
-                          <div>
-                            <span className="block text-[10px] text-outline font-semibold uppercase mb-1">Biggest Takeaway</span>
-                            <p className="font-body-sm text-xs text-text bg-[#09090A] p-3 rounded border border-[#232325] whitespace-pre-wrap min-h-[50px] leading-relaxed">
-                              {takeaway || "No takeaway notes recorded yet."}
-                            </p>
-                          </div>
-                          <div>
-                            <span className="block text-[10px] text-outline font-semibold uppercase mb-1">Note For Future Self</span>
-                            <p className="font-body-sm text-xs text-text bg-[#09090A] p-3 rounded border border-[#232325] whitespace-pre-wrap min-h-[50px] leading-relaxed">
-                              {noteToSelf || "No self warnings recorded yet."}
-                            </p>
+                        <div className="space-y-3 font-mono text-xs select-none">
+                          <div className="grid grid-cols-2 gap-3 text-[11px]">
+                            <div>
+                              <span className="text-outline uppercase text-[8px] block font-bold">Pattern</span>
+                              <span className="font-bold text-text">{blueprint.selection.patternUsed || "Not Specified"}</span>
+                            </div>
+                            <div>
+                              <span className="text-outline uppercase text-[8px] block font-bold">Complexity</span>
+                              <span className="font-bold text-text">
+                                {blueprint.complexities.timeComplexity} / {blueprint.complexities.spaceComplexity}
+                              </span>
+                            </div>
+                            <div className="col-span-2 border-t border-[#1C1C1E] pt-2">
+                              <span className="text-outline uppercase text-[8px] block font-bold mb-0.5">Key Observation</span>
+                              <span className="text-text leading-relaxed font-medium select-text block max-h-[80px] overflow-y-auto">
+                                {blueprint.understanding.keyObservation || "None logged"}
+                              </span>
+                            </div>
+                            {blueprint.understanding.hiddenTrick && (
+                              <div className="col-span-2 border-t border-[#1C1C1E] pt-2">
+                                <span className="text-outline uppercase text-[8px] block font-bold mb-0.5">Hidden Trick</span>
+                                <span className="text-text font-medium select-text block max-h-[60px] overflow-y-auto">
+                                  {blueprint.understanding.hiddenTrick}
+                                </span>
+                              </div>
+                            )}
+                            <div className="col-span-2 border-t border-[#1C1C1E] pt-2">
+                              <span className="text-outline uppercase text-[8px] block font-bold mb-0.5">Construction Steps</span>
+                              <span className="font-bold text-text">{blueprint.construction_steps.length} Steps Mapped</span>
+                            </div>
+                            <div className="col-span-2 border-t border-[#1C1C1E] pt-2">
+                              <span className="text-outline uppercase text-[8px] block font-bold mb-0.5">Future Reminder</span>
+                              <span className="text-[#FFC700] font-bold block select-text">
+                                {blueprint.reflection.futureReminder || "None logged"}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -781,7 +1472,7 @@ export function QuestionDetailDrawer() {
                                 </span>
                                 <div className="space-y-2">
                                   {problemHints.map((hint, idx) => (
-                                    <CollapsibleHint key={idx} index={idx + 1} content={hint} />
+                                    <CollapsibleHint key={hint} index={idx + 1} content={hint} />
                                   ))}
                                 </div>
                               </div>
@@ -789,19 +1480,16 @@ export function QuestionDetailDrawer() {
                           </>
                         ) : (
                           <div className="space-y-6 animate-pulse select-none">
-                            {/* Paragraph skeleton */}
                             <div className="space-y-3 bg-[#0D0D0E]/80 border border-border/40 p-5 rounded-xl">
                               <div className="h-4 w-3/4 bg-white/5 rounded" />
                               <div className="h-4 w-5/6 bg-white/5 rounded" />
                               <div className="h-4 w-2/3 bg-white/5 rounded" />
                               <div className="h-4 w-full bg-white/5 rounded" />
                             </div>
-                            {/* Likes and dislikes skeleton */}
                             <div className="flex gap-4 px-1">
                               <div className="h-3 w-16 bg-white/5 rounded" />
                               <div className="h-3 w-16 bg-white/5 rounded" />
                             </div>
-                            {/* System Hints accordion skeleton */}
                             <div className="bg-[#101011] border border-border/40 p-4 rounded-xl space-y-2">
                               <div className="h-3.5 w-24 bg-white/5 rounded mb-3" />
                               <div className="h-10 bg-[#0A0A0B] border border-[#232325] rounded-lg" />
@@ -936,16 +1624,28 @@ export function QuestionDetailDrawer() {
                         </div>
                       </div>
 
-                      {/* Takeaways & Future Warnings */}
+                      {/* Quick Takeaway / Revision Warning */}
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <label className="block font-mono text-[10px] text-outline uppercase font-bold tracking-wider select-none">
-                            4. Approach Strategy
+                            4. Core Revision Reminder / Note to Self
+                          </label>
+                          <input
+                            type="text"
+                            value={noteToSelf}
+                            onChange={(e) => syncReminderWithBlueprint(e.target.value)}
+                            placeholder="e.g. Always verify strict loop bounds (left < right)..."
+                            className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3 text-xs text-text focus:outline-none focus:ring-1 focus:ring-[#FFC700]/30 leading-relaxed font-body-sm"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block font-mono text-[10px] text-outline uppercase font-bold tracking-wider select-none">
+                            5. Approach Strategy / Key Insight
                           </label>
                           <textarea
                             value={takeaway}
-                            onChange={(e) => setTakeaway(e.target.value)}
-                            placeholder="Describe the optimal solution approach, pattern strategy, or code flow..."
+                            onChange={(e) => syncTakeawayWithBlueprint(e.target.value)}
+                            placeholder="What was the optimal solution approach, pattern strategy, or code flow..."
                             className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-[#FFC700]/30 min-h-[90px] leading-relaxed custom-scrollbar font-body-sm"
                           />
                         </div>
@@ -1061,7 +1761,7 @@ export function QuestionDetailDrawer() {
                           </label>
                           <textarea
                             value={takeaway}
-                            onChange={(e) => setTakeaway(e.target.value)}
+                            onChange={(e) => syncTakeawayWithBlueprint(e.target.value)}
                             placeholder="Add or refine the biggest lesson learned..."
                             className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-[#FFC700]/30 min-h-[70px] leading-relaxed custom-scrollbar font-body-sm"
                           />
@@ -1072,7 +1772,7 @@ export function QuestionDetailDrawer() {
                           </label>
                           <textarea
                             value={noteToSelf}
-                            onChange={(e) => setNoteToSelf(e.target.value)}
+                            onChange={(e) => syncReminderWithBlueprint(e.target.value)}
                             placeholder="What warning should you give yourself for the next cycle?"
                             className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-[#FFC700]/30 min-h-[70px] leading-relaxed custom-scrollbar font-body-sm"
                           />
@@ -1113,7 +1813,7 @@ export function QuestionDetailDrawer() {
                           )}
                         >
                           <BookOpen className="w-3.5 h-3.5" />
-                          My Approach
+                          Solution Blueprint
                         </button>
                         <button
                           onClick={() => setActiveTab("history")}
@@ -1129,44 +1829,403 @@ export function QuestionDetailDrawer() {
                         </button>
                       </div>
 
-                      {/* Tab Content: My Approach */}
-                      {activeTab === "wiki" && (
-                        <div className="space-y-5">
-                          {/* Core notes */}
-                          <div className="space-y-2">
-                            <label className="block font-mono text-[10px] text-outline uppercase font-bold tracking-wider select-none">
-                              Approach Strategy
-                            </label>
-                            <textarea
-                              value={takeaway}
-                              onChange={(e) => setTakeaway(e.target.value)}
-                              placeholder="Describe the optimal solution approach, pattern strategy, or code flow..."
-                              className="w-full bg-[#111112] border border-border focus:border-[#FFC700] rounded-xl p-3.5 text-xs text-text focus:outline-none focus:ring-1 focus:ring-[#FFC700]/30 min-h-[200px] leading-relaxed custom-scrollbar font-body-sm"
-                            />
-                          </div>
+                      {/* Tab Content: Solution Blueprint editing */}
+                      {activeTab === "wiki" && (() => {
+                        const isIdeaDone = !!blueprint.understanding.keyObservation;
+                        const isStrategyDone = !!blueprint.selection.patternUsed;
+                        const isBuildDone = blueprint.construction_steps.length > 0 && blueprint.construction_steps.some(s => s.title);
+                        const isPerfDone = !!blueprint.complexities.timeComplexity && !!blueprint.complexities.spaceComplexity;
+                        const isRememberDone = !!blueprint.reflection.futureReminder;
+                        
+                        return (
+                          <div className="space-y-5 select-text pb-8">
+                            {/* Progress HUD */}
+                            <div className="bg-[#111112] border border-border rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-badge-sm font-mono-label text-outline/80 select-none">
+                              <span className="text-[10px] text-outline uppercase font-bold tracking-wider">Workflow Progress</span>
+                              <div className="flex flex-wrap gap-x-3 gap-y-1 items-center justify-center">
+                                <span className={cn("flex items-center gap-1 transition-colors", isIdeaDone ? "text-secondary font-bold" : "text-outline/40")}>
+                                  {isIdeaDone ? "✓" : "○"} Idea
+                                </span>
+                                <span className="text-outline/20">/</span>
+                                <span className={cn("flex items-center gap-1 transition-colors", isStrategyDone ? "text-secondary font-bold" : "text-outline/40")}>
+                                  {isStrategyDone ? "✓" : "○"} Strategy
+                                </span>
+                                <span className="text-outline/20">/</span>
+                                <span className={cn("flex items-center gap-1 transition-colors", isBuildDone ? "text-secondary font-bold" : "text-outline/40")}>
+                                  {isBuildDone ? "✓" : "○"} Build
+                                </span>
+                                <span className="text-outline/20">/</span>
+                                <span className={cn("flex items-center gap-1 transition-colors", isPerfDone ? "text-secondary font-bold" : "text-outline/40")}>
+                                  {isPerfDone ? "✓" : "○"} Performance
+                                </span>
+                                <span className="text-outline/20">/</span>
+                                <span className={cn("flex items-center gap-1 transition-colors", isRememberDone ? "text-secondary font-bold" : "text-outline/40")}>
+                                  {isRememberDone ? "✓" : "○"} Remember
+                                </span>
+                              </div>
+                            </div>
 
-                          {/* Save action */}
-                          <div className="select-none pt-2">
-                            <button
-                              onClick={handleSaveNotebook}
-                              disabled={isSaving}
-                              className="w-full bg-[#FFC700] hover:bg-[#FFE14D] disabled:bg-disabled disabled:cursor-not-allowed text-[#000000] font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer text-sm"
-                            >
-                              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                              SAVE APPROACH STRATEGY
-                            </button>
+                            {/* 5 Collapsible Cards */}
+                            <div className="space-y-4">
+                              {/* Card 1: THE IDEA */}
+                              <AccordionSection
+                                title="THE IDEA"
+                                isExpanded={expandedSections.understanding}
+                                onToggle={() => toggleSection("understanding")}
+                              >
+                                <div className="space-y-4">
+                                  <div className="space-y-1">
+                                    <label className="text-outline uppercase text-badge-sm font-bold block">Key Observation</label>
+                                    <textarea
+                                      value={blueprint.understanding.keyObservation}
+                                      onChange={(e) => updateBlueprintField("understanding", "keyObservation", e.target.value)}
+                                      placeholder="What changed the problem from brute force to optimal?"
+                                      className="w-full bg-[#111112] border border-border rounded-lg p-3 text-body-sm text-text focus:outline-none focus:border-[#FFC700] min-h-[70px] font-body-sm leading-relaxed"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-outline uppercase text-badge-sm font-bold block">Memory Trick (Hidden Trick)</label>
+                                    <input
+                                      type="text"
+                                      value={blueprint.understanding.hiddenTrick}
+                                      onChange={(e) => updateBlueprintField("understanding", "hiddenTrick", e.target.value)}
+                                      placeholder="What is the non-obvious twist or edge case constraint to remember?"
+                                      className="w-full bg-[#111112] border border-border rounded-lg px-2.5 py-2 text-body-sm text-text focus:outline-none focus:border-[#FFC700]"
+                                    />
+                                  </div>
+                                  <div className="flex justify-end pt-2 border-t border-border/20">
+                                    <button
+                                      type="button"
+                                      onClick={() => proceedToSection("understanding", "selection")}
+                                      className="text-primary hover:text-[#FFE14D] text-badge-sm font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                                    >
+                                      PROCEED TO STRATEGY <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </AccordionSection>
+
+                              {/* Card 2: THE STRATEGY */}
+                              <AccordionSection
+                                title="THE STRATEGY"
+                                isExpanded={expandedSections.selection}
+                                onToggle={() => toggleSection("selection")}
+                              >
+                                <div className="space-y-4">
+                                  <div className="space-y-1">
+                                    <label className="text-outline uppercase text-badge-sm font-bold block">Algorithmic Pattern</label>
+                                    <input
+                                      type="text"
+                                      value={blueprint.selection.patternUsed}
+                                      onChange={(e) => updateBlueprintField("selection", "patternUsed", e.target.value)}
+                                      placeholder="Enter algorithmic pattern (e.g. Tree BFS, Sliding Window...)"
+                                      className="w-full bg-[#111112] border border-border rounded-lg px-2.5 py-2 text-body-sm text-text focus:outline-none focus:border-[#FFC700]"
+                                    />
+                                    {blueprint.selection.patternUsed && (
+                                      <a
+                                        href={`/patterns/${slugifyPattern(blueprint.selection.patternUsed)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-primary hover:text-[#FFE14D] text-badge-sm font-mono-label font-bold inline-flex items-center gap-1 hover:underline transition-colors mt-2"
+                                      >
+                                        <BookOpen className="w-3.5 h-3.5" />
+                                        OPEN PATTERN ATLAS
+                                      </a>
+                                    )}
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-outline uppercase text-badge-sm font-bold block">Why this pattern?</label>
+                                    <input
+                                      type="text"
+                                      value={blueprint.selection.whyPattern}
+                                      onChange={(e) => updateBlueprintField("selection", "whyPattern", e.target.value)}
+                                      placeholder="What features of the input/constraints made this pattern the optimal choice?"
+                                      className="w-full bg-[#111112] border border-border rounded-lg px-2.5 py-2 text-body-sm text-text focus:outline-none focus:border-[#FFC700]"
+                                    />
+                                  </div>
+                                  <div className="flex justify-end pt-2 border-t border-border/20">
+                                    <button
+                                      type="button"
+                                      onClick={() => proceedToSection("selection", "construction")}
+                                      className="text-primary hover:text-[#FFE14D] text-badge-sm font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                                    >
+                                      PROCEED TO BUILD THE SOLUTION <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </AccordionSection>
+
+                              {/* Card 3: BUILD THE SOLUTION */}
+                              <AccordionSection
+                                title="BUILD THE SOLUTION"
+                                isExpanded={expandedSections.construction}
+                                onToggle={() => toggleSection("construction")}
+                              >
+                                <div className="space-y-6">
+                                  {/* Connected vertical timeline */}
+                                  <div className="relative border-l-2 border-[#2D2D2D]/60 ml-3 pl-6 space-y-6 py-2 select-none">
+                                    {blueprint.construction_steps.map((step, idx) => (
+                                      <div key={idx} className="relative group">
+                                        {/* Node bullet */}
+                                        <div className="absolute -left-[32px] top-2 w-4 h-4 rounded-full bg-[#111112] border-2 border-primary flex items-center justify-center text-[8px] font-bold text-primary shadow-[0_0_8px_rgba(255,212,0,0.3)]">
+                                          {idx + 1}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                          <div className="flex items-center justify-between">
+                                            <span className="font-mono-label text-badge-sm text-[#FFC700]/90 font-bold uppercase tracking-wider">
+                                              Step Node {idx + 1}
+                                            </span>
+                                            <div className="flex items-center gap-1 bg-black/35 border border-border/50 rounded p-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleMoveStep(idx, "up")}
+                                                disabled={idx === 0}
+                                                className="p-1 text-outline hover:text-primary disabled:opacity-20 cursor-pointer transition-colors"
+                                                title="Move Up"
+                                              >
+                                                <ArrowUp className="w-3.5 h-3.5" />
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleMoveStep(idx, "down")}
+                                                disabled={idx === blueprint.construction_steps.length - 1}
+                                                className="p-1 text-outline hover:text-primary disabled:opacity-20 cursor-pointer transition-colors"
+                                                title="Move Down"
+                                              >
+                                                <ArrowDown className="w-3.5 h-3.5" />
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleRemoveStep(idx)}
+                                                className="p-1 text-outline hover:text-red-400 cursor-pointer transition-colors"
+                                                title="Delete Step"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            </div>
+                                          </div>
+                                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                            <input
+                                              type="text"
+                                              value={step.title}
+                                              onChange={(e) => handleUpdateStep(idx, "title", e.target.value)}
+                                              placeholder="e.g. Initialize Queue"
+                                              className="w-full bg-[#111112] border border-border rounded-lg px-2.5 py-1.5 text-body-sm text-text font-bold select-text focus:outline-none focus:border-[#FFC700]"
+                                            />
+                                            <input
+                                              type="text"
+                                              value={step.reason}
+                                              onChange={(e) => handleUpdateStep(idx, "reason", e.target.value)}
+                                              placeholder="e.g. Push root node to start traversal..."
+                                              className="w-full bg-[#111112] border border-border rounded-lg px-2.5 py-1.5 text-body-sm text-text sm:col-span-2 select-text focus:outline-none focus:border-[#FFC700]"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={handleAddStep}
+                                    className="w-full border border-dashed border-border/80 hover:border-primary/50 py-2.5 rounded-lg text-body-sm font-semibold text-outline hover:text-[#FFC700] transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                    ADD TIMELINE STEP
+                                  </button>
+
+                                  <div className="flex justify-end pt-2 border-t border-border/20">
+                                    <button
+                                      type="button"
+                                      onClick={() => proceedToSection("construction", "complexities")}
+                                      className="text-primary hover:text-[#FFE14D] text-badge-sm font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                                    >
+                                      PROCEED TO PERFORMANCE <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </AccordionSection>
+
+                              {/* Card 4: PERFORMANCE */}
+                              <AccordionSection
+                                title="PERFORMANCE"
+                                isExpanded={expandedSections.complexities}
+                                onToggle={() => toggleSection("complexities")}
+                              >
+                                <div className="space-y-4">
+                                  {/* Time Complexity */}
+                                  <div className="space-y-1.5">
+                                    <label className="text-outline uppercase text-badge-sm font-bold font-mono-label">Time Complexity</label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {COMPLEXITY_OPTIONS.map(opt => (
+                                        <button
+                                          key={opt}
+                                          type="button"
+                                          onClick={() => updateBlueprintField("complexities", "timeComplexity", opt)}
+                                          className={cn(
+                                            "px-2.5 py-1 rounded text-badge-sm font-mono-label font-bold border transition-all cursor-pointer",
+                                            blueprint.complexities.timeComplexity === opt
+                                              ? "border-[#FFC700] bg-[#FFC700]/10 text-[#FFC700]"
+                                              : "border-border hover:border-outline text-outline"
+                                          )}
+                                        >
+                                          {opt}
+                                        </button>
+                                      ))}
+                                    </div>
+                                    <input
+                                      type="text"
+                                      value={blueprint.complexities.timeWhy}
+                                      onChange={(e) => updateBlueprintField("complexities", "timeWhy", e.target.value)}
+                                      placeholder="Why this complexity? (e.g. single pass linear scan)"
+                                      className="w-full bg-[#111112] border border-border rounded-lg px-2.5 py-1.5 text-body-sm text-text focus:outline-none focus:border-[#FFC700] mt-1"
+                                    />
+                                  </div>
+
+                                  {/* Space Complexity */}
+                                  <div className="space-y-1.5 border-t border-[#1C1C1E] pt-3">
+                                    <label className="text-outline uppercase text-badge-sm font-bold font-mono-label">Space Complexity</label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {COMPLEXITY_OPTIONS.slice(0, 4).map(opt => (
+                                        <button
+                                          key={opt}
+                                          type="button"
+                                          onClick={() => updateBlueprintField("complexities", "spaceComplexity", opt)}
+                                          className={cn(
+                                            "px-2.5 py-1 rounded text-badge-sm font-mono-label font-bold border transition-all cursor-pointer",
+                                            blueprint.complexities.spaceComplexity === opt
+                                              ? "border-[#FFC700] bg-[#FFC700]/10 text-[#FFC700]"
+                                              : "border-border hover:border-outline text-outline"
+                                          )}
+                                        >
+                                          {opt}
+                                        </button>
+                                      ))}
+                                    </div>
+                                    <input
+                                      type="text"
+                                      value={blueprint.complexities.spaceWhy}
+                                      onChange={(e) => updateBlueprintField("complexities", "spaceWhy", e.target.value)}
+                                      placeholder="Why this complexity? (e.g. visited set sizes)"
+                                      className="w-full bg-[#111112] border border-border rounded-lg px-2.5 py-1.5 text-body-sm text-text focus:outline-none focus:border-[#FFC700] mt-1"
+                                    />
+                                  </div>
+
+                                  <div className="flex justify-end pt-2 border-t border-border/20">
+                                    <button
+                                      type="button"
+                                      onClick={() => proceedToSection("complexities", "reflection")}
+                                      className="text-primary hover:text-[#FFE14D] text-badge-sm font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                                    >
+                                      PROCEED TO REMEMBER <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </AccordionSection>
+
+                              {/* Card 5: REMEMBER */}
+                              <AccordionSection
+                                title="REMEMBER"
+                                isExpanded={expandedSections.reflection}
+                                onToggle={() => toggleSection("reflection")}
+                              >
+                                <div className="space-y-4">
+                                  <div className="space-y-1">
+                                    <label className="text-outline uppercase text-badge-sm font-bold block">Biggest Mistake</label>
+                                    <input
+                                      type="text"
+                                      value={blueprint.reflection.biggestMistake}
+                                      onChange={(e) => updateBlueprintField("reflection", "biggestMistake", e.target.value)}
+                                      placeholder="What was the main cognitive bottleneck or bug during your first attempt?"
+                                      className="w-full bg-[#111112] border border-border rounded-lg px-2.5 py-1.5 text-body-sm text-text focus:outline-none focus:border-[#FFC700]"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-outline uppercase text-badge-sm font-bold block text-red-400">⚠️ Future Reminder (Warnings)</label>
+                                    <input
+                                      type="text"
+                                      value={blueprint.reflection.futureReminder}
+                                      onChange={(e) => {
+                                        updateBlueprintField("reflection", "futureReminder", e.target.value);
+                                        setNoteToSelf(e.target.value);
+                                      }}
+                                      placeholder="What mistake should future you avoid?"
+                                      className="w-full bg-[#111112] border border-border focus:border-red-500 rounded-lg px-2.5 py-1.5 text-body-sm text-text focus:outline-none"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-outline uppercase text-badge-sm font-bold block">Interview explanation (takeaway)</label>
+                                    <textarea
+                                      value={blueprint.reflection.interviewExplanation}
+                                      onChange={(e) => {
+                                        updateBlueprintField("reflection", "interviewExplanation", e.target.value);
+                                        setTakeaway(e.target.value);
+                                      }}
+                                      placeholder="How would you explain the core strategy to an interviewer in under 30 seconds?"
+                                      className="w-full bg-[#111112] border border-border rounded-lg p-3 text-body-sm text-text focus:outline-none focus:border-[#FFC700] min-h-[70px] font-body-sm leading-relaxed"
+                                    />
+                                  </div>
+                                </div>
+                              </AccordionSection>
+                            </div>
+
+                            {/* Save Action Button */}
+                            <div className="select-none pt-2">
+                              <button
+                                onClick={handleSaveNotebook}
+                                disabled={isSaving}
+                                className="w-full bg-[#FFC700] hover:bg-[#FFE14D] disabled:bg-disabled disabled:cursor-not-allowed text-[#000000] font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer text-sm"
+                              >
+                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                SAVE SOLUTION BLUEPRINT
+                              </button>
+                            </div>
+
+                            {/* Live Solution Snapshot Card */}
+                            <div className="border border-[#FFC700]/30 bg-[#FFC700]/5 rounded-xl p-4 space-y-3 font-mono-label text-body-sm select-none">
+                              <div className="flex items-center justify-between border-b border-[#FFC700]/25 pb-2 text-badge-sm uppercase font-bold text-[#FFC700] tracking-widest">
+                                <span>SYSTEM LOG: SOLUTION SNAPSHOT</span>
+                                <span className={cn("animate-pulse", notebook ? "text-secondary" : "text-primary")}>
+                                  {notebook ? "● SAVED" : "○ EDITING LIVE"}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3 text-badge-sm select-text">
+                                <div>
+                                  <span className="text-outline uppercase text-badge-sm block font-bold">Pattern</span>
+                                  <span className="font-bold text-text">{blueprint.selection.patternUsed || "Not Specified"}</span>
+                                </div>
+                                <div>
+                                  <span className="text-outline uppercase text-badge-sm block font-bold">Complexity</span>
+                                  <span className="font-bold text-text">
+                                    {blueprint.complexities.timeComplexity} TC / {blueprint.complexities.spaceComplexity} SC
+                                  </span>
+                                </div>
+                                <div className="col-span-2 border-t border-[#FFC700]/10 pt-2">
+                                  <span className="text-outline uppercase text-badge-sm block font-bold mb-0.5">Key Observation</span>
+                                  <span className="text-text font-medium block max-h-[80px] overflow-y-auto">{blueprint.understanding.keyObservation || "None"}</span>
+                                </div>
+                                <div>
+                                  <span className="text-outline uppercase text-badge-sm block font-bold">Construction</span>
+                                  <span className="font-bold text-text">{blueprint.construction_steps.length} Steps Mapped</span>
+                                </div>
+                                <div className="col-span-2 border-t border-[#FFC700]/10 pt-2">
+                                  <span className="text-outline uppercase text-badge-sm block font-bold mb-0.5">Future Reminder</span>
+                                  <span className="text-[#FFC700] font-bold block">{blueprint.reflection.futureReminder || "None"}</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* Tab Content: History Logs */}
                       {activeTab === "history" && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 select-none">
                           {history.length > 0 ? (
                             <div className="relative border-l border-border pl-4 space-y-6 py-2 select-none">
                               {history.map((log, index) => (
                                 <div key={log.id} className="relative">
-                                  {/* Timeline marker */}
                                   <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#FFC700] border border-[#0B0B0C]" />
                                   
                                   <div className="bg-[#111112] border border-border rounded-xl p-4 space-y-2.5">

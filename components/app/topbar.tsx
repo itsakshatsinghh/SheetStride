@@ -153,7 +153,7 @@ export function Topbar() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "relative py-1.5 px-4 text-body-lg font-body transition-all duration-200 rounded-lg border",
+                      "relative py-1.5 px-4 text-body-sm font-body-lg transition-all duration-200 rounded-lg border",
                       active
                         ? "bg-[rgba(255,212,0,0.12)] border-[#FFD400] text-[#FFD400] font-bold"
                         : "border-transparent text-on-surface-variant hover:bg-[#181818] hover:border-[#2D2D2D] hover:text-text"
@@ -243,7 +243,7 @@ export function Topbar() {
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       className={cn(
-                        "py-2 px-4 rounded-lg font-body text-body-lg tracking-wide transition-all uppercase flex items-center justify-between border",
+                        "py-2 px-4 rounded-lg font-body-lg text-body-md tracking-wide transition-all uppercase flex items-center justify-between border",
                         active
                           ? "bg-[rgba(255,212,0,0.12)] border-[#FFD400] text-[#FFD400] font-bold"
                           : "border-transparent text-on-surface-variant hover:bg-[#181818] hover:border-[#2D2D2D] hover:text-text"
@@ -261,7 +261,7 @@ export function Topbar() {
                       setMobileMenuOpen(false);
                       handleLogout();
                     }}
-                    className="py-2 px-4 rounded-lg font-body text-body-lg text-danger hover:bg-danger/10 text-left uppercase flex items-center gap-2"
+                    className="py-2 px-4 rounded-lg font-body-lg text-body-md text-danger hover:bg-danger/10 text-left uppercase flex items-center gap-2"
                   >
                     <LogOut className="h-4 w-4" strokeWidth={1.8} />
                     <span>Logout Session</span>

@@ -470,33 +470,33 @@ export default function ProfilePage() {
         {/* Fast Stats Sidebar */}
         <div className="lg:col-span-4 grid grid-cols-2 gap-stack-md">
           <div className="bg-[#111111] border border-[#2D2D2D] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
-            <span className="font-mono-label text-mono-label text-outline uppercase text-[11px]">Global Rank</span>
+            <span className="font-mono-label text-mono-label text-outline uppercase text-badge-sm">Global Rank</span>
             <div className="flex flex-col">
               <span className="font-mono-stats text-mono-stats text-primary text-2xl">#{userGlobalRank}</span>
-              <span className="text-[10px] text-secondary flex items-center gap-1 mt-1">
+              <span className="text-badge-sm text-secondary flex items-center gap-1 mt-1">
                 <span className="material-symbols-outlined text-[12px]">trending_up</span> +12 today
               </span>
             </div>
           </div>
           <div className="bg-[#111111] border border-[#2D2D2D] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
-            <span className="font-mono-label text-mono-label text-outline uppercase text-[11px]">Sprint Streak</span>
+            <span className="font-mono-label text-mono-label text-outline uppercase text-badge-sm">Sprint Streak</span>
             <div className="flex flex-col">
               <span className="font-mono-stats text-mono-stats text-tertiary text-2xl">{currentStreak} Days</span>
-              <span className="text-[10px] text-on-surface-variant mt-1">Record Best: {longestStreak}</span>
+              <span className="text-badge-sm text-on-surface-variant mt-1">Record Best: {longestStreak}</span>
             </div>
           </div>
           <div className="bg-[#111111] border border-[#2D2D2D] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
-            <span className="font-mono-label text-mono-label text-outline uppercase text-[11px]">Time Invested</span>
+            <span className="font-mono-label text-mono-label text-outline uppercase text-badge-sm">Time Invested</span>
             <div className="flex flex-col">
               <span className="font-mono-stats text-mono-stats text-on-surface text-2xl">{(solvedCount * 1.5).toFixed(0)} Hr</span>
-              <span className="text-[10px] text-on-surface-variant mt-1">avg 3h/day</span>
+              <span className="text-badge-sm text-on-surface-variant mt-1">avg 3h/day</span>
             </div>
           </div>
           <div className="bg-[#111111] border border-[#2D2D2D] p-stack-md flex flex-col justify-between rounded-lg hover:border-outline-variant transition-colors shadow-md">
-            <span className="font-mono-label text-mono-label text-outline uppercase text-[11px]">Accuracy</span>
+            <span className="font-mono-label text-mono-label text-outline uppercase text-badge-sm">Accuracy</span>
             <div className="flex flex-col">
               <span className="font-mono-stats text-mono-stats text-secondary text-2xl">{accuracyPercent}%</span>
-              <span className="text-[10px] text-on-surface-variant mt-1">Top 5% overall</span>
+              <span className="text-badge-sm text-on-surface-variant mt-1">Top 5% overall</span>
             </div>
           </div>
         </div>

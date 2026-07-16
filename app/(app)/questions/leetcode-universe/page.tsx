@@ -501,7 +501,7 @@ function QuestionsList() {
                           }
                         }))}
                         className={cn(
-                          "font-headline-md text-headline-md transition-colors leading-snug cursor-pointer text-left",
+                          "font-body-lg text-body-md font-semibold transition-colors leading-snug cursor-pointer text-left",
                           solved ? "text-on-surface-variant line-through opacity-60" : "text-on-surface hover:text-primary"
                         )}
                       >

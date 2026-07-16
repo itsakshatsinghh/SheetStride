@@ -445,7 +445,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
                               }
                             }))}
                             className={cn(
-                              "font-headline-md text-xs font-semibold tracking-wide transition-colors cursor-pointer text-left",
+                              "font-body-lg text-body-md font-semibold tracking-wide transition-colors cursor-pointer text-left",
                               solved ? "text-outline line-through opacity-60" : "text-text hover:text-[#f97316]"
                             )}
                           >

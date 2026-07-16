@@ -115,7 +115,16 @@ const config: Config = {
         "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
         "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
         "mono-label": ["13px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }],
-        "mono-stats": ["18px", { lineHeight: "24px", fontWeight: "700" }]
+        "mono-stats": ["18px", { lineHeight: "24px", fontWeight: "700" }],
+
+        // Standardized Premium Universal Scale
+        "app-logo": ["34px", { lineHeight: "42px", letterSpacing: "0.08em", fontWeight: "400" }],
+        "page-title": ["30px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }],
+        "section-title": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+        "card-title": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+        "subsection-title": ["18px", { lineHeight: "26px", fontWeight: "500" }],
+        "body-md": ["15px", { lineHeight: "22px", fontWeight: "400" }],
+        "badge-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }]
       },
       spacing: {
         gutter: "1.5rem",

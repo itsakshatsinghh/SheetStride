@@ -423,13 +423,13 @@ export default function ProgressPage() {
             <div>
               <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#2D2D2D] pb-4 mb-4 select-none">
                 <div className="space-y-1">
-                  <h2 className="font-headline-md text-sm text-on-surface font-bold uppercase tracking-wide flex items-center gap-2">
+                  <h2 className="font-headline-md text-card-title text-on-surface font-bold uppercase tracking-wide flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#FFC700] animate-pulse shadow-[0_0_8px_#FFC700]" />
                     Spaced Repetition Engine
                   </h2>
-                  <p className="font-body-sm text-[10px] text-outline uppercase font-semibold">Practice scheduled loops to solidify algorithmic patterns.</p>
+                  <p className="font-body-lg text-badge-sm text-outline uppercase font-semibold">Practice scheduled loops to solidify algorithmic patterns.</p>
                 </div>
-                <div className="flex bg-black/40 border border-[#2D2D2D] p-0.5 rounded font-mono text-[9px] select-none shrink-0 self-start sm:self-center">
+                <div className="flex bg-black/40 border border-[#2D2D2D] p-0.5 rounded font-mono-label text-badge-sm select-none shrink-0 self-start sm:self-center">
                   <button 
                     onClick={() => setActiveRevTab("due")}
                     className={cn(
@@ -455,7 +455,7 @@ export default function ProgressPage() {
               <div className="space-y-3 max-h-[380px] overflow-y-auto custom-scrollbar pr-1">
                 {activeRevTab === "due" ? (
                   revisionQueue.length === 0 ? (
-                    <div className="py-12 text-center text-outline/60 font-body-sm text-xs italic select-none">
+                    <div className="py-12 text-center text-outline/60 font-body-lg text-body-sm italic select-none">
                       No revisions due today. You are caught up!
                     </div>
                   ) : (
@@ -474,20 +474,20 @@ export default function ProgressPage() {
                                   mode: "description"
                                 }
                               }))}
-                              className="font-bold text-xs text-white text-left truncate group-hover:text-primary transition-colors cursor-pointer block"
+                              className="font-body-lg text-body-sm font-bold text-white text-left truncate group-hover:text-primary transition-colors cursor-pointer block"
                             >
                               {item.questions.Title}
                             </button>
                             <div className="flex gap-2 items-center flex-wrap">
                               <span className={cn(
-                                "text-[9px] font-mono border px-1.5 py-0.5 rounded font-bold uppercase",
+                                "text-badge-sm font-mono-label border px-1.5 py-0.5 rounded font-bold uppercase",
                                 item.questions.Difficulty.toLowerCase() === "easy" ? "border-emerald-500/20 text-emerald-400 bg-emerald-500/5" :
                                 item.questions.Difficulty.toLowerCase() === "medium" ? "border-primary/20 text-primary bg-primary/5" : "border-red-500/20 text-red-400 bg-red-500/5"
                               )}>
                                 {item.questions.Difficulty}
                               </span>
-                              <span className="text-[9px] font-mono text-outline uppercase truncate max-w-[150px]">{item.questions.Topics?.split(",")[0]}</span>
-                              <span className="text-[9px] font-mono text-red-400/90 font-semibold uppercase">
+                              <span className="text-badge-sm font-mono-label text-outline uppercase truncate max-w-[150px]">{item.questions.Topics?.split(",")[0]}</span>
+                              <span className="text-badge-sm font-mono-label text-red-400/90 font-semibold uppercase">
                                 {daysOverdue > 0 ? `Overdue by ${daysOverdue}d` : "Due Now"}
                               </span>
                             </div>
@@ -495,14 +495,14 @@ export default function ProgressPage() {
                           <button
                             onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
                               detail: {
-                                questionId: item.questions.ID,
-                                title: item.questions.Title,
-                                difficulty: item.questions.Difficulty,
-                                link: item.questions.Link,
-                                mode: "review"
+                                  questionId: item.questions.ID,
+                                  title: item.questions.Title,
+                                  difficulty: item.questions.Difficulty,
+                                  link: item.questions.Link,
+                                  mode: "review"
                               }
                             }))}
-                            className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 text-black text-[10px] bg-primary border border-primary px-3 py-1.5 rounded font-bold hover:bg-[#FFE14D] transition-all uppercase tracking-wider text-center"
+                            className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 text-black text-badge-sm bg-primary border border-primary px-3 py-1.5 rounded font-bold hover:bg-[#FFE14D] transition-all uppercase tracking-wider text-center"
                           >
                             REVISE <span className="material-symbols-outlined text-[12px]">sync</span>
                           </button>
@@ -512,7 +512,7 @@ export default function ProgressPage() {
                   )
                 ) : (
                   upcomingQueue.length === 0 ? (
-                    <div className="py-12 text-center text-outline/60 font-body-sm text-xs italic select-none">
+                    <div className="py-12 text-center text-outline/60 font-body-lg text-body-sm italic select-none">
                       No upcoming revisions scheduled.
                     </div>
                   ) : (
@@ -531,20 +531,20 @@ export default function ProgressPage() {
                                   mode: "description"
                                 }
                               }))}
-                              className="font-bold text-xs text-white text-left truncate group-hover:text-primary transition-colors cursor-pointer block"
+                              className="font-body-lg text-body-sm font-bold text-white text-left truncate group-hover:text-primary transition-colors cursor-pointer block"
                             >
                               {item.questions.Title}
                             </button>
                             <div className="flex gap-2 items-center flex-wrap">
                               <span className={cn(
-                                "text-[9px] font-mono border px-1.5 py-0.5 rounded font-bold uppercase",
+                                "text-badge-sm font-mono-label border px-1.5 py-0.5 rounded font-bold uppercase",
                                 item.questions.Difficulty.toLowerCase() === "easy" ? "border-emerald-500/20 text-emerald-400 bg-emerald-500/5" :
                                 item.questions.Difficulty.toLowerCase() === "medium" ? "border-primary/20 text-primary bg-primary/5" : "border-red-500/20 text-red-400 bg-red-500/5"
                               )}>
                                 {item.questions.Difficulty}
                               </span>
-                              <span className="text-[9px] font-mono text-outline uppercase truncate max-w-[150px]">{item.questions.Topics?.split(",")[0]}</span>
-                              <span className="text-[9px] font-mono text-secondary font-semibold uppercase">
+                              <span className="text-badge-sm font-mono-label text-outline uppercase truncate max-w-[150px]">{item.questions.Topics?.split(",")[0]}</span>
+                              <span className="text-badge-sm font-mono-label text-secondary font-semibold uppercase">
                                 Due in {daysLeft} {daysLeft === 1 ? "day" : "days"}
                               </span>
                             </div>
@@ -560,7 +560,7 @@ export default function ProgressPage() {
                                 mode: "review"
                               }
                             }))}
-                            className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 text-white text-[10px] border border-[#2D2D2D] hover:bg-white/5 px-3 py-1.5 rounded font-bold transition-all uppercase tracking-wider text-center"
+                            className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 text-white text-badge-sm border border-[#2D2D2D] hover:bg-white/5 px-3 py-1.5 rounded font-bold transition-all uppercase tracking-wider text-center"
                           >
                             PRACTICE EARLY
                           </button>
