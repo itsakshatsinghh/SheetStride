@@ -60,6 +60,20 @@ export default function DashboardPage() {
   const [weeklyActivities, setWeeklyActivities] = useState(0);
   const [weeklyTopTopic, setWeeklyTopTopic] = useState("Trees");
   const [focusTopics, setFocusTopics] = useState<string[]>([]);
+  const [focusDuration, setFocusDuration] = useState<string>("7");
+  const [focusDifficulty, setFocusDifficulty] = useState<string>("mix");
+  const [focusSource, setFocusSource] = useState<string>("core");
+  const [focusReviewDensity, setFocusReviewDensity] = useState<string>("balanced");
+  const [focusStartDate, setFocusStartDate] = useState<string>("");
+
+  // Temporary console modal states (saved on modal Done / close)
+  const [tempFocusTopics, setTempFocusTopics] = useState<string[]>([]);
+  const [tempDuration, setTempDuration] = useState<string>("7");
+  const [tempDifficulty, setTempDifficulty] = useState<string>("mix");
+  const [tempSource, setTempSource] = useState<string>("core");
+  const [tempReviewDensity, setTempReviewDensity] = useState<string>("balanced");
+  const [tempStudyMode, setTempStudyMode] = useState<"learn" | "balanced" | "review">("balanced");
+  const [tempDailyLoad, setTempDailyLoad] = useState<"light" | "balanced" | "intensive">("balanced");
   
   // Added diagnostic, resume, and blueprint states
   const [practiceAccuracy, setPracticeAccuracy] = useState<number | null>(null);
@@ -86,6 +100,31 @@ export default function DashboardPage() {
       const savedLoad = localStorage.getItem("sheetstride-daily-load");
       if (savedLoad && ["light", "balanced", "intensive"].includes(savedLoad)) {
         setDailyLoad(savedLoad as any);
+      }
+      
+      const savedDuration = localStorage.getItem("sheetstride-focus-duration");
+      if (savedDuration) setFocusDuration(savedDuration);
+      
+      const savedDifficulty = localStorage.getItem("sheetstride-focus-difficulty");
+      if (savedDifficulty) setFocusDifficulty(savedDifficulty);
+      
+      const savedSource = localStorage.getItem("sheetstride-focus-source");
+      if (savedSource) setFocusSource(savedSource);
+      
+      const savedDensity = localStorage.getItem("sheetstride-focus-density");
+      if (savedDensity) setFocusReviewDensity(savedDensity);
+
+      const savedStartDate = localStorage.getItem("sheetstride-focus-start-date");
+      if (savedStartDate) setFocusStartDate(savedStartDate);
+      
+      const savedTopicsVal = localStorage.getItem("sheetstride-focus-topics");
+      if (savedTopicsVal) {
+        try {
+          const parsed = JSON.parse(savedTopicsVal);
+          if (Array.isArray(parsed)) {
+            setFocusTopics(parsed);
+          }
+        } catch (e) {}
       }
     }
   }, []);
@@ -135,6 +174,11 @@ export default function DashboardPage() {
       // Determine current preferences (from state or fallback)
       let currentMode: "learn" | "balanced" | "review" = studyMode;
       let currentLoad: "light" | "balanced" | "intensive" = dailyLoad;
+      let currentDuration = focusDuration;
+      let currentDifficulty = focusDifficulty;
+      let currentSource = focusSource;
+      let currentDensity = focusReviewDensity;
+      let currentTopics = focusTopics;
       
       const metadata = user.user_metadata || {};
       const savedMode = metadata["sheetstride-study-mode"] || localStorage.getItem("sheetstride-study-mode");
@@ -146,10 +190,43 @@ export default function DashboardPage() {
         currentLoad = savedLoad as any;
       }
 
+      const savedDuration = metadata["sheetstride-focus-duration"] || localStorage.getItem("sheetstride-focus-duration");
+      if (savedDuration) currentDuration = savedDuration;
+
+      const savedDifficulty = metadata["sheetstride-focus-difficulty"] || localStorage.getItem("sheetstride-focus-difficulty");
+      if (savedDifficulty) currentDifficulty = savedDifficulty;
+
+      const savedSource = metadata["sheetstride-focus-source"] || localStorage.getItem("sheetstride-focus-source");
+      if (savedSource) currentSource = savedSource;
+
+      const savedDensity = metadata["sheetstride-focus-density"] || localStorage.getItem("sheetstride-focus-density");
+      if (savedDensity) currentDensity = savedDensity;
+
+      const savedStartDate = metadata["sheetstride-focus-start-date"] || localStorage.getItem("sheetstride-focus-start-date");
+      if (savedStartDate) {
+        setFocusStartDate(savedStartDate);
+      }
+
+      const savedTopicsVal = metadata["sheetstride-focus-topics"] || localStorage.getItem("sheetstride-focus-topics");
+      if (savedTopicsVal) {
+        try {
+          const parsed = typeof savedTopicsVal === "string" ? JSON.parse(savedTopicsVal) : savedTopicsVal;
+          if (Array.isArray(parsed)) {
+            currentTopics = parsed;
+          }
+        } catch (e) {
+          console.warn("Failed to parse focus topics:", e);
+        }
+      }
+
       // Compile roadmap contract using isolated engine
       const roadmap = await buildRoadmap(userId, supabase, {
         studyMode: currentMode,
-        dailyLoad: currentLoad
+        dailyLoad: currentLoad,
+        focusDifficulty: currentDifficulty,
+        focusSource: currentSource,
+        focusReviewDensity: currentDensity,
+        focusTopics: currentTopics
       });
 
       // Update state indicators directly from compiled roadmap contract
@@ -162,6 +239,10 @@ export default function DashboardPage() {
       setCurrentStreak(roadmap.currentStreak);
       setLongestStreak(roadmap.longestStreak);
       setFocusTopics(roadmap.focusTopics);
+      setFocusDuration(currentDuration);
+      setFocusDifficulty(currentDifficulty);
+      setFocusSource(currentSource);
+      setFocusReviewDensity(currentDensity);
 
       // Fetch solvedList questions to populate client counts
       const { data: userProgress, error: progressError } = await supabase
@@ -301,49 +382,72 @@ export default function DashboardPage() {
     }
   }
 
-  const handleSaveFocusTopics = async (updatedTopics: string[]) => {
-    if (!user) return;
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ focus_topics: updatedTopics })
-        .eq("id", user.id);
+  const handleSaveAllPlannerSettings = async () => {
+    // 1. Optimistically update all primary states
+    setFocusTopics(tempFocusTopics);
+    setFocusDuration(tempDuration);
+    setFocusDifficulty(tempDifficulty);
+    setFocusSource(tempSource);
+    setFocusReviewDensity(tempReviewDensity);
+    setStudyMode(tempStudyMode);
+    setDailyLoad(tempDailyLoad);
 
-      if (!error) {
-        setFocusTopics(updatedTopics);
-        await loadDashboardData();
+    const todayISO = new Date().toISOString();
+    
+    // Check if topics actually changed to decide if we reset cycle start date
+    const topicsChanged = JSON.stringify(tempFocusTopics) !== JSON.stringify(focusTopics);
+    if (topicsChanged) {
+      setFocusStartDate(todayISO);
+      localStorage.setItem("sheetstride-focus-start-date", todayISO);
+    }
+
+    // 2. Persist everything to localStorage
+    localStorage.setItem("sheetstride-focus-topics", JSON.stringify(tempFocusTopics));
+    localStorage.setItem("sheetstride-focus-duration", tempDuration);
+    localStorage.setItem("sheetstride-focus-difficulty", tempDifficulty);
+    localStorage.setItem("sheetstride-focus-source", tempSource);
+    localStorage.setItem("sheetstride-focus-density", tempReviewDensity);
+    localStorage.setItem("sheetstride-study-mode", tempStudyMode);
+    localStorage.setItem("sheetstride-daily-load", tempDailyLoad);
+
+    // 3. Persist everything to auth metadata in one single call!
+    try {
+      const authUpdates: any = {
+        "sheetstride-focus-topics": tempFocusTopics,
+        "sheetstride-focus-duration": tempDuration,
+        "sheetstride-focus-difficulty": tempDifficulty,
+        "sheetstride-focus-source": tempSource,
+        "sheetstride-focus-density": tempReviewDensity,
+        "sheetstride-study-mode": tempStudyMode,
+        "sheetstride-daily-load": tempDailyLoad
+      };
+      if (topicsChanged) {
+        authUpdates["sheetstride-focus-start-date"] = todayISO;
       }
+      await supabase.auth.updateUser({
+        data: authUpdates
+      });
+    } catch (authErr) {
+      console.warn("Failed to sync planner settings to auth metadata:", authErr);
+    }
+
+    // 4. Background upsert profiles
+    try {
+      await supabase
+        .from("profiles")
+        .upsert({ 
+          id: user?.id, 
+          focus_topics: tempFocusTopics 
+        });
     } catch (err) {
-      console.error("Failed to save focus topics:", err);
+      console.warn("Profiles database upsert skipped (table may not exist):", err);
     }
-  };
 
-  const handleUpdateStudyMode = async (mode: "learn" | "balanced" | "review") => {
-    setStudyMode(mode);
-    localStorage.setItem("sheetstride-study-mode", mode);
-    try {
-      await supabase.auth.updateUser({
-        data: {
-          "sheetstride-study-mode": mode
-        }
-      });
-    } catch (e) {
-      console.warn("Failed to sync study-mode preference to database:", e);
-    }
-  };
-
-  const handleUpdateDailyLoad = async (load: "light" | "balanced" | "intensive") => {
-    setDailyLoad(load);
-    localStorage.setItem("sheetstride-daily-load", load);
-    try {
-      await supabase.auth.updateUser({
-        data: {
-          "sheetstride-daily-load": load
-        }
-      });
-    } catch (e) {
-      console.warn("Failed to sync daily-load preference to database:", e);
-    }
+    // 5. Close modal
+    setShowFocusModal(false);
+    
+    // 6. Reload data exactly once!
+    await loadDashboardData();
   };
 
   // Load preferences from Supabase Auth metadata when user session hydrates
@@ -358,6 +462,33 @@ export default function DashboardPage() {
       if (savedLoad && ["light", "balanced", "intensive"].includes(savedLoad)) {
         setDailyLoad(savedLoad as any);
       }
+
+      const savedDuration = metadata["sheetstride-focus-duration"];
+      if (savedDuration) setFocusDuration(savedDuration);
+
+      const savedDifficulty = metadata["sheetstride-focus-difficulty"];
+      if (savedDifficulty) setFocusDifficulty(savedDifficulty);
+
+      const savedSource = metadata["sheetstride-focus-source"];
+      if (savedSource) setFocusSource(savedSource);
+
+      const savedDensity = metadata["sheetstride-focus-density"];
+      if (savedDensity) setFocusReviewDensity(savedDensity);
+
+      const savedStartDate = metadata["sheetstride-focus-start-date"];
+      if (savedStartDate) setFocusStartDate(savedStartDate);
+
+      const savedTopicsVal = metadata["sheetstride-focus-topics"] || localStorage.getItem("sheetstride-focus-topics");
+      if (savedTopicsVal) {
+        try {
+          const parsed = typeof savedTopicsVal === "string" ? JSON.parse(savedTopicsVal) : savedTopicsVal;
+          if (Array.isArray(parsed)) {
+            setFocusTopics(parsed);
+          }
+        } catch (e) {
+          console.warn("Failed to parse focus topics in useEffect:", e);
+        }
+      }
     }
   }, [user]);
 
@@ -368,17 +499,46 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener("question-solved", loadDashboardData);
     };
-  }, [user, studyMode, dailyLoad]);
+  }, [user, studyMode, dailyLoad, focusDuration, focusDifficulty, focusSource, focusReviewDensity, focusTopics]);
+
+  // Synchronize temporary states when modal opens
+  useEffect(() => {
+    if (showFocusModal) {
+      setTempFocusTopics(focusTopics);
+      setTempDuration(focusDuration);
+      setTempDifficulty(focusDifficulty);
+      setTempSource(focusSource);
+      setTempReviewDensity(focusReviewDensity);
+      setTempStudyMode(studyMode);
+      setTempDailyLoad(dailyLoad);
+    }
+  }, [showFocusModal, focusTopics, focusDuration, focusDifficulty, focusSource, focusReviewDensity, studyMode, dailyLoad]);
 
   const completedTasks = todaysMission.filter(t => t.completed).length;
   const totalTasks = todaysMission.length || 1;
   const missionPercent = Math.round((completedTasks / totalTasks) * 100);
   const isRoadmapComplete = todaysMission.length > 0 && todaysMission.every(t => t.completed);
 
+  const getFocusCycleText = () => {
+    if (!focusStartDate) return "";
+    const start = new Date(focusStartDate);
+    const today = new Date();
+    start.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const diffTime = today.getTime() - start.getTime();
+    const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24))) + 1;
+    const duration = parseInt(focusDuration) || 7;
+    if (diffDays > duration) {
+      return "Expired - Reset Focus";
+    }
+    return `Day ${diffDays} of ${duration}`;
+  };
+
   const welcomeText = user ? (
     <>
       Welcome back, {user?.user_metadata?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "Operator"}.
-      {" "}Your current focus is <span className="text-primary font-bold">{focusTopics[0] || weakestTopic}</span>.
+      {" "}Your current focus is <span className="text-primary font-bold">{focusTopics[0] || weakestTopic}</span>
+      {focusStartDate && <span className="text-outline/80 text-[10px] ml-1">({getFocusCycleText()})</span>}.
       {" "}{todaysMission.filter((t) => t.type === "revise").length} review{todaysMission.filter((t) => t.type === "revise").length === 1 ? " is" : "s are"} ready today, along with{" "}
       {todaysMission.filter((t) => t.type === "solve").length} new practice opportunit{todaysMission.filter((t) => t.type === "solve").length === 1 ? "y" : "ies"}.
     </>
@@ -505,6 +665,7 @@ export default function DashboardPage() {
                     <span className="text-outline/50 block text-[8px] uppercase tracking-wider font-bold">Topic Focus</span>
                     <span className="text-text font-bold text-xs truncate block max-w-full" title={focusTopics.join(", ") || weakestTopic}>
                       {focusTopics[0] || weakestTopic}
+                      {focusStartDate && <span className="text-outline text-[9px] block font-normal font-mono">({getFocusCycleText()})</span>}
                     </span>
                   </div>
                 </div>
@@ -565,7 +726,7 @@ export default function DashboardPage() {
                                 title: task.question?.Title,
                                 difficulty: task.question?.Difficulty,
                                 link: task.question?.Link,
-                                mode: task.type === "revise" ? "reflection" : "description"
+                                mode: task.type === "revise" ? "priming" : "description"
                               }
                             }))}
                             className={cn(
@@ -781,6 +942,7 @@ export default function DashboardPage() {
                 <span className="uppercase font-bold text-outline-variant font-body">Active focus</span>
                 <span className="text-primary font-bold uppercase truncate max-w-[200px]" title={focusTopics.join(", ") || weakestTopic}>
                   {focusTopics[0] || weakestTopic}
+                  {focusStartDate && <span className="text-outline text-[8px] ml-1 font-normal font-mono">({getFocusCycleText()})</span>}
                 </span>
               </div>
 
@@ -964,7 +1126,7 @@ export default function DashboardPage() {
       <AnimatePresence>
         {showFocusModal && (
           <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4 font-mono">
-            <div className="absolute inset-0" onClick={() => setShowFocusModal(false)} />
+            <div className="absolute inset-0" onClick={handleSaveAllPlannerSettings} />
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -977,7 +1139,7 @@ export default function DashboardPage() {
                   <p className="font-body text-[10px] text-outline mt-0.5">Customize your target focus, workload capacity, and review heuristics.</p>
                 </div>
                 <button
-                  onClick={() => setShowFocusModal(false)}
+                  onClick={handleSaveAllPlannerSettings}
                   className="p-1 hover:bg-white/5 rounded text-outline hover:text-text cursor-pointer transition-colors border-none bg-transparent"
                 >
                   <X className="h-4 w-4" />
@@ -989,15 +1151,15 @@ export default function DashboardPage() {
                 <span className="block text-[10px] text-primary uppercase font-bold tracking-wider">1 // Focus Topics</span>
                 <div className="grid grid-cols-2 gap-2 max-h-[140px] overflow-y-auto custom-scrollbar p-1">
                   {AVAILABLE_TOPICS.map((topic) => {
-                    const isChecked = focusTopics.includes(topic);
+                    const isChecked = tempFocusTopics.includes(topic);
                     return (
                       <button
                         key={topic}
                         onClick={() => {
                           const updated = isChecked
-                            ? focusTopics.filter((t) => t !== topic)
-                            : [...focusTopics, topic];
-                          handleSaveFocusTopics(updated);
+                            ? tempFocusTopics.filter((t) => t !== topic)
+                            : [...tempFocusTopics, topic];
+                          setTempFocusTopics(updated);
                         }}
                         className={cn(
                           "px-3 py-1.5 border rounded font-mono text-[10px] text-left uppercase transition-all cursor-pointer select-none",
@@ -1025,10 +1187,10 @@ export default function DashboardPage() {
                     ] as const).map((m) => (
                       <button
                         key={m.id}
-                        onClick={() => handleUpdateStudyMode(m.id)}
+                        onClick={() => setTempStudyMode(m.id)}
                         className={cn(
                           "px-2.5 py-1.5 border text-left rounded text-[10px] font-bold uppercase transition-all cursor-pointer select-none",
-                          studyMode === m.id
+                          tempStudyMode === m.id
                             ? "bg-primary/10 border-primary text-primary"
                             : "bg-[#0C0C0C] border-[#222] text-outline hover:border-outline hover:text-text"
                         )}
@@ -1049,10 +1211,10 @@ export default function DashboardPage() {
                     ] as const).map((l) => (
                       <button
                         key={l.id}
-                        onClick={() => handleUpdateDailyLoad(l.id)}
+                        onClick={() => setTempDailyLoad(l.id)}
                         className={cn(
                           "px-2.5 py-1.5 border text-left rounded text-[10px] font-bold uppercase transition-all cursor-pointer select-none",
-                          dailyLoad === l.id
+                          tempDailyLoad === l.id
                             ? "bg-primary/10 border-primary text-primary"
                             : "bg-[#0C0C0C] border-[#222] text-outline hover:border-outline hover:text-text"
                         )}
@@ -1064,28 +1226,124 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* 3. Planner Rules */}
-              <div className="border-t border-[#2D2D2D]/60 pt-3 space-y-2 select-none">
-                <span className="block text-[10px] text-primary uppercase font-bold tracking-wider">4 // Planner Rules</span>
-                <div className="bg-[#0C0C0C]/80 border border-[#222]/80 p-3 rounded-lg space-y-1.5 font-mono text-[9px] text-outline/85 leading-relaxed">
-                  <div className="flex items-center gap-1.5 text-secondary">
-                    <span>✓</span> <span>Prioritize overdue spaced revisions</span>
+              {/* 4. Focus Schedule Configurations */}
+              <div className="border-t border-[#2D2D2D]/60 pt-3 space-y-4 select-none">
+                <span className="block text-[10px] text-primary uppercase font-bold tracking-wider">4 // Focus Scheduler Tuning</span>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Q1: Focus Duration */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[8px] text-outline uppercase font-bold tracking-wide">Duration // Continue selected topics</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {([
+                        { id: "7", label: "7d" },
+                        { id: "14", label: "14d" },
+                        { id: "21", label: "21d" },
+                        { id: "30", label: "30d" }
+                      ] as const).map((d) => (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => setTempDuration(d.id)}
+                          className={cn(
+                            "px-2 py-1 border rounded text-[9px] font-bold transition-all cursor-pointer flex-1 text-center min-w-[36px]",
+                            tempDuration === d.id
+                              ? "bg-primary/15 border-primary text-primary"
+                              : "bg-[#0C0C0C] border-[#222] text-outline/70 hover:border-outline hover:text-text"
+                          )}
+                        >
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-secondary">
-                    <span>✓</span> <span>Align tasks to monthly active focuses</span>
+
+                  {/* Q2: Target Difficulty */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[8px] text-outline uppercase font-bold tracking-wide">Difficulty // Focus questions level</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {([
+                        { id: "mix", label: "Mix" },
+                        { id: "easy", label: "Easy" },
+                        { id: "medium", label: "Med" },
+                        { id: "hard", label: "Hard" }
+                      ] as const).map((diff) => (
+                        <button
+                          key={diff.id}
+                          type="button"
+                          onClick={() => setTempDifficulty(diff.id)}
+                          className={cn(
+                            "px-2 py-1 border rounded text-[9px] font-bold transition-all cursor-pointer flex-1 text-center min-w-[36px]",
+                            tempDifficulty === diff.id
+                              ? "bg-primary/15 border-primary text-primary"
+                              : "bg-[#0C0C0C] border-[#222] text-outline/70 hover:border-outline hover:text-text"
+                          )}
+                        >
+                          {diff.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-secondary">
-                    <span>✓</span> <span>Mix learning, recognition practice, and retention</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[#2D2D2D]/30 pt-3">
+                  {/* Q3: Question Source */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[8px] text-outline uppercase font-bold tracking-wide">Source // Recommend questions from</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {([
+                        { id: "core", label: "Core" },
+                        { id: "company", label: "Company" },
+                        { id: "leetcode", label: "LeetCode" }
+                      ] as const).map((src) => (
+                        <button
+                          key={src.id}
+                          type="button"
+                          onClick={() => setTempSource(src.id)}
+                          className={cn(
+                            "px-2 py-1 border rounded text-[9px] font-bold transition-all cursor-pointer flex-1 text-center min-w-[48px]",
+                            tempSource === src.id
+                              ? "bg-primary/15 border-primary text-primary"
+                              : "bg-[#0C0C0C] border-[#222] text-outline/70 hover:border-outline hover:text-text"
+                          )}
+                        >
+                          {src.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-secondary">
-                    <span>✓</span> <span>Cap workload according to load targets</span>
+
+                  {/* Q4: Review Density */}
+                  <div className="space-y-1.5">
+                    <span className="block text-[8px] text-outline uppercase font-bold tracking-wide">Revisions // Workload scheduling density</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {([
+                        { id: "light", label: "Light" },
+                        { id: "balanced", label: "Balanced" },
+                        { id: "strict", label: "Strict" }
+                      ] as const).map((den) => (
+                        <button
+                          key={den.id}
+                          type="button"
+                          onClick={() => setTempReviewDensity(den.id)}
+                          className={cn(
+                            "px-2 py-1 border rounded text-[9px] font-bold transition-all cursor-pointer flex-1 text-center min-w-[48px]",
+                            tempReviewDensity === den.id
+                              ? "bg-primary/15 border-primary text-primary"
+                              : "bg-[#0C0C0C] border-[#222] text-outline/70 hover:border-outline hover:text-text"
+                          )}
+                        >
+                          {den.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="flex justify-end pt-3 border-t border-[#2D2D2D]">
                 <button
-                  onClick={() => setShowFocusModal(false)}
+                  onClick={handleSaveAllPlannerSettings}
                   className="px-4 py-2 bg-primary hover:bg-primary-strong text-black font-mono text-xs font-bold uppercase tracking-wider rounded transition-colors cursor-pointer border-none"
                 >
                   Done

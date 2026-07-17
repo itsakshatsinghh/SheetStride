@@ -192,7 +192,7 @@ Keep these technical quirks in mind during development:
 *   SheetStride Core Roadmap Tracks
 *   LeetCode Universe Search Engine (paginated fetching)
 *   Company Sheets Hub (463 companies, frequency listings)
-*   Refined Mission Control Dashboard (Daily Roadmap, Resume Session storage-polling widget, Diagnostics Plan Summary, Workspace Shortcuts, and actionable Preparation Insights; details and heatmap grids moved to Progress/Profile pages)
+*   Refined Mission Control Dashboard (Daily Roadmap, Resume Session storage-polling widget, Diagnostics Plan Summary, Workspace Shortcuts, and actionable Preparation Insights; Focus Topics modal supporting database `.upsert()`, elapsed countdown cycle display, and 4 interactive configuration questions; details and heatmap grids moved to Progress/Profile pages)
 *   Razorpay Order & Signature Verification API handlers
 *   Streak Calculations (Current & Peak)
 *   Spaced Repetition Revision Engine (Initial Solve Reflection, scheduling multipliers, Revisions Queue dashboard tab, tabbed Spaced Repetition panel on Progress page, Early Practice checks to preserve scheduled future due dates, and LeetCode Premium skip support to bypass revision scheduling entirely)

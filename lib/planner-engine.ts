@@ -73,6 +73,10 @@ export async function buildRoadmap(
   preferences: {
     studyMode: "learn" | "balanced" | "review";
     dailyLoad: "light" | "balanced" | "intensive";
+    focusDifficulty?: string;
+    focusSource?: string;
+    focusReviewDensity?: string;
+    focusTopics?: string[];
   }
 ): Promise<Roadmap> {
   const now = new Date();
@@ -247,20 +251,25 @@ export async function buildRoadmap(
   }
 
   // 6. Fetch profiles data (XP, focus_topics)
-  let activeFocus: string[] = [];
+  let activeFocus: string[] = preferences.focusTopics && preferences.focusTopics.length > 0
+    ? preferences.focusTopics
+    : [];
   let userXP = 0;
-  try {
-    const { data: dbProfile } = await supabase
-      .from("profiles")
-      .select("focus_topics, xp")
-      .eq("id", userId)
-      .maybeSingle();
-    if (dbProfile) {
-      activeFocus = dbProfile.focus_topics || [];
-      userXP = dbProfile.xp || 0;
+
+  if (activeFocus.length === 0) {
+    try {
+      const { data: dbProfile } = await supabase
+        .from("profiles")
+        .select("focus_topics, xp")
+        .eq("id", userId)
+        .maybeSingle();
+      if (dbProfile) {
+        activeFocus = dbProfile.focus_topics || [];
+        userXP = dbProfile.xp || 0;
+      }
+    } catch (dbErr) {
+      console.warn("Profiles check failed in engine:", dbErr);
     }
-  } catch (dbErr) {
-    console.warn("Profiles check failed in engine:", dbErr);
   }
 
   // 7. Fetch sheet questions list
@@ -277,7 +286,7 @@ export async function buildRoadmap(
   let targetReviewCount = 2;
   let targetDrillCount = 1;
 
-  const { studyMode, dailyLoad } = preferences;
+  const { studyMode, dailyLoad, focusDifficulty, focusSource, focusReviewDensity } = preferences;
 
   if (studyMode === "learn") {
     if (dailyLoad === "light") {
@@ -323,6 +332,13 @@ export async function buildRoadmap(
     }
   }
 
+  // Apply revision density adjustments
+  if (focusReviewDensity === "strict") {
+    targetReviewCount = Math.max(targetReviewCount, 2);
+  } else if (focusReviewDensity === "light") {
+    targetReviewCount = Math.max(0, targetReviewCount - 1);
+  }
+
   // A. Revisions selection (Sync Overdue)
   const activeRevisions = revData.filter((item: any) => {
     const isDue = new Date(item.next_revision_due) <= now;
@@ -356,12 +372,86 @@ export async function buildRoadmap(
 
   // B. Focus Solves selection
   const topicsFilter = activeFocus.length > 0 ? activeFocus : [computedWeakest];
-  const matchingQuestions = sheetQuestionsList.filter((q) => 
-    topicsFilter.some((t) => 
-      (q.topic_name && q.topic_name.toLowerCase().includes(t.toLowerCase())) || 
-      (q.topics && q.topics.toLowerCase().includes(t.toLowerCase()))
-    )
-  );
+  const selectedSource = focusSource || "core";
+  const selectedDifficulty = focusDifficulty || "mix";
+  let matchingQuestions: any[] = [];
+
+  const loadMatchingQuestions = async (applyDifficulty: boolean) => {
+    let result: any[] = [];
+    if (selectedSource === "company") {
+      try {
+        const topicPromises = topicsFilter.map(async (topic) => {
+          const { data } = await supabase
+            .from("view_company_questions")
+            .select("*")
+            .ilike("topics", `%${topic}%`)
+            .order("frequency", { ascending: false })
+            .limit(100);
+          return data || [];
+        });
+        const results = await Promise.all(topicPromises);
+        const seen = new Set();
+        result = results.flat().filter((q: any) => {
+          if (seen.has(q.question_id)) return false;
+          seen.add(q.question_id);
+          return true;
+        });
+      } catch (e) {
+        console.warn("Company questions query failed:", e);
+      }
+    } else if (selectedSource === "leetcode") {
+      try {
+        const topicPromises = topicsFilter.map(async (topic) => {
+          const { data } = await supabase
+            .from("questions")
+            .select("ID, Title, Difficulty, Link, Topics")
+            .ilike("Topics", `%${topic}%`)
+            .limit(100);
+          return data || [];
+        });
+        const results = await Promise.all(topicPromises);
+        const seen = new Set();
+        result = results.flat()
+          .filter((q: any) => {
+            if (seen.has(q.ID)) return false;
+            seen.add(q.ID);
+            return true;
+          })
+          .map((q: any) => ({
+            question_id: q.ID,
+            title: q.Title,
+            difficulty: q.Difficulty,
+            link: q.Link,
+            topics: q.Topics,
+            topic_name: topicsFilter.find(t => q.Topics?.toLowerCase().includes(t.toLowerCase())) || ""
+          }));
+      } catch (e) {
+        console.warn("Leetcode questions query failed:", e);
+      }
+    } else {
+      result = sheetQuestionsList.filter((q) => 
+        topicsFilter.some((t) => 
+          (q.topic_name && q.topic_name.toLowerCase().includes(t.toLowerCase())) || 
+          (q.topics && q.topics.toLowerCase().includes(t.toLowerCase()))
+        )
+      );
+    }
+
+    if (applyDifficulty && selectedDifficulty !== "mix") {
+      result = result.filter((q) => 
+        (q.difficulty || q.Difficulty)?.toLowerCase() === selectedDifficulty.toLowerCase()
+      );
+    }
+    return result;
+  };
+
+  // Run matching questions search with difficulty filter
+  matchingQuestions = await loadMatchingQuestions(true);
+
+  // Fallback: If no questions match the target difficulty, remove difficulty filter to avoid empty list
+  if (matchingQuestions.length === 0 && selectedDifficulty !== "mix") {
+    matchingQuestions = await loadMatchingQuestions(false);
+  }
 
   const solvedIdsSet = new Set(solved.map((s) => s.ID));
   const unsolvedFocusQuestions = matchingQuestions.filter((q) => !solvedIdsSet.has(q.question_id));

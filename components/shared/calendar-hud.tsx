@@ -368,7 +368,7 @@ export function CalendarHUD() {
                             title: item.title,
                             difficulty: item.difficulty,
                             link: item.link,
-                            mode: "review"
+                            mode: "priming"
                           }
                         }))}
                         className="bg-primary hover:bg-[#FFE14D] text-[#000000] font-bold font-mono text-[9px] px-2.5 py-1 rounded flex items-center gap-0.5 transition-all cursor-pointer shrink-0 uppercase tracking-wide"

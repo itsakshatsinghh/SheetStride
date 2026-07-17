@@ -10,6 +10,36 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Folder, ChevronDown, ChevronUp, Clock } from "lucide-react";
+
+// Helper function to map LeetCode questions to standard patterns
+function getPatternName(q: any, sheetMap: Map<number, string>): string {
+  if (sheetMap.has(q.ID)) {
+    return sheetMap.get(q.ID)!;
+  }
+  
+  const topics = q.Topics || "";
+  const topicsLower = topics.toLowerCase();
+  
+  if (topicsLower.includes("sliding window")) return "Sliding Window";
+  if (topicsLower.includes("two pointer") || topicsLower.includes("two-pointer")) return "Two Pointers";
+  if (topicsLower.includes("binary search")) return "Binary Search";
+  if (topicsLower.includes("tree")) return "Trees";
+  if (topicsLower.includes("graph")) return "Graphs";
+  if (topicsLower.includes("heap") || topicsLower.includes("priority queue")) return "Heap";
+  if (topicsLower.includes("backtracking")) return "Backtracking";
+  if (topicsLower.includes("dynamic programming") || topicsLower.includes("dp")) return "DP";
+  if (topicsLower.includes("linked list")) return "Linked List";
+  if (topicsLower.includes("stack")) return "Stack";
+  if (topicsLower.includes("queue")) return "Queue";
+  
+  if (topics) {
+    const firstTopic = topics.split(",")[0].trim();
+    return firstTopic || "Miscellaneous";
+  }
+  
+  return "Miscellaneous";
+}
 
 // requestAnimationFrame count-up hook for GPU-friendly 60fps animations
 function CountUp({ end, duration = 1.0, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
@@ -79,6 +109,7 @@ export default function ProgressPage() {
 
   // Track revision tabs: "due" or "upcoming"
   const [activeRevTab, setActiveRevTab] = useState<"due" | "upcoming">("due");
+  const [expandedPatterns, setExpandedPatterns] = useState<{ [key: string]: boolean }>({});
 
   async function loadProgressData() {
     if (!user) return;
@@ -152,6 +183,22 @@ export default function ProgressPage() {
 
       let revData: any[] = [];
       if (!progressErr && progressList && progressList.length > 0) {
+        // Fetch sheet questions mappings
+        const { data: sheetQData } = await supabase
+          .from("sheet_questions")
+          .select('"question ID", "Pattern name"');
+        
+        const sheetPatternMap = new Map<number, string>();
+        if (sheetQData) {
+          sheetQData.forEach((row: any) => {
+            const qId = row["question ID"];
+            const pattern = row["Pattern name"];
+            if (qId && pattern) {
+              sheetPatternMap.set(qId, pattern);
+            }
+          });
+        }
+
         const questionIds = progressList.map((row: any) => row.question_id);
         const { data: questionsData, error: questionsError } = await supabase
           .from("questions")
@@ -164,9 +211,12 @@ export default function ProgressPage() {
             .map((row: any) => {
               const q = questionsMap.get(row.question_id);
               if (!q) return null;
+              
+              const patternName = getPatternName(q, sheetPatternMap);
               return {
                 ...row,
-                questions: q
+                questions: q,
+                pattern_name: patternName
               };
             })
             .filter(Boolean);
@@ -384,6 +434,127 @@ export default function ProgressPage() {
     show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } }
   };
 
+  // Helper to check if a question is due today (not overdue)
+  const isDueToday = (item: any) => {
+    const now = new Date();
+    const d = new Date(item.next_revision_due);
+    if (d > now) return false;
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays === 0 || d.toDateString() === now.toDateString();
+  };
+
+  // Helper to get oldest overdue days
+  const getOldestOverdueDays = (items: any[]) => {
+    const now = new Date();
+    let maxDays = 0;
+    items.forEach(item => {
+      const d = new Date(item.next_revision_due);
+      if (d < now) {
+        const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays > maxDays) maxDays = diffDays;
+      }
+    });
+    return maxDays;
+  };
+
+  // Group revisions by pattern
+  const getGroupedRevisions = (queue: any[]) => {
+    const groupsMap = new Map<string, any[]>();
+    queue.forEach(item => {
+      const p = item.pattern_name || "Miscellaneous";
+      if (!groupsMap.has(p)) {
+        groupsMap.set(p, []);
+      }
+      groupsMap.get(p)!.push(item);
+    });
+
+    const now = new Date();
+    const groups: {
+      patternName: string;
+      items: any[];
+      easyCount: number;
+      mediumCount: number;
+      hardCount: number;
+      overdueCount: number;
+      oldestOverdueDays: number;
+      estimatedTimeMin: number;
+      hasTodayDue: boolean;
+      masteryStatus: "Strong" | "Good" | "Needs Practice";
+    }[] = [];
+
+    groupsMap.forEach((items, patternName) => {
+      let easy = 0;
+      let medium = 0;
+      let hard = 0;
+      let overdue = 0;
+      let totalRevisionCount = 0;
+
+      items.forEach(item => {
+        const diff = (item.questions?.Difficulty || "").toLowerCase();
+        if (diff === "easy") easy++;
+        else if (diff === "medium") medium++;
+        else if (diff === "hard") hard++;
+
+        if (new Date(item.next_revision_due) <= now) {
+          overdue++;
+        }
+
+        totalRevisionCount += item.revision_count || 0;
+      });
+
+      const avgRev = items.length > 0 ? totalRevisionCount / items.length : 0;
+      let mastery: "Strong" | "Good" | "Needs Practice" = "Needs Practice";
+      if (avgRev >= 4) mastery = "Strong";
+      else if (avgRev >= 2) mastery = "Good";
+
+      const time = (easy * 3) + (medium * 5) + (hard * 8);
+      const oldestOverdue = getOldestOverdueDays(items);
+      const todayDue = items.some(isDueToday);
+
+      groups.push({
+        patternName,
+        items,
+        easyCount: easy,
+        mediumCount: medium,
+        hardCount: hard,
+        overdueCount: overdue,
+        oldestOverdueDays: oldestOverdue,
+        estimatedTimeMin: time,
+        hasTodayDue: todayDue,
+        masteryStatus: mastery
+      });
+    });
+
+    // Sort priority:
+    // 1. Pattern containing today's due reviews (hasTodayDue)
+    // 2. Most overdue (oldestOverdueDays descending)
+    // 3. Highest number of due questions (items.length descending)
+    // 4. Alphabetically
+    groups.sort((a, b) => {
+      if (a.hasTodayDue !== b.hasTodayDue) {
+        return a.hasTodayDue ? -1 : 1;
+      }
+      if (a.oldestOverdueDays !== b.oldestOverdueDays) {
+        return b.oldestOverdueDays - a.oldestOverdueDays;
+      }
+      if (a.items.length !== b.items.length) {
+        return b.items.length - a.items.length;
+      }
+      return a.patternName.localeCompare(b.patternName);
+    });
+
+    return groups;
+  };
+
+  const groupedRevisions = getGroupedRevisions(activeRevTab === "due" ? revisionQueue : upcomingQueue);
+
+  const togglePattern = (patternName: string) => {
+    setExpandedPatterns(prev => ({
+      ...prev,
+      [patternName]: !prev[patternName]
+    }));
+  };
+
   return (
     <AppShell className="space-y-stack-lg max-w-container-max mx-auto px-gutter" gridBackground>
       {/* Header section */}
@@ -427,7 +598,12 @@ export default function ProgressPage() {
                     <span className="w-1.5 h-1.5 rounded-full bg-[#FFC700] animate-pulse shadow-[0_0_8px_#FFC700]" />
                     Spaced Repetition Engine
                   </h2>
-                  <p className="font-body-lg text-badge-sm text-outline uppercase font-semibold">Practice scheduled loops to solidify algorithmic patterns.</p>
+                  <p className="font-body-lg text-badge-sm text-outline uppercase font-semibold">
+                    {activeRevTab === "due" 
+                      ? `Today you're revising ${groupedRevisions.length} ${groupedRevisions.length === 1 ? "pattern" : "patterns"}.` 
+                      : `Upcoming revisions grouped into ${groupedRevisions.length} ${groupedRevisions.length === 1 ? "pattern folder" : "pattern folders"}.`
+                    }
+                  </p>
                 </div>
                 <div className="flex bg-black/40 border border-[#2D2D2D] p-0.5 rounded font-mono-label text-badge-sm select-none shrink-0 self-start sm:self-center">
                   <button 
@@ -451,123 +627,218 @@ export default function ProgressPage() {
                 </div>
               </header>
 
-              {/* Revision Queue List */}
-              <div className="space-y-3 max-h-[380px] overflow-y-auto custom-scrollbar pr-1">
-                {activeRevTab === "due" ? (
-                  revisionQueue.length === 0 ? (
-                    <div className="py-12 text-center text-outline/60 font-body-lg text-body-sm italic select-none">
-                      No revisions due today. You are caught up!
-                    </div>
-                  ) : (
-                    revisionQueue.map((item) => {
-                      const daysOverdue = Math.floor((new Date().getTime() - new Date(item.next_revision_due).getTime()) / (1000 * 60 * 60 * 24));
-                      return (
-                        <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-[#0A0A0A]/40 border border-[#2D2D2D] rounded-lg hover:border-primary/40 transition-all group">
-                          <div className="space-y-1 flex-1 min-w-0">
-                            <button
-                              onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
-                                detail: {
-                                  questionId: item.questions.ID,
-                                  title: item.questions.Title,
-                                  difficulty: item.questions.Difficulty,
-                                  link: item.questions.Link,
-                                  mode: "description"
-                                }
-                              }))}
-                              className="font-body-lg text-body-sm font-bold text-white text-left truncate group-hover:text-primary transition-colors cursor-pointer block"
-                            >
-                              {item.questions.Title}
-                            </button>
-                            <div className="flex gap-2 items-center flex-wrap">
-                              <span className={cn(
-                                "text-badge-sm font-mono-label border px-1.5 py-0.5 rounded font-bold uppercase",
-                                item.questions.Difficulty.toLowerCase() === "easy" ? "border-emerald-500/20 text-emerald-400 bg-emerald-500/5" :
-                                item.questions.Difficulty.toLowerCase() === "medium" ? "border-primary/20 text-primary bg-primary/5" : "border-red-500/20 text-red-400 bg-red-500/5"
-                              )}>
-                                {item.questions.Difficulty}
-                              </span>
-                              <span className="text-badge-sm font-mono-label text-outline uppercase truncate max-w-[150px]">{item.questions.Topics?.split(",")[0]}</span>
-                              <span className="text-badge-sm font-mono-label text-red-400/90 font-semibold uppercase">
-                                {daysOverdue > 0 ? `Overdue by ${daysOverdue}d` : "Due Now"}
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
-                              detail: {
-                                  questionId: item.questions.ID,
-                                  title: item.questions.Title,
-                                  difficulty: item.questions.Difficulty,
-                                  link: item.questions.Link,
-                                  mode: "review"
-                              }
-                            }))}
-                            className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 text-black text-badge-sm bg-primary border border-primary px-3 py-1.5 rounded font-bold hover:bg-[#FFE14D] transition-all uppercase tracking-wider text-center"
-                          >
-                            REVISE <span className="material-symbols-outlined text-[12px]">sync</span>
-                          </button>
-                        </div>
-                      );
-                    })
-                  )
+              {/* Revision Queue List (Pattern-grouped cards) */}
+              <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
+                {groupedRevisions.length === 0 ? (
+                  <div className="py-12 text-center text-outline/60 font-body-lg text-body-sm italic select-none">
+                    {activeRevTab === "due" ? "No revisions due today. You are caught up!" : "No upcoming revisions scheduled."}
+                  </div>
                 ) : (
-                  upcomingQueue.length === 0 ? (
-                    <div className="py-12 text-center text-outline/60 font-body-lg text-body-sm italic select-none">
-                      No upcoming revisions scheduled.
-                    </div>
-                  ) : (
-                    upcomingQueue.map((item) => {
-                      const daysLeft = Math.ceil((new Date(item.next_revision_due).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                      return (
-                        <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-[#0A0A0A]/40 border border-[#2D2D2D] rounded-lg hover:border-primary/45 transition-all group">
-                          <div className="space-y-1 flex-1 min-w-0">
-                            <button
-                              onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
-                                detail: {
-                                  questionId: item.questions.ID,
-                                  title: item.questions.Title,
-                                  difficulty: item.questions.Difficulty,
-                                  link: item.questions.Link,
-                                  mode: "description"
-                                }
-                              }))}
-                              className="font-body-lg text-body-sm font-bold text-white text-left truncate group-hover:text-primary transition-colors cursor-pointer block"
-                            >
-                              {item.questions.Title}
-                            </button>
-                            <div className="flex gap-2 items-center flex-wrap">
-                              <span className={cn(
-                                "text-badge-sm font-mono-label border px-1.5 py-0.5 rounded font-bold uppercase",
-                                item.questions.Difficulty.toLowerCase() === "easy" ? "border-emerald-500/20 text-emerald-400 bg-emerald-500/5" :
-                                item.questions.Difficulty.toLowerCase() === "medium" ? "border-primary/20 text-primary bg-primary/5" : "border-red-500/20 text-red-400 bg-red-500/5"
-                              )}>
-                                {item.questions.Difficulty}
+                  groupedRevisions.map((group) => {
+                    const isExpanded = !!expandedPatterns[group.patternName];
+                    const totalQuestions = group.items.length;
+                    const easyPct = (group.easyCount / totalQuestions) * 100;
+                    const mediumPct = (group.mediumCount / totalQuestions) * 100;
+                    const hardPct = (group.hardCount / totalQuestions) * 100;
+
+                    return (
+                      <div 
+                        key={group.patternName} 
+                        className="bg-[#0A0A0A]/40 border border-[#2D2D2D] rounded-xl hover:border-primary/20 transition-all overflow-hidden"
+                      >
+                        {/* Card Header Section */}
+                        <div 
+                          onClick={() => togglePattern(group.patternName)}
+                          className="p-5 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0E0E0F]/60 hover:bg-[#111112]/80 transition-colors select-none"
+                        >
+                          <div className="space-y-2.5 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Folder className="w-4 h-4 text-primary shrink-0" />
+                              <h3 className="font-headline-md text-sm font-bold text-white">
+                                {group.patternName}
+                              </h3>
+                              <span className="text-[9px] font-mono border border-border px-1.5 py-0.5 rounded text-outline uppercase font-semibold">
+                                {totalQuestions} {totalQuestions === 1 ? "Question" : "Questions"}
                               </span>
-                              <span className="text-badge-sm font-mono-label text-outline uppercase truncate max-w-[150px]">{item.questions.Topics?.split(",")[0]}</span>
-                              <span className="text-badge-sm font-mono-label text-secondary font-semibold uppercase">
-                                Due in {daysLeft} {daysLeft === 1 ? "day" : "days"}
+                              {/* Mastery rating */}
+                              <span className={cn(
+                                "text-[8px] font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider",
+                                group.masteryStatus === "Strong" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" :
+                                group.masteryStatus === "Good" ? "bg-primary/10 text-primary border border-primary/20" :
+                                "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                              )}>
+                                {group.masteryStatus}
                               </span>
                             </div>
+
+                            {/* Multi-colored difficulty segments progress bar */}
+                            <div className="h-1.5 w-full md:max-w-xs bg-[#1A1A1E] rounded-full overflow-hidden flex select-none">
+                              {group.easyCount > 0 && (
+                                <div className="bg-emerald-500 h-full animate-pulse-subtle" style={{ width: `${easyPct}%` }} title={`Easy: ${group.easyCount}`} />
+                              )}
+                              {group.mediumCount > 0 && (
+                                <div className="bg-primary h-full animate-pulse-subtle" style={{ width: `${mediumPct}%` }} title={`Medium: ${group.mediumCount}`} />
+                              )}
+                              {group.hardCount > 0 && (
+                                <div className="bg-red-500 h-full animate-pulse-subtle" style={{ width: `${hardPct}%` }} title={`Hard: ${group.hardCount}`} />
+                              )}
+                            </div>
+
+                            {/* Metadata Row */}
+                            <div className="flex flex-wrap items-center gap-3 text-badge-sm font-mono-label text-outline/80">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-emerald-400 font-bold">EASY {group.easyCount}</span>
+                                <span className="text-outline/30">•</span>
+                                <span className="text-primary font-bold">MED {group.mediumCount}</span>
+                                <span className="text-outline/30">•</span>
+                                <span className="text-red-400 font-bold">HARD {group.hardCount}</span>
+                              </div>
+
+                              <span className="text-outline/40">|</span>
+
+                              {activeRevTab === "due" ? (
+                                <>
+                                  {group.overdueCount > 0 ? (
+                                    <span className="text-red-400 font-semibold uppercase">
+                                      Overdue {group.overdueCount} {group.overdueCount === 1 ? "Question" : "Questions"}
+                                    </span>
+                                  ) : (
+                                    <span className="text-secondary font-semibold uppercase">Due Today</span>
+                                  )}
+                                  {group.oldestOverdueDays > 0 && (
+                                    <>
+                                      <span className="text-outline/40">•</span>
+                                      <span className="text-outline uppercase">Oldest Due {group.oldestOverdueDays}d ago</span>
+                                    </>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-secondary font-semibold uppercase">
+                                  Next in {Math.ceil((new Date(group.items[0].next_revision_due).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}d
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {/* Allow users to practice early */}
-                          <button
-                            onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
-                              detail: {
-                                questionId: item.questions.ID,
-                                title: item.questions.Title,
-                                difficulty: item.questions.Difficulty,
-                                link: item.questions.Link,
-                                mode: "review"
-                              }
-                            }))}
-                            className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 text-white text-badge-sm border border-[#2D2D2D] hover:bg-white/5 px-3 py-1.5 rounded font-bold transition-all uppercase tracking-wider text-center"
-                          >
-                            PRACTICE EARLY
-                          </button>
+
+                          <div className="flex items-center gap-4 shrink-0 select-none">
+                            {/* Estimated revision time */}
+                            <div className="flex items-center gap-1 text-badge-sm font-mono-label text-outline bg-black/30 border border-border/40 px-2 py-1.5 rounded-lg">
+                              <Clock className="w-3.5 h-3.5 text-outline/60" />
+                              <span>≈ {group.estimatedTimeMin} min</span>
+                            </div>
+
+                            {/* Continue Revision button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePattern(group.patternName);
+                              }}
+                              className={cn(
+                                "px-3 py-1.5 border rounded-lg text-badge-sm font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer",
+                                isExpanded 
+                                  ? "border-border hover:border-outline text-outline hover:text-white" 
+                                  : "border-primary bg-primary text-black hover:bg-[#FFE14D]"
+                              )}
+                            >
+                              <span>{isExpanded ? "Collapse" : "Continue"}</span>
+                              {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
                         </div>
-                      );
-                    })
-                  )
+
+                        {/* Collapsible Questions List */}
+                        {isExpanded && (
+                          <div className="border-t border-[#2D2D2D] bg-[#070707]/30 p-4 space-y-2.5">
+                            {group.items.map((item) => {
+                              const daysOverdue = Math.floor((new Date().getTime() - new Date(item.next_revision_due).getTime()) / (1000 * 60 * 60 * 24));
+                              const daysLeft = Math.ceil((new Date(item.next_revision_due).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+                              return (
+                                <div 
+                                  key={item.id} 
+                                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-[#0A0A0A]/40 border border-[#2D2D2D]/60 rounded-lg hover:border-primary/30 transition-all group"
+                                >
+                                  <div className="space-y-1 flex-1 min-w-0">
+                                    <button
+                                      onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                                        detail: {
+                                          questionId: item.questions.ID,
+                                          title: item.questions.Title,
+                                          difficulty: item.questions.Difficulty,
+                                          link: item.questions.Link,
+                                          mode: "description"
+                                        }
+                                      }))}
+                                      className="font-body-lg text-body-sm font-bold text-white text-left truncate group-hover:text-primary transition-colors cursor-pointer block"
+                                    >
+                                      {item.questions.Title}
+                                    </button>
+                                    <div className="flex gap-2 items-center flex-wrap select-none">
+                                      <span className={cn(
+                                        "text-badge-sm font-mono-label border px-1.5 py-0.5 rounded font-bold uppercase",
+                                        item.questions.Difficulty.toLowerCase() === "easy" ? "border-emerald-500/20 text-emerald-400 bg-emerald-500/5" :
+                                        item.questions.Difficulty.toLowerCase() === "medium" ? "border-primary/20 text-primary bg-primary/5" : "border-red-500/20 text-red-400 bg-red-500/5"
+                                      )}>
+                                        {item.questions.Difficulty}
+                                      </span>
+                                      <span className="text-badge-sm font-mono-label text-outline uppercase truncate max-w-[150px]">
+                                        {item.questions.Topics?.split(",")[0]}
+                                      </span>
+                                      {activeRevTab === "due" ? (
+                                        <span className={cn(
+                                          "text-badge-sm font-mono-label font-semibold uppercase",
+                                          daysOverdue > 0 ? "text-red-400/90" : "text-secondary"
+                                        )}>
+                                          {daysOverdue > 0 ? `Overdue by ${daysOverdue}d` : "Due Now"}
+                                        </span>
+                                      ) : (
+                                        <span className="text-badge-sm font-mono-label text-secondary font-semibold uppercase">
+                                          Due in {daysLeft} {daysLeft === 1 ? "day" : "days"}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {activeRevTab === "due" ? (
+                                    <button
+                                      onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                                        detail: {
+                                          questionId: item.questions.ID,
+                                          title: item.questions.Title,
+                                          difficulty: item.questions.Difficulty,
+                                          link: item.questions.Link,
+                                          mode: "priming"
+                                        }
+                                      }))}
+                                      className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 text-black text-badge-sm bg-primary border border-primary px-3 py-1.5 rounded font-bold hover:bg-[#FFE14D] transition-all uppercase tracking-wider text-center cursor-pointer"
+                                    >
+                                      REVISE <span className="material-symbols-outlined text-[12px]">sync</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
+                                        detail: {
+                                          questionId: item.questions.ID,
+                                          title: item.questions.Title,
+                                          difficulty: item.questions.Difficulty,
+                                          link: item.questions.Link,
+                                          mode: "review"
+                                        }
+                                      }))}
+                                      className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-1.5 text-white text-badge-sm border border-[#2D2D2D] hover:bg-white/5 px-3 py-1.5 rounded font-bold transition-all uppercase tracking-wider text-center cursor-pointer"
+                                    >
+                                      PRACTICE EARLY
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

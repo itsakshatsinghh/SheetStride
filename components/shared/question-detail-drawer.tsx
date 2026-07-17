@@ -1105,10 +1105,10 @@ export function QuestionDetailDrawer() {
       });
     });
 
-    // Final Slide: Complexity & Future Reminder
+    // Slide 4: Complexities
     slides.push({
-      title: "4. Complexities & Reflections",
-      subtitle: "Performance benchmarks and reminders",
+      title: "4. Complexities",
+      subtitle: "Performance benchmarks and analytical explanation",
       content: (
         <div className="space-y-4 text-left select-text">
           <div className="grid grid-cols-2 gap-3">
@@ -1127,12 +1127,40 @@ export function QuestionDetailDrawer() {
               )}
             </div>
           </div>
-          <div className="border border-red-500/20 bg-red-500/5 p-3 rounded-lg border-dashed">
-            <span className="text-red-400 uppercase font-mono text-[8px] block font-bold mb-0.5">⚠️ Future Revision Warning</span>
-            <p className="text-xs text-text leading-relaxed font-bold select-text">
-              {blueprint.reflection.futureReminder || "No specific warnings logged."}
-            </p>
-          </div>
+        </div>
+      )
+    });
+
+    // Slide 5: Reflection
+    slides.push({
+      title: "5. Reflection & Takeaways",
+      subtitle: "Future warnings and strategy reflection",
+      content: (
+        <div className="space-y-4 text-left select-text">
+          {blueprint.reflection.futureReminder && (
+            <div className="border border-red-500/20 bg-red-500/5 p-3 rounded-lg border-dashed">
+              <span className="text-red-400 uppercase font-mono text-[8px] block font-bold mb-0.5">⚠️ Future Revision Warning</span>
+              <p className="text-xs text-text leading-relaxed font-bold select-text">
+                {blueprint.reflection.futureReminder}
+              </p>
+            </div>
+          )}
+          {blueprint.reflection.biggestMistake && (
+            <div className="border border-amber-500/20 bg-amber-500/5 p-3 rounded-lg border-dashed">
+              <span className="text-amber-500 uppercase font-mono text-[8px] block font-bold mb-0.5">⚠️ Biggest Mistake to Avoid</span>
+              <p className="text-xs text-text leading-relaxed font-bold select-text">
+                {blueprint.reflection.biggestMistake}
+              </p>
+            </div>
+          )}
+          {blueprint.reflection.interviewExplanation && (
+            <div>
+              <span className="text-outline uppercase text-[8px] font-mono block font-bold mb-1">Interview Explanation Summary</span>
+              <p className="text-xs text-text bg-[#0E0E0F] p-3 rounded border border-border leading-relaxed font-medium whitespace-pre-wrap select-text">
+                {blueprint.reflection.interviewExplanation}
+              </p>
+            </div>
+          )}
         </div>
       )
     });
@@ -1159,6 +1187,46 @@ export function QuestionDetailDrawer() {
 
     return () => clearInterval(interval);
   }, [isReplaying, isReplayPaused, replaySlides.length]);
+
+  // Keyboard listeners for Replay mode
+  useEffect(() => {
+    if (!isReplaying) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+        return;
+      }
+
+      switch (e.key) {
+        case "ArrowLeft":
+          e.preventDefault();
+          setIsReplayPaused(true);
+          setReplayIndex(prev => Math.max(0, prev - 1));
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          setIsReplayPaused(true);
+          setReplayIndex(prev => {
+            if (prev < replaySlides.length - 1) return prev + 1;
+            return prev;
+          });
+          break;
+        case " ":
+          e.preventDefault();
+          setIsReplayPaused(p => !p);
+          break;
+        case "Escape":
+          e.preventDefault();
+          handleStopReplay();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isReplaying, replaySlides.length]);
 
   const handleStartReplay = () => {
     setReplayIndex(0);
@@ -1326,19 +1394,30 @@ export function QuestionDetailDrawer() {
                         setReplayIndex(prev => Math.max(0, prev - 1));
                       }}
                       disabled={replayIndex === 0}
-                      className="px-4 py-2 border border-border rounded-lg text-xs font-semibold text-text hover:border-primary disabled:opacity-30 disabled:hover:border-border cursor-pointer transition-colors"
+                      className="px-3 py-2 border border-border rounded-lg text-xs font-semibold text-text hover:border-primary disabled:opacity-30 disabled:hover:border-border cursor-pointer transition-colors"
                     >
-                      PREVIOUS
+                      PREV
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setReplayIndex(0);
+                        setIsReplayPaused(false);
+                      }}
+                      className="px-3 py-2 border border-[#2D2D2D] hover:border-primary/50 bg-[#0C0C0C]/40 text-outline hover:text-primary rounded-lg text-xs font-semibold cursor-pointer transition-colors flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>RESTART</span>
                     </button>
 
                     <button
                       onClick={() => setIsReplayPaused(!isReplayPaused)}
-                      className="flex items-center gap-1.5 text-xs text-[#FFC700] font-bold border border-[#FFC700]/30 bg-[#FFD400]/5 hover:bg-[#FFD400]/10 px-4 py-2.5 rounded-lg cursor-pointer transition-colors"
+                      className="flex items-center gap-1.5 text-xs text-[#FFC700] font-bold border border-[#FFC700]/30 bg-[#FFD400]/5 hover:bg-[#FFD400]/10 px-3.5 py-2 rounded-lg cursor-pointer transition-colors"
                     >
                       {isReplayPaused ? (
                         <>
                           <PlayCircle className="w-4 h-4 text-[#FFC700]" />
-                          <span>AUTO-PLAY</span>
+                          <span>PLAY</span>
                         </>
                       ) : (
                         <>
@@ -1354,14 +1433,14 @@ export function QuestionDetailDrawer() {
                           setIsReplayPaused(true);
                           setReplayIndex(prev => prev + 1);
                         }}
-                        className="px-4 py-2 border border-border rounded-lg text-xs font-semibold text-text hover:border-primary cursor-pointer transition-colors"
+                        className="px-3 py-2 border border-border rounded-lg text-xs font-semibold text-text hover:border-primary cursor-pointer transition-colors"
                       >
                         NEXT
                       </button>
                     ) : (
                       <button
                         onClick={handleStopReplay}
-                        className="px-4 py-2 bg-[#FFC700] hover:bg-[#FFE14D] text-[#000000] rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                        className="px-3 py-2 bg-[#FFC700] hover:bg-[#FFE14D] text-[#000000] rounded-lg text-xs font-bold cursor-pointer transition-colors"
                       >
                         FINISH
                       </button>
@@ -1845,31 +1924,44 @@ export function QuestionDetailDrawer() {
                   {openMode === "notebook" && (
                     <div className="space-y-6 flex flex-col h-full">
                       {/* Tabs Header */}
-                      <div className="flex border-b border-border select-none">
-                        <button
-                          onClick={() => setActiveTab("wiki")}
-                          className={cn(
-                            "flex-1 pb-3 text-center text-xs font-semibold border-b-2 flex items-center justify-center gap-2 transition-colors cursor-pointer",
-                            activeTab === "wiki" 
-                              ? "border-[#FFC700] text-[#FFC700]" 
-                              : "border-transparent text-outline hover:text-text"
-                          )}
-                        >
-                          <BookOpen className="w-3.5 h-3.5" />
-                          Solution Blueprint
-                        </button>
-                        <button
-                          onClick={() => setActiveTab("history")}
-                          className={cn(
-                            "flex-1 pb-3 text-center text-xs font-semibold border-b-2 flex items-center justify-center gap-2 transition-colors cursor-pointer",
-                            activeTab === "history" 
-                              ? "border-[#FFC700] text-[#FFC700]" 
-                              : "border-transparent text-outline hover:text-text"
-                          )}
-                        >
-                          <History className="w-3.5 h-3.5" />
-                          Practice Logs ({history.length})
-                        </button>
+                      <div className="flex items-center justify-between border-b border-border select-none mb-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setActiveTab("wiki")}
+                            className={cn(
+                              "pb-3 px-4 text-center text-xs font-semibold border-b-2 flex items-center justify-center gap-2 transition-colors cursor-pointer",
+                              activeTab === "wiki" 
+                                ? "border-[#FFC700] text-[#FFC700]" 
+                                : "border-transparent text-outline hover:text-text"
+                            )}
+                          >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            Solution Blueprint
+                          </button>
+                          <button
+                            onClick={() => setActiveTab("history")}
+                            className={cn(
+                              "pb-3 px-4 text-center text-xs font-semibold border-b-2 flex items-center justify-center gap-2 transition-colors cursor-pointer",
+                              activeTab === "history" 
+                                ? "border-[#FFC700] text-[#FFC700]" 
+                                : "border-transparent text-outline hover:text-text"
+                            )}
+                          >
+                            <History className="w-3.5 h-3.5" />
+                            Practice Logs ({history.length})
+                          </button>
+                        </div>
+                        {activeTab === "wiki" && (
+                          <button
+                            type="button"
+                            onClick={handleStartReplay}
+                            className="pb-2.5 flex items-center gap-1 text-[9px] font-mono hover:text-[#FFC700] text-outline transition-colors cursor-pointer uppercase font-bold tracking-wider"
+                            title="Preview Replay Slide Deck"
+                          >
+                            <PlayCircle className="w-3.5 h-3.5 text-[#FFC700]" />
+                            <span>Preview Replay</span>
+                          </button>
+                        )}
                       </div>
 
                       {/* Tab Content: Solution Blueprint editing */}
