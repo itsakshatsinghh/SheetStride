@@ -32,6 +32,7 @@ SheetStride is built as a single-page progressive web application leveraging the
     *   `/dashboard` - User personal dashboard (visual graphs).
     *   `/profile` - Redesigned profile with LeetCode status split.
     *   `/progress` - Activity calendar and detailed distribution metrics.
+    *   `/practice` - Practice center and challenge simulator (descriptive decoders, pattern workouts).
     *   `/questions` - Questions hub (entry points to Core, Database, Company Sheets).
     *   `/questions/leetcode-universe` - Infinite problem grid.
     *   `/questions/sheetstride-core` - Curved topic roadmap.
@@ -49,6 +50,7 @@ SheetStride is built as a single-page progressive web application leveraging the
 *   **Shared Visualization Components:**
     *   `Heatmap` (`components/shared/heatmap.tsx`): Calendar grid displaying problem-solving history.
     *   `Breadcrumbs` (`components/shared/breadcrumbs.tsx`): Clean uppercase folder-style navigator.
+    *   `QuestionDetailDrawer` (`components/shared/question-detail-drawer.tsx`): Tabbed sidebar component governing problem description layouts, user practice logs, and the **Solution Blueprint** guided engineering timeline.
 *   **Feature-Specific Components:**
     *   `PatternQuestionsClient` (`app/patterns/[slug]/pattern-questions-client.tsx`): Manages solve checks, toast logs, and offline local storage fallback.
 

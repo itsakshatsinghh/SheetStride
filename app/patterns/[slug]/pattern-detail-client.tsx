@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Layers, Award, Tag, CheckCircle, AlertCircle, ArrowRight, ShieldAlert, Cpu, Sparkles } from "lucide-react";
@@ -115,6 +115,13 @@ export function PatternDetailClient({
 }) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>("LEARN");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && pattern?.slug) {
+      localStorage.setItem("sheetstride-last-pattern", pattern.slug);
+      localStorage.setItem("sheetstride-last-pattern-name", pattern.pattern_name);
+    }
+  }, [pattern?.slug, pattern?.pattern_name]);
 
   const pathList = CURRICULUM_GRAPHS[pattern.slug] || [pattern.family_name, pattern.pattern_name];
 

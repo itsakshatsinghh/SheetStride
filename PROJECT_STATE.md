@@ -11,10 +11,7 @@ This snapshot represents the current status of features, models, and integration
 *   **Mission Library (SheetStride Core):** Staged flagship roadmap containing 437 tasks divided by topic and pattern.
 *   **LeetCode Universe Database:** Fully indexed search engine for 3,647 LeetCode questions, complete with paginated fetching, difficulty filters, and topic selection.
 *   **Company Sheets (FAANG & HFTs):** Interactive corporate sheet hub loaded dynamically via `view_company_summary` (463 companies). Provides interview prep lists sorted by frequency.
-*   **System Analytics Dashboard:** Gamified tracking control center featuring:
-    *   **Activity Heatmap:** Github-style contributions grid.
-    *   **Weekly Throughput:** requestAnimationFrame animated bars.
-    *   **Topic Mastery Meter:** SVG radial donut gauge representing the user's completion progress.
+*   **Refined Mission Control Dashboard:** A highly focused, premium daily command center that answers "What should I do next?" in a clean, professional 2-column workspace. Features Today's Study Roadmap, a client-side localStorage-based **Resume Session** widget (one-click shortcuts to last visited patterns, blueprints, questions, or company sheets), a unified **Plan Diagnostics** summary card, and dynamic **Preparation Insights** (which flags pattern-recognition overlap confusions and weekly activities based on historical logs). All heavy visual grids (like heatmaps and proficiency logs) have been moved to the Progress page.
 *   **Profile System:** Cyberpunk split layout showing user stats, profile detail updates, and premium Razorpay donation links.
 *   **Streak Tracking:** Auto-calculation of solve streaks (current and max) via database RPCs.
 *   **Spaced Repetition Revision Engine:** Lightweight 15-second cognitive reflection modal on solve checkoff, automatic scheduled revision queue, and multiplier feedback loops (Easier / Same / Difficult). Includes **Early Practice Protection** (early solves don't push the scheduled due dates out), a dedicated tabbed **Revision Engine Queue** (Due vs. Upcoming) on the Progress page, and **LeetCode Premium skips** (allows bypassing revision scheduling entirely for premium-only problems).
@@ -40,6 +37,9 @@ This snapshot represents the current status of features, models, and integration
     *   **Daily Training Workout Packs:** Cascading generator logic that guarantees exactly 3 questions are generated for the selected date key. Links question items to LeetCode and hooks "Mark Solved" buttons directly to the global Interview Notebook Reflection Drawer.
     *   **Once-a-Day Generation Boundary:** Restricts workout generation/creation to once per day, resetting exactly at 5:00 AM IST (UTC shifted by +30 minutes). Prevents pack regeneration once today's workout has been generated.
     *   **Resilient Practice Logs Fallback:** Features combined fetches (remote `drill_history` table + local storage backups `sheetstride-drill-logs`) so logs and recognition insights are loaded instantly even if Supabase schema cache resets.
+*   **Typography Standardization (Phase 3 Audit & Realignment):** Standardized typography scale (e.g. `text-body-sm`, `text-body-md`, `font-body-lg`, `text-headline-sm`, etc.) using Outfit and Inter font families across all pages. Removed arbitrary size properties to ensure Stripe/Linear-like premium visual hierarchy.
+*   **Solution Blueprint Workspace UX V1 Redesign:** Upgraded the reflection flow to a vertical connected timeline engineering checklist (`THE IDEA`, `THE STRATEGY`, `BUILD THE SOLUTION`, `PERFORMANCE`, `REMEMBER`) with dynamic HUD progress trackers, auto-scaffolded template steps matching the selected pattern, proceed actions, and live snap-shot telemetry logging.
+*   **Decoupled Planner Engine & Study Practice Restructure:** Integrated the branch merge from `main` to decouple the Study Planner engine, add Supabase pref sync, and rename the `/training-ground` path to `/practice` workspace cleanly.
 
 ### 🟡 In Progress
 *   **None:** All target roadmap features are completed.

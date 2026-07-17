@@ -110,6 +110,13 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
     loadData();
   }, [slug, user]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && companyName && slug) {
+      localStorage.setItem("sheetstride-last-company", slug);
+      localStorage.setItem("sheetstride-last-company-name", companyName);
+    }
+  }, [companyName, slug]);
+
   // Listen to solved events to refetch progress directly from Supabase (bypassing cache)
   useEffect(() => {
     if (!user) return;

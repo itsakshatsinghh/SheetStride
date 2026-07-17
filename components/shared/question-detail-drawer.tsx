@@ -328,6 +328,21 @@ export function QuestionDetailDrawer() {
       setReplayIndex(0);
       setIsReplayPaused(false);
       setIsLoading(true);
+
+      // Track last opened question in localStorage
+      if (typeof window !== "undefined" && questionId) {
+        localStorage.setItem("sheetstride-last-question", String(questionId));
+        localStorage.setItem("sheetstride-last-question-title", qTitle);
+        localStorage.setItem("sheetstride-last-question-difficulty", difficulty);
+        localStorage.setItem("sheetstride-last-question-link", qLink);
+
+        if (mode === "reflection" || mode === "notebook") {
+          localStorage.setItem("sheetstride-last-blueprint", String(questionId));
+          localStorage.setItem("sheetstride-last-blueprint-title", qTitle);
+          localStorage.setItem("sheetstride-last-blueprint-difficulty", difficulty);
+          localStorage.setItem("sheetstride-last-blueprint-link", qLink);
+        }
+      }
     };
 
     window.addEventListener("open-question-drawer" as any, handleOpen);
@@ -670,6 +685,13 @@ export function QuestionDetailDrawer() {
       timestamps[qId] = completedAt;
       localStorage.setItem("solved_questions_timestamps", JSON.stringify(timestamps));
 
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sheetstride-last-blueprint", String(qId));
+        localStorage.setItem("sheetstride-last-blueprint-title", title);
+        localStorage.setItem("sheetstride-last-blueprint-difficulty", diff);
+        localStorage.setItem("sheetstride-last-blueprint-link", link);
+      }
+
       setSuccessMsg(`REVISION SCHEDULED: DUE IN ${finalInterval} DAYS`);
       window.dispatchEvent(new Event("question-solved"));
 
@@ -778,6 +800,13 @@ export function QuestionDetailDrawer() {
 
       if (notebookError) throw notebookError;
 
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sheetstride-last-blueprint", String(qId));
+        localStorage.setItem("sheetstride-last-blueprint-title", title);
+        localStorage.setItem("sheetstride-last-blueprint-difficulty", diff);
+        localStorage.setItem("sheetstride-last-blueprint-link", link);
+      }
+
       setSuccessMsg(`REVISION UPDATED: NEXT DUE IN ${newInterval} DAYS`);
       window.dispatchEvent(new Event("question-solved"));
 
@@ -863,6 +892,13 @@ export function QuestionDetailDrawer() {
 
       if (notebookError) throw notebookError;
 
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sheetstride-last-blueprint", String(qId));
+        localStorage.setItem("sheetstride-last-blueprint-title", title);
+        localStorage.setItem("sheetstride-last-blueprint-difficulty", diff);
+        localStorage.setItem("sheetstride-last-blueprint-link", link);
+      }
+
       setSuccessMsg("MARKED AS PREMIUM: REVISION SKIPPED");
       window.dispatchEvent(new Event("question-solved"));
 
@@ -899,6 +935,13 @@ export function QuestionDetailDrawer() {
         });
 
       if (error) throw error;
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sheetstride-last-blueprint", String(qId));
+        localStorage.setItem("sheetstride-last-blueprint-title", title);
+        localStorage.setItem("sheetstride-last-blueprint-difficulty", diff);
+        localStorage.setItem("sheetstride-last-blueprint-link", link);
+      }
 
       // Update notebook local state context
       setNotebook((prev: any) => ({

@@ -54,7 +54,7 @@ SheetStride is designed as a hybrid Progressive Web App:
 *   `app/page.tsx` - Static public landing page.
 *   `app/(auth)/login/page.tsx` - Authenticated access page supporting Magic Links and Google/GitHub OAuth.
 *   `app/(app)/` - Protected group routes governed by `middleware.ts`.
-    *   `dashboard/page.tsx` - Analytics center showing solving throughput, streaks, and progress.
+    *   `dashboard/page.tsx` - Refined Mission Control dashboard (daily roadmap, resume session widget, diagnostics summary, and study insights).
     *   `profile/page.tsx` - Account detail summaries with linked LeetCode usernames.
     *   `progress/page.tsx` - Historical contributions heatmap and topic mastery distributions.
     *   `settings/page.tsx` - Profile edits and Razorpay donation buttons.
@@ -63,7 +63,7 @@ SheetStride is designed as a hybrid Progressive Web App:
     *   `questions/sheetstride-core/page.tsx` - Algorithmic patterns curriculum path.
     *   `questions/company-sheets/page.tsx` - Directory of 463 target companies.
     *   `questions/company-sheets/[slug]/page.tsx` - Checklist of interview questions for a selected company, sorted by occurrence frequency.
-    *   `training-ground/page.tsx` - Challenges and daily workout calendar dashboard workspace.
+    *   `practice/page.tsx` - Practice center and challenge simulator workspace.
 *   `app/patterns/page.tsx` - Patterns index page displaying options for Pattern Atlas and Challenges Hub.
 *   `app/patterns/atlas/page.tsx` - In-app listing of all 16 algorithmic patterns.
 *   `app/patterns/[slug]/page.tsx` - SEO dynamic template loading pattern definitions and boilerplate code templates.
@@ -192,7 +192,7 @@ Keep these technical quirks in mind during development:
 *   SheetStride Core Roadmap Tracks
 *   LeetCode Universe Search Engine (paginated fetching)
 *   Company Sheets Hub (463 companies, frequency listings)
-*   Analytics Dashboard (Heatmap, Weekly Throughput, SVG Radial Mastery Gauges)
+*   Refined Mission Control Dashboard (Daily Roadmap, Resume Session storage-polling widget, Diagnostics Plan Summary, Workspace Shortcuts, and actionable Preparation Insights; details and heatmap grids moved to Progress/Profile pages)
 *   Razorpay Order & Signature Verification API handlers
 *   Streak Calculations (Current & Peak)
 *   Spaced Repetition Revision Engine (Initial Solve Reflection, scheduling multipliers, Revisions Queue dashboard tab, tabbed Spaced Repetition panel on Progress page, Early Practice checks to preserve scheduled future due dates, and LeetCode Premium skip support to bypass revision scheduling entirely)
@@ -205,6 +205,9 @@ Keep these technical quirks in mind during development:
 *   Postgres manual join helpers on progress retrieval ranges
 *   Pattern Atlas (Phase 2): Complete interactive study portal (tabbed LEARN/PRACTICE/MASTER layouts, custom visualizer steps and play loops, C++ syntax highlights with client token parsing, math and LaTeX formats rendering, simplified practice tables, curriculum progression charts).
 *   Global Database Search: Integrated Ctrl+K search button next to avatar in topbar that queries Supabase questions and opens the detail drawer.
+*   Typography Standardization (Phase 3 Audit & Realignment): Standardized typography scale (Outfit/Inter font families, text-body-sm, text-body-md, font-body-lg, text-headline-sm) across all system pages for stripe-like premium readability.
+*   Solution Blueprint Workspace UX V1 Redesign: Vertical connected timeline checklist (`THE IDEA`, `THE STRATEGY`, `BUILD THE SOLUTION`, `PERFORMANCE`, `REMEMBER`), HUD progress trackers, scaffolding templates matching active patterns, and live snapshot logging telemetry.
+*   Decoupled Planner Engine & Study Practice Restructure: Integrated the branch merge from `main` to decouple the Study Planner engine, add Supabase pref sync, and rename the `/training-ground` path to `/practice` workspace cleanly.
 
 ### 🟡 In Progress
 *   None (all milestone tasks complete)
