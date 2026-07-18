@@ -1263,7 +1263,7 @@ export function QuestionDetailDrawer() {
             {/* Header info */}
             <div className="p-6 border-b border-border bg-[#0E0E0F] flex items-center gap-4 justify-between">
               <div className="flex items-center gap-3">
-                {(openMode === "reflection" || openMode === "review" || isReplaying) && (
+                {(openMode === "reflection" || openMode === "review" || openMode === "notebook" || isReplaying) && (
                   <button 
                     onClick={() => {
                       if (isReplaying) {
@@ -1642,6 +1642,13 @@ export function QuestionDetailDrawer() {
                         >
                           LOG YOUR SUBMISSION
                           <ChevronRight className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setOpenMode("notebook")}
+                          className="group w-full bg-[#111112] border border-border hover:border-primary text-text hover:text-primary font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer text-sm font-headline"
+                        >
+                          <BookOpen className="w-4 h-4 text-outline group-hover:text-primary transition-colors" />
+                          SOLUTION BLUEPRINT
                         </button>
                         {!progress?.completed && (
                           <button
