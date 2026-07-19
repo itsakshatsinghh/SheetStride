@@ -51,6 +51,7 @@ export default function DashboardPage() {
 
   // Revision states
   const [revisionQueue, setRevisionQueue] = useState<any[]>([]);
+  const [revisionsClearedToday, setRevisionsClearedToday] = useState(0);
 
   // Interactive console states
   const [showFocusModal, setShowFocusModal] = useState(false);
@@ -243,6 +244,23 @@ export default function DashboardPage() {
       setFocusDifficulty(currentDifficulty);
       setFocusSource(currentSource);
       setFocusReviewDensity(currentDensity);
+
+      // Check daily revision goal status
+      try {
+        const todayStr = new Date().toDateString();
+        const { data: revTodayData } = await supabase
+          .from("user_progress")
+          .select("last_revised_at")
+          .eq("user_id", userId)
+          .not("last_revised_at", "is", null);
+
+        if (revTodayData) {
+          const cleared = revTodayData.filter((r: any) => 
+            r.last_revised_at && new Date(r.last_revised_at).toDateString() === todayStr
+          ).length;
+          setRevisionsClearedToday(cleared);
+        }
+      } catch (e) {}
 
       // Fetch solvedList questions to populate client counts
       const { data: userProgress, error: progressError } = await supabase
@@ -950,6 +968,13 @@ export default function DashboardPage() {
                 <span className="uppercase font-bold text-outline-variant font-body">Plan Progress</span>
                 <span className="text-text font-bold">
                   {completedTasks} / {totalTasks} COMPLETED
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center border-b border-[#2D2D2D]/20 pb-2.5">
+                <span className="uppercase font-bold text-outline-variant font-body">Daily Revision Goal</span>
+                <span className={cn("font-bold font-mono", revisionsClearedToday >= 1 ? "text-secondary font-bold" : "text-amber-500 font-bold")}>
+                  [{revisionsClearedToday} / 1] CLEARED
                 </span>
               </div>
 

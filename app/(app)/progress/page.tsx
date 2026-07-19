@@ -106,6 +106,7 @@ export default function ProgressPage() {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [revisionQueue, setRevisionQueue] = useState<any[]>([]);
   const [upcomingQueue, setUpcomingQueue] = useState<any[]>([]);
+  const [revisionsClearedToday, setRevisionsClearedToday] = useState(0);
 
   // Track revision tabs: "due" or "upcoming"
   const [activeRevTab, setActiveRevTab] = useState<"due" | "upcoming">("due");
@@ -224,9 +225,15 @@ export default function ProgressPage() {
       }
 
       const now = new Date();
+      const todayStr = now.toDateString();
+      const clearedToday = progressList?.filter((row: any) => 
+        row.last_revised_at && new Date(row.last_revised_at).toDateString() === todayStr
+      ).length || 0;
+      setRevisionsClearedToday(clearedToday);
+
       const due = revData.filter((item: any) => item.questions && new Date(item.next_revision_due) <= now);
       const upcoming = revData.filter((item: any) => item.questions && new Date(item.next_revision_due) > now);
-      setRevisionQueue(due);
+      setRevisionQueue(due.slice(0, 5));
       setUpcomingQueue(upcoming);
 
     } catch (err) {
@@ -592,6 +599,30 @@ export default function ProgressPage() {
             className="bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:border-[#FFD400] hover:shadow-[0_0_20px_rgba(255,212,0,0.07)]"
           >
             <div>
+              {/* Task 2: Daily Revision Goal Tracker */}
+              <div className="mb-4 p-3.5 bg-[#0C0C0D] border border-[#2D2D2D] rounded-xl flex items-center justify-between gap-4 font-mono select-none">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-8 h-8 rounded-lg border flex items-center justify-center font-bold text-xs transition-all shrink-0",
+                    revisionsClearedToday >= 1 
+                      ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+                      : "bg-[#FFC700]/10 border-[#FFC700]/30 text-[#FFC700]"
+                  )}>
+                    {revisionsClearedToday >= 1 ? "✓" : "○"}
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-outline font-bold uppercase block tracking-wider font-mono-label">One-In, One-Out Rhythm</span>
+                    <h4 className="font-bold text-white text-xs tracking-wide">
+                      Daily Revision Goal: <span className={revisionsClearedToday >= 1 ? "text-emerald-400 font-extrabold" : "text-[#FFC700] font-extrabold"}>[{revisionsClearedToday} / 1]</span> Cleared
+                    </h4>
+                  </div>
+                </div>
+                <div className="text-right hidden sm:block font-mono text-[9px] text-outline">
+                  <span className="text-outline/70 font-semibold block uppercase">Token System</span>
+                  <span className="text-primary/90 font-bold">Max 5 Visible Items</span>
+                </div>
+              </div>
+
               <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#2D2D2D] pb-4 mb-4 select-none">
                 <div className="space-y-1">
                   <h2 className="font-headline-md text-card-title text-on-surface font-bold uppercase tracking-wide flex items-center gap-2">

@@ -716,11 +716,11 @@ export function QuestionDetailDrawer() {
       let newInterval = currentInterval;
 
       if (feedback === "easier") {
-        newInterval = Math.ceil(currentInterval * 2.0);
+        newInterval = Math.ceil(currentInterval * 2.5);
       } else if (feedback === "same") {
-        newInterval = Math.ceil(currentInterval * 1.2);
+        newInterval = Math.ceil(currentInterval * 1.5);
       } else if (feedback === "difficult") {
-        newInterval = Math.max(2, Math.floor(currentInterval * 0.5));
+        newInterval = Math.max(4, Math.floor(currentInterval * 0.8));
       }
 
       const now = new Date();
@@ -1797,6 +1797,48 @@ export function QuestionDetailDrawer() {
                   {/* MODE: REVISIONS FEEDBACK */}
                   {openMode === "review" && (
                     <div className="space-y-6">
+                      {/* Task 4: Elevated Historical Conceptual Strategy & Notes Display */}
+                      <div className="bg-[#111112] border border-[#2D2D2D] p-4 rounded-xl space-y-3 shadow-inner select-text">
+                        <div className="flex items-center justify-between font-mono text-[10px] text-[#FFC700] uppercase font-bold tracking-wider select-none border-b border-[#232325] pb-2">
+                          <span className="flex items-center gap-2">
+                            <BookOpen className="w-3.5 h-3.5" />
+                            Historical Conceptual Blueprint
+                          </span>
+                          {blueprint.selection.patternUsed && (
+                            <span className="text-primary font-bold text-[9px] bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                              {blueprint.selection.patternUsed}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Historical Takeaway / Insight */}
+                        <div>
+                          <span className="text-outline uppercase text-[8px] font-mono block font-bold mb-1 select-none">
+                            Historical Key Insight / Approach Strategy
+                          </span>
+                          <p className="text-xs text-text bg-[#070708] p-3 rounded-lg border border-[#1C1C1E] leading-relaxed font-bold whitespace-pre-wrap select-text">
+                            {takeaway || blueprint.reflection.interviewExplanation || "No historical takeaway logged yet."}
+                          </p>
+                        </div>
+
+                        {/* Historical Note for Self / Warning */}
+                        <div>
+                          <span className="text-outline uppercase text-[8px] font-mono block font-bold mb-1 select-none">
+                            Historical Revision Warning / Note to Self
+                          </span>
+                          <p className="text-xs text-[#FFC700] bg-[#FFC700]/5 p-3 rounded-lg border border-[#FFC700]/20 leading-relaxed font-bold whitespace-pre-wrap select-text">
+                            {noteToSelf || blueprint.reflection.futureReminder || "No historical reminder logged yet."}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Task 4: Subtle Text Reminder for 5-Minute Crux Verification */}
+                      <div className="p-3 bg-[#0A0A0C] border border-[#232325] rounded-xl text-center select-none">
+                        <p className="text-[11px] font-mono text-[#E4E4E7]/90 leading-relaxed italic font-medium">
+                          "Dry-run the 3-line logic crux on paper. If your mental blueprint matches your historical notes, submit your evaluation."
+                        </p>
+                      </div>
+
                       {/* Repetition feedback */}
                       <div className="space-y-2 select-none">
                         <label className="block font-mono text-[10px] text-outline uppercase font-bold tracking-wider">
@@ -1804,9 +1846,9 @@ export function QuestionDetailDrawer() {
                         </label>
                         <div className="grid grid-cols-3 gap-2">
                           {[
-                            { key: "easier", label: "Easier", sub: "Interval x2.0" },
-                            { key: "same", label: "Same", sub: "Interval x1.2" },
-                            { key: "difficult", label: "Difficult", sub: "Interval x0.5" }
+                            { key: "easier", label: "Easier", sub: "Interval x2.5" },
+                            { key: "same", label: "Same", sub: "Interval x1.5" },
+                            { key: "difficult", label: "Difficult", sub: "Interval x0.8 (min 4d)" }
                           ].map(opt => (
                             <button
                               key={opt.key}
@@ -1820,7 +1862,7 @@ export function QuestionDetailDrawer() {
                               )}
                             >
                               <span className="text-xs font-headline-md font-bold">{opt.label}</span>
-                              <span className="text-[8px] opacity-60 font-mono mt-1">{opt.sub}</span>
+                              <span className="text-[8px] opacity-60 font-mono mt-1 font-semibold">{opt.sub}</span>
                             </button>
                           ))}
                         </div>

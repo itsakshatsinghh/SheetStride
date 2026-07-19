@@ -692,7 +692,7 @@ export async function buildRoadmap(
     userXP,
     weakestTopic: computedWeakest,
     revisionQueueLength,
-    revisionQueue: dueRevisions,
+    revisionQueue: dueRevisions.slice(0, 5),
     upcomingQueue: upcoming,
     dailyQuest: quest
   };
