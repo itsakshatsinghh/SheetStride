@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ExternalLink, Check, Play, Info, Lightbulb, AlertCircle, X, Brain, Tag, Clock, Database, BarChart3, Code2, BookOpen } from "lucide-react";
+import { Loader2, ExternalLink, Check, Play, Info, Lightbulb, AlertCircle, X, Brain, Tag, Clock, Database, BarChart3, Code2, BookOpen, Search } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/app/shell";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { cn, fetchWithCache } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PatternVisualizer } from "@/components/app/pattern-visualizer";
 
 import { TOPIC_SLUGS, TOPIC_DISPLAY_NAMES, slugifyPattern } from "@/lib/slugs";
 
@@ -61,6 +62,7 @@ interface PatternMetadata {
   sc: string | null;
   difficulty: string | null;
   cpp_template: string | null;
+  visualization_metadata: any | null;
 }
 
 export default function QuestionExplorerPage({ params }: { params: Promise<{ topic: string; pattern: string }> }) {
@@ -83,167 +85,157 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
   const [solvedIds, setSolvedIds] = useState<Set<number>>(new Set());
   const [solvedTimestamps, setSolvedTimestamps] = useState<{ [qId: number]: string }>({});
   
+  // Filters
+  const [search, setSearch] = useState("");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("All");
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  
   // Toast notification state
   const [toastMessage, setToastMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
 
-
-
-  useEffect(() => {
+  async function loadQuestionsData() {
     const dbName = TOPIC_SLUGS[topicSlug];
-    if (!dbName) {
+    if (!dbName || !user) {
       setLoading(false);
       return;
     }
     setDbTopicName(dbName);
     setTopicDisplayName(TOPIC_DISPLAY_NAMES[topicSlug] || dbName);
-
-    if (!user) return;
     const userId = user.id;
 
-    async function loadQuestionsData() {
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
 
-        const cacheKey = `pattern_questions_cache_${user ? user.id : "anon"}_${topicSlug}_${patternSlug}`;
-        const dataResult = await fetchWithCache(cacheKey, async () => {
-          // 1. Fetch user's solved question IDs
-          let solvedArr: any[] = [];
-          if (user) {
-            const { data: userSolves, error: solvesError } = await supabase
-              .from("user_progress")
-              .select("question_id, completed-at")
-              .eq("user_id", userId);
+      const cacheKey = `pattern_questions_cache_${user ? user.id : "anon"}_${topicSlug}_${patternSlug}`;
+      const dataResult = await fetchWithCache(cacheKey, async () => {
+        // 1. Fetch user's solved question IDs
+        let solvedArr: any[] = [];
+        if (user) {
+          const { data: userSolves, error: solvesError } = await supabase
+            .from("user_progress")
+            .select("question_id, completed-at")
+            .eq("user_id", userId);
 
-            if (solvesError) throw solvesError;
-            solvedArr = userSolves || [];
-          }
-
-          // 2. Fetch sheet questions mapped under this topic from the optimized view
-          const { data: qData, error: qError } = await supabase
-            .from("view_sheet_questions")
-            .select("*")
-            .eq("topic_name", dbName);
-
-          if (qError) throw qError;
-
-          // Group sheet questions by their pattern slug
-          const matched = qData?.filter((row: any) => {
-            return slugifyPattern(row.pattern_name || "") === patternSlug;
-          });
-
-          let resolvedPatternName = "";
-          let mappedQList: Question[] = [];
-          let metaData = null;
-
-          if (matched && matched.length > 0) {
-            resolvedPatternName = matched[0].pattern_name;
-            
-            // Fetch additional metadata (Title and Topics) from the master questions table
-            const qIds = matched.map((row: any) => row.question_id);
-            const { data: questionsMeta, error: metaQError } = await supabase
-              .from("questions")
-              .select("ID, Title, Topics")
-              .in("ID", qIds);
-              
-            const metaMap = new Map();
-            if (!metaQError && questionsMeta) {
-              questionsMeta.forEach((q: any) => {
-                metaMap.set(q.ID, q);
-              });
-            }
-
-            mappedQList = matched
-              .map((row: any) => {
-                const meta = metaMap.get(row.question_id);
-                return {
-                  ID: row.question_id,
-                  Title: meta?.Title || row.question_name || row.title || "",
-                  Difficulty: row.difficulty,
-                  Link: row.link,
-                  Topics: meta?.Topics || row.topics || "",
-                  "Acceptance Rate (%)": row.acceptance_rate,
-                };
-              })
-              .filter(Boolean) as Question[];
-            
-            mappedQList.sort((a, b) => a.ID - b.ID);
-          }
-
-          // Fetch pattern metadata
-          if (resolvedPatternName) {
-            const { data: metaDataList, error: metaError } = await supabase
-              .from("pattern_metadata")
-              .select("*")
-              .eq("pattern_name", resolvedPatternName)
-              .limit(1);
-
-            if (!metaError && metaDataList && metaDataList.length > 0) {
-              metaData = metaDataList[0];
-            }
-          }
-
-          return {
-            resolvedPatternName,
-            solvedArr,
-            mappedQList,
-            metaData
-          };
-        }, 300000); // 5 minutes TTL
-
-        if (dataResult) {
-          setDbPatternName(dataResult.resolvedPatternName);
-          setQuestions(dataResult.mappedQList);
-          setPatternMetadata(dataResult.metaData);
-
-          const ids = new Set<number>();
-          const timesMap: { [qId: number]: string } = {};
-          dataResult.solvedArr.forEach((item: any) => {
-            ids.add(item.question_id);
-            timesMap[item.question_id] = item["completed-at"] || new Date().toISOString();
-          });
-          setSolvedIds(ids);
-          setSolvedTimestamps(timesMap);
+          if (solvesError) throw solvesError;
+          solvedArr = userSolves || [];
         }
-      } catch (err) {
-        console.error("Failed to load question explorer data:", err);
-        setPatternMetadata(null);
-      } finally {
-        setLoading(false);
-        setMetaLoading(false);
-      }
-    }
 
-    loadQuestionsData();
+        // 2. Fetch sheet questions mapped under this topic from the optimized view
+        const { data: qData, error: qError } = await supabase
+          .from("view_sheet_questions")
+          .select("*")
+          .eq("topic_name", dbName);
+
+        if (qError) throw qError;
+
+        // Group sheet questions by their pattern slug
+        const matched = qData?.filter((row: any) => {
+          return slugifyPattern(row.pattern_name || "") === patternSlug;
+        });
+
+        let resolvedPatternName = "";
+        let mappedQList: Question[] = [];
+        let metaData = null;
+
+        if (matched && matched.length > 0) {
+          resolvedPatternName = matched[0].pattern_name;
+          
+          // Fetch additional metadata (Title and Topics) from the master questions table
+          const qIds = matched.map((row: any) => row.question_id);
+          const { data: questionsMeta, error: metaQError } = await supabase
+            .from("questions")
+            .select("ID, Title, Topics")
+            .in("ID", qIds);
+            
+          const metaMap = new Map();
+          if (!metaQError && questionsMeta) {
+            questionsMeta.forEach((q: any) => {
+              metaMap.set(q.ID, q);
+            });
+          }
+
+          mappedQList = matched
+            .map((row: any) => {
+              const meta = metaMap.get(row.question_id);
+              return {
+                ID: row.question_id,
+                Title: meta?.Title || row.question_name || row.title || "",
+                Difficulty: row.difficulty,
+                Link: row.link,
+                Topics: meta?.Topics || row.topics || "",
+                "Acceptance Rate (%)": row.acceptance_rate,
+              };
+            })
+            .filter(Boolean) as Question[];
+          
+          mappedQList.sort((a, b) => a.ID - b.ID);
+        }
+
+        // Fetch pattern metadata
+        if (resolvedPatternName) {
+          const { data: metaDataList, error: metaError } = await supabase
+            .from("pattern_metadata")
+            .select("*")
+            .eq("pattern_name", resolvedPatternName)
+            .limit(1);
+
+          if (!metaError && metaDataList && metaDataList.length > 0) {
+            metaData = metaDataList[0];
+          }
+        }
+
+        return {
+          resolvedPatternName,
+          solvedArr,
+          mappedQList,
+          metaData
+        };
+      }, 300000); // 5 minutes TTL
+
+      if (dataResult) {
+        setDbPatternName(dataResult.resolvedPatternName);
+        setQuestions(dataResult.mappedQList);
+        setPatternMetadata(dataResult.metaData);
+
+        const ids = new Set<number>();
+        const timesMap: { [qId: number]: string } = {};
+        dataResult.solvedArr.forEach((item: any) => {
+          ids.add(item.question_id);
+          timesMap[item.question_id] = item["completed-at"] || new Date().toISOString();
+        });
+        setSolvedIds(ids);
+        setSolvedTimestamps(timesMap);
+      }
+    } catch (err) {
+      console.error("Failed to load question explorer data:", err);
+      setPatternMetadata(null);
+    } finally {
+      setLoading(false);
+      setMetaLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (user) {
+      loadQuestionsData();
+    }
   }, [topicSlug, patternSlug, user]);
 
   // Listen to solved events to refetch progress directly from Supabase (bypassing cache)
   useEffect(() => {
     if (!user) return;
     const handleSync = async () => {
-      try {
-        const { data: userSolves, error } = await supabase
-          .from("user_progress")
-          .select("question_id, completed-at")
-          .eq("user_id", user.id);
-        
-        if (!error && userSolves) {
-          const solvedSet = new Set<number>();
-          const timesMap: { [qId: number]: string } = {};
-          userSolves.forEach((item: any) => {
-            solvedSet.add(item.question_id);
-            timesMap[item.question_id] = item["completed-at"] || new Date().toISOString();
-          });
-          setSolvedIds(solvedSet);
-          setSolvedTimestamps(timesMap);
-        }
-      } catch (err) {
-        console.error("Failed to sync solves:", err);
-      }
+      // Clear pattern checklist cache key explicitly on solved update
+      const cacheKey = `pattern_questions_cache_${user.id}_${topicSlug}_${patternSlug}`;
+      localStorage.removeItem(cacheKey);
+      
+      // Reload stats and checklist details
+      await loadQuestionsData();
     };
     window.addEventListener("question-solved", handleSync);
     return () => window.removeEventListener("question-solved", handleSync);
-  }, [user]);
+  }, [user, topicSlug, patternSlug]);
 
   const handleToggleSolve = async (qId: number, title: string, difficulty: string, link: string) => {
     if (!user) return;
@@ -460,27 +452,88 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
         </div>
       </div>
 
-      {/* Question Table Grid container */}
-      <div className="bg-[#111111] border border-[#2D2D2D] rounded-xl overflow-hidden shadow-2xl relative">
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#090909]/50 border-b border-[#2D2D2D] select-none">
-                <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">#</th>
-                <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Title</th>
-                <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Topic</th>
-                <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Difficulty</th>
-                <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Status</th>
-                <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Solved Date</th>
-                <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Link</th>
-                <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Notes</th>
-                <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#2D2D2D]/40">
-              <AnimatePresence mode="popLayout">
-                {questions.map((row) => {
-                  const solved = solvedIds.has(row.ID);
+      {/* Client-side Filtering Logic */}
+      {(() => {
+        const filteredQuestions = questions.filter((q) => {
+          const matchesSearch =
+            q.Title.toLowerCase().includes(search.toLowerCase()) ||
+            (q.Topics && q.Topics.toLowerCase().includes(search.toLowerCase()));
+
+          const matchesDifficulty =
+            selectedDifficulty === "All" ||
+            q.Difficulty.toLowerCase() === selectedDifficulty.toLowerCase();
+
+          const solved = solvedIds.has(q.ID);
+          const matchesStatus =
+            selectedStatus === "All" ||
+            (selectedStatus === "Solved" && solved) ||
+            (selectedStatus === "Pending" && !solved);
+
+          return matchesSearch && matchesDifficulty && matchesStatus;
+        });
+
+        return (
+          <>
+            {/* Toolbar Controls */}
+            <div className="bg-[#111111]/90 border border-[#2D2D2D] rounded-xl p-4 mb-6 flex flex-col lg:flex-row gap-4 items-center justify-between">
+              {/* Search */}
+              <div className="relative w-full lg:w-96 group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-outline w-4 h-4 group-focus-within:text-primary transition-colors" />
+                <input
+                  type="text"
+                  className="w-full bg-[#080808] border border-outline-variant/40 rounded-lg py-2.5 pl-10 pr-4 text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all font-body-sm text-body-sm"
+                  placeholder="Search problems or topics..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+
+              {/* Filters */}
+              <div className="flex gap-4 w-full lg:w-auto justify-end">
+                <select
+                  value={selectedDifficulty}
+                  onChange={(e) => setSelectedDifficulty(e.target.value)}
+                  className="bg-[#080808] border border-outline-variant/40 rounded-lg py-2 px-4 text-on-surface-variant font-body-sm text-body-sm focus:border-primary cursor-pointer hover:border-outline-variant transition-colors"
+                >
+                  <option value="All">All Difficulties</option>
+                  <option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Hard">Hard</option>
+                </select>
+
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="bg-[#080808] border border-outline-variant/40 rounded-lg py-2 px-4 text-on-surface-variant font-body-sm text-body-sm focus:border-primary cursor-pointer hover:border-outline-variant transition-colors"
+                >
+                  <option value="All">All Status</option>
+                  <option value="Solved">Solved</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Question Table Grid container */}
+            <div className="bg-[#111111] border border-[#2D2D2D] rounded-xl overflow-hidden shadow-2xl relative">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#090909]/50 border-b border-[#2D2D2D] select-none">
+                      <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">#</th>
+                      <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Title</th>
+                      <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Topic</th>
+                      <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Difficulty</th>
+                      <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Status</th>
+                      <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Solved Date</th>
+                      <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Link</th>
+                      <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase">Notes</th>
+                      <th className="px-6 py-4 font-mono-label text-mono-label text-outline uppercase text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#2D2D2D]/40">
+                    <AnimatePresence mode="popLayout">
+                      {filteredQuestions.map((row) => {
+                        const solved = solvedIds.has(row.ID);
                   return (
                     <motion.tr 
                       key={row.ID}
@@ -606,6 +659,9 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
           </table>
         </div>
       </div>
+          </>
+        );
+      })()}
 
       {/* Pattern Details / Pro-tip Bento Section (Pattern Handbook) */}
       {metaLoading ? (
@@ -666,6 +722,9 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
         }
         if (patternMetadata.cpp_template) {
           availableTabs.push({ id: "cpp_template", label: "CPP Template", icon: Code2 });
+        }
+        if (patternMetadata.visualization_metadata) {
+          availableTabs.push({ id: "visualizer", label: "Visualizer", icon: Play });
         }
 
         if (availableTabs.length === 0) {
@@ -895,6 +954,20 @@ export default function QuestionExplorerPage({ params }: { params: Promise<{ top
                         />
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {currentTabId === "visualizer" && (
+                <div className="flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-headline-md text-headline-md text-on-surface">Interactive Visualizer</h3>
+                    <span className="font-mono-label text-mono-label text-outline uppercase">
+                      Module {currentTabIndex + 1 < 10 ? `0${currentTabIndex + 1}` : currentTabIndex + 1} / {availableTabs.length < 10 ? `0${availableTabs.length}` : availableTabs.length}
+                    </span>
+                  </div>
+                  <div className="flex-1 mt-2">
+                    <PatternVisualizer metadata={patternMetadata.visualization_metadata} />
                   </div>
                 </div>
               )}

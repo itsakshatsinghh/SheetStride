@@ -36,6 +36,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
   // Filters
   const [search, setSearch] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
+  const [selectedStatus, setSelectedStatus] = useState("All");
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState("");
@@ -121,6 +122,10 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
   useEffect(() => {
     if (!user) return;
     const handleSync = async () => {
+      // Clear company sheet questions cache key explicitly on solved update
+      const cacheKey = `company_questions_cache_${user.id}_${slug}`;
+      localStorage.removeItem(cacheKey);
+
       try {
         const { data: userSolves, error } = await supabase
           .from("user_progress")
@@ -143,7 +148,7 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
     };
     window.addEventListener("question-solved", handleSync);
     return () => window.removeEventListener("question-solved", handleSync);
-  }, [user]);
+  }, [user, slug]);
 
   const handleToggleSolve = async (qId: number, title: string, difficulty: string, link: string) => {
     if (!user) return;
@@ -230,13 +235,82 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
       selectedDifficulty === "All" ||
       q.difficulty.toLowerCase() === selectedDifficulty.toLowerCase();
 
-    return matchesSearch && matchesDifficulty;
+    const solved = solvedIds.has(q.question_id);
+    const matchesStatus =
+      selectedStatus === "All" ||
+      (selectedStatus === "Solved" && solved) ||
+      (selectedStatus === "Pending" && !solved);
+
+    return matchesSearch && matchesDifficulty && matchesStatus;
   });
 
   // Calculate metrics
   const totalCount = questions.length;
   const solvedCount = questions.filter((q) => solvedIds.has(q.question_id)).length;
   const percent = totalCount > 0 ? Math.round((solvedCount / totalCount) * 100) : 0;
+
+  // Aggregate topics by primary tag
+  const topicMap: { [topic: string]: number } = {};
+  questions.forEach((q) => {
+    const t = q.topics?.split(",")[0]?.trim() || "Unknown";
+    topicMap[t] = (topicMap[t] || 0) + 1;
+  });
+
+  const sortedTopics = Object.entries(topicMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const TOPIC_COLORS = [
+    "#f97316", // orange
+    "#4de082", // green
+    "#00E5FF", // cyan
+    "#FFC700", // yellow
+    "#9d4edd", // purple
+    "#ff007f", // pink
+    "#38bdf8", // light blue
+    "#a855f7", // lavender
+  ];
+
+  const displayTopics: { name: string; count: number; color: string }[] = [];
+  const displayLimit = 5;
+  let othersCount = 0;
+
+  sortedTopics.forEach((item, idx) => {
+    if (idx < displayLimit) {
+      displayTopics.push({
+        ...item,
+        color: TOPIC_COLORS[idx % TOPIC_COLORS.length],
+      });
+    } else {
+      othersCount += item.count;
+    }
+  });
+
+  if (othersCount > 0) {
+    displayTopics.push({
+      name: "Others",
+      count: othersCount,
+      color: "#64748b",
+    });
+  }
+
+  // Calculate SVG donut slice offsets
+  const r = 45;
+  const C = 2 * Math.PI * r; // ~282.74
+  let cumulativeOffset = 0;
+
+  const chartSlices = displayTopics.map((slice) => {
+    const percentage = totalCount > 0 ? slice.count / totalCount : 0;
+    const strokeLength = percentage * C;
+    const strokeOffset = cumulativeOffset;
+    cumulativeOffset += strokeLength;
+    return {
+      ...slice,
+      strokeLength,
+      strokeOffset,
+      circumference: C,
+    };
+  });
 
   // Stagger animation variants
   const staggerContainer = {
@@ -342,25 +416,87 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
         </p>
       </header>
 
-      {/* Statistics HUD */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 select-none">
-        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 shadow-md">
-          <span className="font-mono-label text-mono-label text-outline/60 uppercase">Total Questions</span>
-          <span className="font-mono-stats text-mono-stats text-on-surface">{totalCount}</span>
+      {/* Statistics HUD & Topic Segregation Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10 items-stretch">
+        {/* Left Side: Stats Cards Grid */}
+        <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6 select-none">
+          <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 shadow-md justify-center">
+            <span className="font-mono-label text-mono-label text-outline/60 uppercase">Total Questions</span>
+            <span className="font-mono-stats text-mono-stats text-on-surface">{totalCount}</span>
+          </div>
+          <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-secondary shadow-md justify-center">
+            <span className="font-mono-label text-mono-label text-outline/60 uppercase">Solved</span>
+            <span className="font-mono-stats text-mono-stats text-secondary">{solvedCount}</span>
+          </div>
+          <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-[#f97316]/50 shadow-md justify-center">
+            <span className="font-mono-label text-mono-label text-outline/60 uppercase">Completion Rate</span>
+            <span className="font-mono-stats text-mono-stats text-[#f97316]">{percent}%</span>
+          </div>
+          <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 shadow-md justify-center">
+            <span className="font-mono-label text-mono-label text-outline/60 uppercase">Active Mode</span>
+            <span className="font-mono-stats text-mono-stats text-primary flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" /> TARGETED
+            </span>
+          </div>
         </div>
-        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-secondary shadow-md">
-          <span className="font-mono-label text-mono-label text-outline/60 uppercase">Solved</span>
-          <span className="font-mono-stats text-mono-stats text-secondary">{solvedCount}</span>
-        </div>
-        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 border-l-4 border-l-[#f97316]/50 shadow-md">
-          <span className="font-mono-label text-mono-label text-outline/60 uppercase">Completion Rate</span>
-          <span className="font-mono-stats text-mono-stats text-[#f97316]">{percent}%</span>
-        </div>
-        <div className="bg-[#111111] border border-[#2D2D2D] p-6 rounded-xl flex flex-col gap-1 shadow-md">
-          <span className="font-mono-label text-mono-label text-outline/60 uppercase">Active Mode</span>
-          <span className="font-mono-stats text-mono-stats text-primary flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" /> TARGETED
-          </span>
+
+        {/* Right Side: Topic Distribution Card */}
+        <div className="lg:col-span-4 bg-[#111111]/72 border border-[#2D2D2D] backdrop-blur-[12px] p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:border-[#f97316]/60 hover:shadow-[0_0_20px_rgba(249,115,22,0.05)] shadow-md min-h-[220px]">
+          <h2 className="font-mono-label text-mono-label uppercase text-outline flex items-center gap-2 select-none border-b border-[#2D2D2D]/60 pb-3 mb-4">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] animate-pulse shadow-[0_0_8px_#f97316]" />
+            Topic_Distribution
+          </h2>
+          <div className="flex flex-row items-center gap-6 justify-between flex-1">
+            {/* SVG Donut Chart */}
+            <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="48" fill="transparent" stroke="#232325" strokeWidth="12" />
+                {chartSlices.map((slice, index) => (
+                  <circle
+                    key={index}
+                    cx="60"
+                    cy="60"
+                    r="48"
+                    fill="transparent"
+                    stroke={slice.color}
+                    strokeWidth="12"
+                    strokeDasharray={`${slice.strokeLength} ${slice.circumference}`}
+                    strokeDashoffset={-slice.strokeOffset}
+                    strokeLinecap="butt"
+                    className="transition-all duration-500"
+                  />
+                ))}
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
+                <span className="font-mono text-lg font-extrabold text-white leading-none">
+                  {Object.keys(topicMap).length}
+                </span>
+                <span className="font-mono-label text-[8px] text-outline/60 uppercase tracking-wider mt-1">
+                  Topics
+                </span>
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="flex-1 min-w-0 space-y-2 overflow-y-auto max-h-[140px] custom-scrollbar pl-2">
+              {displayTopics.map((item, idx) => {
+                const itemPercent = totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0;
+                return (
+                  <div key={idx} className="flex items-center justify-between gap-2 text-[10px]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="font-mono-label text-outline/80 uppercase truncate" title={item.name}>
+                        {item.name}
+                      </span>
+                    </div>
+                    <span className="font-mono text-on-surface-variant shrink-0 font-bold">
+                      {itemPercent}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -389,6 +525,16 @@ export default function CompanySheetDetailPage({ params }: { params: Promise<{ s
             <option value="Easy">Easy</option>
             <option value="Medium">Medium</option>
             <option value="Hard">Hard</option>
+          </select>
+
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="bg-[#080808] border border-outline-variant/40 rounded-lg py-2 px-4 text-on-surface-variant font-body-sm text-body-sm focus:border-[#f97316] cursor-pointer hover:border-[#f97316] transition-colors"
+          >
+            <option value="All">All Status</option>
+            <option value="Solved">Solved</option>
+            <option value="Pending">Pending</option>
           </select>
         </div>
       </div>

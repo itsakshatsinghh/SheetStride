@@ -11,12 +11,7 @@ import { cn, fetchWithCache } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildRoadmap, RoadmapTask } from "@/lib/planner-engine";
 
-interface SolvedQuestion {
-  ID: number;
-  Title: string;
-  Difficulty: string;
-  Topics: string;
-}
+
 
 const AVAILABLE_TOPICS = [
   "Array",
@@ -39,7 +34,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(true);
-  const [solvedList, setSolvedList] = useState<SolvedQuestion[]>([]);
+
   
   // Streak metrics
   const [currentStreak, setCurrentStreak] = useState(0);
@@ -80,8 +75,7 @@ export default function DashboardPage() {
   const [practiceAccuracy, setPracticeAccuracy] = useState<number | null>(null);
   const [savedBlueprintsCount, setSavedBlueprintsCount] = useState<number>(0);
   const [confusedPattern, setConfusedPattern] = useState<string | null>(null);
-  const [recentBlueprints, setRecentBlueprints] = useState<any[]>([]);
-  const [blueprintsLoading, setBlueprintsLoading] = useState(false);
+
   const [leetcodeUsername, setLeetcodeUsername] = useState("");
   
   const [resumeSession, setResumeSession] = useState<{
@@ -262,26 +256,7 @@ export default function DashboardPage() {
         }
       } catch (e) {}
 
-      // Fetch solvedList questions to populate client counts
-      const { data: userProgress, error: progressError } = await supabase
-        .from("user_progress")
-        .select("question_id")
-        .eq("user_id", userId)
-        .eq("completed", true);
 
-      if (!progressError && userProgress && userProgress.length > 0) {
-        const questionIds = userProgress.map((row: any) => row.question_id);
-        const { data: questionsData } = await supabase
-          .from("questions")
-          .select("ID, Title, Difficulty, Topics")
-          .in("ID", questionIds);
-        
-        if (questionsData) {
-          setSolvedList(questionsData as SolvedQuestion[]);
-        }
-      } else {
-        setSolvedList([]);
-      }
 
       // Fetch LeetCode username
       let leetcodeUser = "";
@@ -357,41 +332,7 @@ export default function DashboardPage() {
         console.warn("Failed to calculate pattern overlaps:", e);
       }
 
-      // Fetch user's recent blueprints from user_notebooks
-      try {
-        setBlueprintsLoading(true);
-        const { data: dbBlueprints, error: bpError } = await supabase
-          .from("user_notebooks")
-          .select("question_id, updated_at, biggest_takeaway")
-          .eq("user_id", userId)
-          .order("updated_at", { ascending: false })
-          .limit(2);
 
-        if (!bpError && dbBlueprints && dbBlueprints.length > 0) {
-          const bpQuestionIds = dbBlueprints.map(b => b.question_id);
-          const { data: qData, error: qErr } = await supabase
-            .from("questions")
-            .select("ID, Title, Difficulty, Link")
-            .in("ID", bpQuestionIds);
-
-          if (!qErr && qData) {
-            const qMap = new Map(qData.map(q => [q.ID, q]));
-            const resolvedBps = dbBlueprints.map(b => ({
-              ...b,
-              question: qMap.get(b.question_id)
-            })).filter(b => b.question);
-            setRecentBlueprints(resolvedBps);
-          } else {
-            setRecentBlueprints([]);
-          }
-        } else {
-          setRecentBlueprints([]);
-        }
-      } catch (err) {
-        console.warn("Failed to fetch recent blueprints:", err);
-      } finally {
-        setBlueprintsLoading(false);
-      }
 
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
@@ -564,21 +505,7 @@ export default function DashboardPage() {
     "Your current roadmap plan is loaded."
   );
 
-  const renderFocusHealthBlocks = (topic: string) => {
-    const completedCount = solvedList.filter((q) => 
-      (q.Topics && q.Topics.toLowerCase().includes(topic.toLowerCase()))
-    ).length;
-    const targetCount = 20;
-    const filledCount = Math.min(targetCount, completedCount);
-    const emptyCount = Math.max(0, targetCount - filledCount);
-    
-    const blocksStr = "■".repeat(filledCount) + "□".repeat(emptyCount);
-    return {
-      blocks: blocksStr,
-      completed: completedCount,
-      target: targetCount
-    };
-  };
+
 
   if (loading) {
     return (
@@ -885,58 +812,7 @@ export default function DashboardPage() {
             </motion.div>
           )}
 
-          {/* Recently Saved Blueprints Drafts Summary */}
-          {recentBlueprints.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.4 }}
-              className="bg-[#111111]/70 border border-[#2D2D2D] p-6 rounded-xl space-y-4 backdrop-blur-md transition-all duration-300 hover:bg-[#151515]/90 hover:border-primary/20"
-            >
-              <header className="border-b border-[#2D2D2D]/60 pb-3 flex justify-between items-center">
-                <div>
-                  <span className="font-mono-label text-[10px] text-secondary uppercase mb-1 block">Knowledge Library</span>
-                  <h2 className="font-headline-sm text-sm uppercase tracking-tight text-on-surface font-bold">Recent Solution Blueprints</h2>
-                </div>
-              </header>
-              <div className="space-y-3">
-                {recentBlueprints.map((bp) => (
-                  <div 
-                    key={bp.question_id}
-                    onClick={() => window.dispatchEvent(new CustomEvent("open-question-drawer", {
-                      detail: {
-                        questionId: bp.question.ID,
-                        title: bp.question.Title,
-                        difficulty: bp.question.Difficulty,
-                        link: bp.question.Link,
-                        mode: "notebook"
-                      }
-                    }))}
-                    className="p-3 bg-[#0C0C0C]/50 hover:bg-[#121212] border border-[#2D2D2D]/85 hover:border-primary/30 rounded-lg flex items-center justify-between gap-4 transition-all cursor-pointer group"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-[8px] text-outline">#{bp.question.ID}</span>
-                        <span className={cn(
-                          "text-[8px] font-bold font-mono px-1.5 py-0.5 rounded uppercase leading-none border",
-                          bp.question.Difficulty.toLowerCase() === "easy" && "bg-secondary/5 border-secondary/15 text-secondary",
-                          bp.question.Difficulty.toLowerCase() === "medium" && "bg-primary/5 border-primary/15 text-primary",
-                          bp.question.Difficulty.toLowerCase() === "hard" && "bg-danger/5 border-danger/15 text-danger"
-                        )}>
-                          {bp.question.Difficulty}
-                        </span>
-                      </div>
-                      <h4 className="text-xs font-semibold text-text truncate group-hover:text-primary transition-colors">{bp.question.Title}</h4>
-                      {bp.biggest_takeaway && (
-                        <p className="text-[10px] text-outline/70 truncate mt-1 italic">"{bp.biggest_takeaway}"</p>
-                      )}
-                    </div>
-                    <BookOpen className="h-4 w-4 text-outline group-hover:text-primary transition-colors shrink-0" />
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+
 
         </div>
 

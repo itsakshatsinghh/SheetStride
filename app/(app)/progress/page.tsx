@@ -41,6 +41,34 @@ function getPatternName(q: any, sheetMap: Map<number, string>): string {
   return "Miscellaneous";
 }
 
+// Helper function to map LeetCode questions to standard roadmap topics
+function getTopicFolderName(q: any, sheetTopicMap: Map<number, string>): string {
+  if (sheetTopicMap.has(q.ID)) {
+    return sheetTopicMap.get(q.ID)!;
+  }
+  
+  const topics = q.Topics || "";
+  const topicsLower = topics.toLowerCase();
+  
+  if (topicsLower.includes("sliding window")) return "II. Sliding Window Patterns";
+  if (topicsLower.includes("two pointer") || topicsLower.includes("two-pointer")) return "I. Two Pointer Patterns";
+  if (topicsLower.includes("binary search")) return "IX. Binary Search Patterns";
+  if (topicsLower.includes("tree")) return "III. Tree Traversal Patterns (DFS & BFS)";
+  if (topicsLower.includes("graph")) return "IV. Graph Traversal Patterns (DFS & BFS)";
+  if (topicsLower.includes("heap") || topicsLower.includes("priority queue")) return "VI. Heap (Priority Queue) Patterns";
+  if (topicsLower.includes("backtracking")) return "VII. Backtracking Patterns";
+  if (topicsLower.includes("greedy")) return "VIII. Greedy Patterns";
+  if (topicsLower.includes("dynamic programming") || topicsLower.includes("dp")) return "V. Dynamic Programming (DP) Patterns";
+  if (topicsLower.includes("stack")) return "X. Stack Patterns";
+  if (topicsLower.includes("bit manipulation") || topicsLower.includes("bit")) return "XI. Bit Manipulation Patterns";
+  if (topicsLower.includes("linked list") || topicsLower.includes("linked-list")) return "XII. Linked List Manipulation Patterns";
+  if (topicsLower.includes("array") || topicsLower.includes("matrix")) return "XIII. Array/Matrix Manipulation Patterns";
+  if (topicsLower.includes("string")) return "XIV. String Manipulation Patterns";
+  if (topicsLower.includes("design")) return "XV. Design Patterns";
+  
+  return "General Practice / LeetCode Universe";
+}
+
 // requestAnimationFrame count-up hook for GPU-friendly 60fps animations
 function CountUp({ end, duration = 1.0, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
   const [count, setCount] = useState(0);
@@ -187,15 +215,20 @@ export default function ProgressPage() {
         // Fetch sheet questions mappings
         const { data: sheetQData } = await supabase
           .from("sheet_questions")
-          .select('"question ID", "Pattern name"');
+          .select('"question ID", "Pattern name", "topic name"');
         
         const sheetPatternMap = new Map<number, string>();
+        const sheetTopicMap = new Map<number, string>();
         if (sheetQData) {
           sheetQData.forEach((row: any) => {
             const qId = row["question ID"];
             const pattern = row["Pattern name"];
+            const topicName = row["topic name"];
             if (qId && pattern) {
               sheetPatternMap.set(qId, pattern);
+            }
+            if (qId && topicName) {
+              sheetTopicMap.set(qId, topicName);
             }
           });
         }
@@ -214,10 +247,12 @@ export default function ProgressPage() {
               if (!q) return null;
               
               const patternName = getPatternName(q, sheetPatternMap);
+              const topicName = getTopicFolderName(q, sheetTopicMap);
               return {
                 ...row,
                 questions: q,
-                pattern_name: patternName
+                pattern_name: patternName,
+                topic_name: topicName
               };
             })
             .filter(Boolean);
@@ -464,20 +499,20 @@ export default function ProgressPage() {
     return maxDays;
   };
 
-  // Group revisions by pattern
+  // Group revisions by topic folder
   const getGroupedRevisions = (queue: any[]) => {
     const groupsMap = new Map<string, any[]>();
     queue.forEach(item => {
-      const p = item.pattern_name || "Miscellaneous";
-      if (!groupsMap.has(p)) {
-        groupsMap.set(p, []);
+      const t = item.topic_name || "General Practice / LeetCode Universe";
+      if (!groupsMap.has(t)) {
+        groupsMap.set(t, []);
       }
-      groupsMap.get(p)!.push(item);
+      groupsMap.get(t)!.push(item);
     });
 
     const now = new Date();
     const groups: {
-      patternName: string;
+      topicName: string;
       items: any[];
       easyCount: number;
       mediumCount: number;
@@ -489,7 +524,7 @@ export default function ProgressPage() {
       masteryStatus: "Strong" | "Good" | "Needs Practice";
     }[] = [];
 
-    groupsMap.forEach((items, patternName) => {
+    groupsMap.forEach((items, topicName) => {
       let easy = 0;
       let medium = 0;
       let hard = 0;
@@ -519,7 +554,7 @@ export default function ProgressPage() {
       const todayDue = items.some(isDueToday);
 
       groups.push({
-        patternName,
+        topicName,
         items,
         easyCount: easy,
         mediumCount: medium,
@@ -533,7 +568,7 @@ export default function ProgressPage() {
     });
 
     // Sort priority:
-    // 1. Pattern containing today's due reviews (hasTodayDue)
+    // 1. Topic folder containing today's due reviews (hasTodayDue)
     // 2. Most overdue (oldestOverdueDays descending)
     // 3. Highest number of due questions (items.length descending)
     // 4. Alphabetically
@@ -547,7 +582,7 @@ export default function ProgressPage() {
       if (a.items.length !== b.items.length) {
         return b.items.length - a.items.length;
       }
-      return a.patternName.localeCompare(b.patternName);
+      return a.topicName.localeCompare(b.topicName);
     });
 
     return groups;
@@ -666,7 +701,7 @@ export default function ProgressPage() {
                   </div>
                 ) : (
                   groupedRevisions.map((group) => {
-                    const isExpanded = !!expandedPatterns[group.patternName];
+                    const isExpanded = !!expandedPatterns[group.topicName];
                     const totalQuestions = group.items.length;
                     const easyPct = (group.easyCount / totalQuestions) * 100;
                     const mediumPct = (group.mediumCount / totalQuestions) * 100;
@@ -674,19 +709,19 @@ export default function ProgressPage() {
 
                     return (
                       <div 
-                        key={group.patternName} 
+                        key={group.topicName} 
                         className="bg-[#0A0A0A]/40 border border-[#2D2D2D] rounded-xl hover:border-primary/20 transition-all overflow-hidden"
                       >
                         {/* Card Header Section */}
                         <div 
-                          onClick={() => togglePattern(group.patternName)}
+                          onClick={() => togglePattern(group.topicName)}
                           className="p-5 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0E0E0F]/60 hover:bg-[#111112]/80 transition-colors select-none"
                         >
                           <div className="space-y-2.5 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <Folder className="w-4 h-4 text-primary shrink-0" />
                               <h3 className="font-headline-md text-sm font-bold text-white">
-                                {group.patternName}
+                                {group.topicName}
                               </h3>
                               <span className="text-[9px] font-mono border border-border px-1.5 py-0.5 rounded text-outline uppercase font-semibold">
                                 {totalQuestions} {totalQuestions === 1 ? "Question" : "Questions"}
@@ -763,7 +798,7 @@ export default function ProgressPage() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                togglePattern(group.patternName);
+                                togglePattern(group.topicName);
                               }}
                               className={cn(
                                 "px-3 py-1.5 border rounded-lg text-badge-sm font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer",

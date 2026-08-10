@@ -696,7 +696,9 @@ export function QuestionDetailDrawer() {
       window.dispatchEvent(new Event("question-solved"));
 
       setTimeout(() => {
-        setIsOpen(false);
+        setSuccessMsg("");
+        setOpenMode("notebook");
+        setActiveTab("wiki");
       }, 1500);
     } catch (err) {
       console.error("Failed to save reflection:", err);
@@ -811,7 +813,9 @@ export function QuestionDetailDrawer() {
       window.dispatchEvent(new Event("question-solved"));
 
       setTimeout(() => {
-        setIsOpen(false);
+        setSuccessMsg("");
+        setOpenMode("notebook");
+        setActiveTab("wiki");
       }, 1500);
     } catch (err) {
       console.error("Failed to complete review save:", err);
@@ -903,7 +907,9 @@ export function QuestionDetailDrawer() {
       window.dispatchEvent(new Event("question-solved"));
 
       setTimeout(() => {
-        setIsOpen(false);
+        setSuccessMsg("");
+        setOpenMode("notebook");
+        setActiveTab("wiki");
       }, 1500);
     } catch (err) {
       console.error("Failed to complete premium skip:", err);
